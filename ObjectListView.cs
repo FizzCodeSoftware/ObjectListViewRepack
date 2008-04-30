@@ -5,10 +5,20 @@
  * Date: 9/10/2006 11:15 AM
  *
  * Change log:
+ * 2008-04-29  JPP  - Preserve scroll position when building the list or changing columns. 
+ *                  - Added TopItemIndex property. Due to problems with the underlying control, this
+ *                    property is not always reliable. See property docs for info.
+ * 2008-04-27  JPP  - Added SelectedIndex property.
+ *                  - Use a different, more general strategy to handle Invoke(). Removed all delegates
+ *                    that were only declared to support Invoke().
+ *                  - Check all native structures for 64-bit correctness.
+ * 
+ * v1.11 - First release on SourceForge!
+ * 
  * 2008-04-13  JPP  - Added ColumnRightClick event.
  *                  - Made the assembly CLS-compliant. To do this, our cell editors were made internal, and
  *                    the constraint on FlagRenderer template parameter was removed (the type must still
- *                    be an IConvertible, but if it isn't, that error are no longer caught at compile time).
+ *                    be an IConvertible, but if it isn't, the error will be caught at runtime, not compile time).
  * 2008-04-12  JPP  - Changed HandleHeaderRightClick() to have a columnIndex parameter, which tells
  *                    exactly which column was right-clicked.
  * 2008-03-31  JPP  - Added SaveState() and RestoreState()
@@ -183,7 +193,7 @@ namespace BrightIdeasSoftware
     /// </para>
     /// <para>
     /// This list puts sort indicators in the column headers to show the column sorting direction.
-    /// On Windows XP and later, the system standard images are used. 
+    /// On Windows XP and later, the system standard images are used.
     /// If you wish to replace the standard images with your own images, put entries in the small image list
     /// with the key values "sort-indicator-up" and "sort-indicator-down".
     /// </para>
@@ -526,6 +536,27 @@ namespace BrightIdeasSoftware
         }
 
         /// <summary>
+        /// Return the index of the row that is currently selected. If no row is selected,
+        /// or more than one is selected, return -1.
+        /// </summary>
+        [Browsable(false),
+         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public int SelectedIndex
+        {
+            get {
+                if (this.SelectedIndices.Count == 1)
+                    return this.SelectedIndices[0];
+                else
+                    return -1;
+            }
+            set {
+                this.SelectedIndices.Clear();
+                if (value > -1 && value < this.Items.Count-1)
+                    this.SelectedIndices.Add(value);
+            }
+        }
+
+        /// <summary>
         /// Get the ListViewItem that is currently selected . If no row is selected, or more than one is selected, return null.
         /// </summary>
         [Browsable(false),
@@ -608,7 +639,7 @@ namespace BrightIdeasSoftware
         /// This setting allows that calculation to be overridden (within reason: you still cannot set the line height to be
         /// less than the line height of the font used in the control). </para>
         /// <para>Setting it to -1 means use the normal calculation method.</para>
-        /// <para><bold>This feature is experiemental!</bold> Strange things may happen to your program, 
+        /// <para><bold>This feature is experiemental!</bold> Strange things may happen to your program,
         /// your spouse or your pet if you use it.</para>
         /// </remarks>
         [Category("Appearance"),
@@ -791,8 +822,10 @@ namespace BrightIdeasSoftware
         /// updated when the mouse is released.
         /// </summary>
         /// <remarks>
-        /// I think that this looks very ugly, but it does give more immediate feedback. It looks ugly because every
-        /// column the divider being dragged gets updated twice: once when the column be resized changes size (this moves
+        /// I think that this looks very ugly, but it does give more immediate feedback.
+        /// It looks ugly because every
+        /// column to the right of the divider being dragged gets updated twice: once when
+        /// the column be resized changes size (this moves
         /// all the columns slightly to the right); then again when the filling columns are updated, but they will be shrunk
         /// so that the combined width is not more than the control, so everything jumps slightly back to the left again.
         /// </remarks>
@@ -873,22 +906,16 @@ namespace BrightIdeasSoftware
 
         #region List commands
 
-        /// <summary>
-        /// Allow the SetObjects method to be called in a thread safe manner
-        /// </summary>
-        /// <param name="collection"></param>
-        protected delegate void SetObjectsInvoker(IEnumerable collection);
-
 		/// <summary>
 		/// Set the collection of objects that will be shown in this list view.
 		/// </summary>
+		/// <remark>This method can safely be called from background threads.</remark>
 		/// <remarks>The list is updated immediately</remarks>
 		/// <param name="collection">The objects to be displayed</param>
 		virtual public void SetObjects (IEnumerable collection)
 		{
 			if (this.InvokeRequired) {
-                //this.Invoke(new SetObjectsInvoker(this.SetObjects), new object[] { collection });
-                this.Invoke((MethodInvoker)delegate { this.SetObjects(collection); }); // this seems neater
+                this.Invoke((MethodInvoker)delegate { this.SetObjects(collection); });
 				return;
 			}
 			this.objects = collection;
@@ -910,7 +937,7 @@ namespace BrightIdeasSoftware
         virtual public void IncrementalUpdate(IEnumerable collection)
         {
             if (this.InvokeRequired) {
-                this.Invoke(new SetObjectsInvoker(this.IncrementalUpdate), new object[] { collection });
+                this.Invoke((MethodInvoker)delegate { this.IncrementalUpdate(collection); });
                 return;
             }
 
@@ -956,7 +983,8 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Remove all items from this list
         /// </summary>
-        virtual public void ClearObjects()
+        /// <remark>This method can safely be called from background threads.</remark>
+		virtual public void ClearObjects()
         {
             if (this.InvokeRequired)
                 this.Invoke(new MethodInvoker(ClearObjects));
@@ -975,19 +1003,28 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Build/rebuild all the list view items in the list
         /// </summary>
-        /// <param name="shouldPreserveSelection">If this is true, the control will try to preserve the selection,
-        /// i.e. all objects that were selected before the call will be selected after the rebuild</param>
-        /// <remarks>Use this method in situations were the contents of the list is basically the same
-        /// as previously.</remarks>
-		virtual public void BuildList(bool shouldPreserveSelection)
+        /// <param name="shouldPreserveState">If this is true, the control will try to preserve the selection 
+        /// and the scroll position (see Remarks)
+        /// </param>
+        /// <remarks>
+        /// <para>
+        /// Use this method in situations were the contents of the list is basically the same
+        /// as previously.
+        /// </para>
+        /// <para>
+        /// Due to limitations in .NET's ListView, the scroll position is only preserved if 
+        /// the control is in Details view AND it is not showing groups.
+        /// </para>
+        /// </remarks>
+        virtual public void BuildList(bool shouldPreserveState)
         {
             if (this.Frozen)
                 return;
 
             ArrayList previousSelection = new ArrayList();
-            if (shouldPreserveSelection && this.objects != null) {
+            int previousTopIndex = this.TopItemIndex;
+            if (shouldPreserveState && this.objects != null)
                 previousSelection = this.SelectedObjects;
-            }
 
 			this.BeginUpdate();
 			this.Items.Clear();
@@ -996,22 +1033,68 @@ namespace BrightIdeasSoftware
             if (this.objects != null) {
                 // Build a list of all our items and then display them. (Building
                 // a list and then doing one AddRange is about 10-15% faster than individual adds)
-                List<OLVListItem> l = new List<OLVListItem>();
+                List<OLVListItem> itemList = new List<OLVListItem>();
                 foreach (object rowObject in this.objects) {
                     OLVListItem lvi = new OLVListItem(rowObject);
                     this.FillInValues(lvi, rowObject);
-                    l.Add(lvi);
+                    itemList.Add(lvi);
                 }
-                this.Items.AddRange(l.ToArray());
+                this.Items.AddRange(itemList.ToArray());
                 this.SetAllSubItemImages();
                 this.Sort(this.lastSortColumn);
 
-                if (shouldPreserveSelection) {
+                if (shouldPreserveState)
                     this.SelectedObjects = previousSelection;
-                }
             }
 
 			this.EndUpdate();
+
+            // We can only restore the scroll position after the EndUpdate() because
+            // of caching that the ListView does internally during a BeginUpdate/EndUpdate pair.
+            if (shouldPreserveState)
+                this.TopItemIndex = previousTopIndex;
+        }
+
+        /// <summary>
+        /// Get or set the index of the top item of this listview
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Due to the quirks of the underlying control, doing this correctly this tricky.
+        /// For example, when a ListView has groups enabled, LVM_GETTOPINDEX always returns 0, 
+        /// so for a grouped ListView, TopItem always returns the first item, regardless of the
+        /// scroll position.
+        /// </para>
+        /// <para>
+        /// This property only works when the listview is in Details view.
+        /// </para>
+        /// <para>
+        /// Setting this property on virtual lists is a no-op, because 
+        /// it relies on the Index property of ListViewItem, and the Index property
+        /// is not reliable for ListViewItems within a virtual list.
+        /// </para>
+        /// </remarks>
+        [Browsable(false),
+        DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public int TopItemIndex
+        {
+            get {
+                if (this.View == View.Details && this.TopItem != null)
+                    return this.TopItem.Index;
+                else
+                    return -1;
+            }
+            set {
+                if (this.View == View.Details && !this.VirtualMode) {
+                    int newTopIndex = Math.Min(value, this.GetItemCount() - 1);
+                    this.TopItem = this.GetItem(newTopIndex);
+
+                    // Setting the TopItem sometimes gives off by one errors,
+                    // that (bizarrely) are correct on a second attempt
+                    if (this.TopItem != null && this.TopItem.Index != newTopIndex)
+                        this.TopItem = this.GetItem(newTopIndex);
+                }
+            }
         }
 
         /// <summary>
@@ -1126,6 +1209,10 @@ namespace BrightIdeasSoftware
         /// <param name="view"></param>
         internal void ChangeToFilteredColumns(View view)
         {
+            // Store the state
+            ArrayList previousSelection = this.SelectedObjects;
+            int previousTopIndex = this.TopItemIndex;
+
             this.Freeze();
             this.Clear();
             List<OLVColumn> cols = this.GetFilteredColumns(view);
@@ -1141,6 +1228,10 @@ namespace BrightIdeasSoftware
             }
             this.BuildList();
             this.Unfreeze();
+
+            // Restore the state
+            this.SelectedObjects = previousSelection;
+            this.TopItemIndex = previousTopIndex;
         }
 
         /// <summary>
@@ -1296,7 +1387,7 @@ namespace BrightIdeasSoftware
             ObjectListViewState olvState;
             try {
                 olvState = deserializer.Deserialize(ms) as ObjectListViewState;
-            } catch (System.Runtime.Serialization.SerializationException e) {
+            } catch (System.Runtime.Serialization.SerializationException) {
                 return false;
             }
 
@@ -1652,10 +1743,10 @@ namespace BrightIdeasSoftware
         {
             ColumnClickEventArgs eventArgs = new ColumnClickEventArgs(columnIndex);
             this.OnColumnRightClick(eventArgs);
-            
+
             if (this.SelectColumnsOnRightClick)
                 this.ShowColumnSelectMenu(Cursor.Position);
-                
+
             return this.SelectColumnsOnRightClick;
         }
 
@@ -1667,8 +1758,8 @@ namespace BrightIdeasSoftware
         virtual protected bool HandleHeaderRightClick()
         {
             return false;
-        }        
-        
+        }
+
         /// <summary>
         /// Tell the world when a cell is about to finish being edited.
         /// </summary>
@@ -1863,7 +1954,10 @@ namespace BrightIdeasSoftware
         /// <returns>An OLVListItem</returns>
         virtual public OLVListItem GetItem(int index)
         {
-            return (OLVListItem)this.Items[index];
+            if (index >= 0 && index < this.GetItemCount())
+                return (OLVListItem)this.Items[index];
+            else
+                return null;
         }
 
         /// <summary>
@@ -1975,10 +2069,14 @@ namespace BrightIdeasSoftware
 		/// <param name="modelObject">The object to be selected or null to deselect all</param>
 		virtual public void SelectObject(object modelObject)
 		{
+            // If the given model is already selected, don't do anything else (prevents an flicker)
             if (this.SelectedItems.Count == 1 && ((OLVListItem)this.SelectedItems[0]).RowObject == modelObject)
                 return;
 
 			this.SelectedItems.Clear();
+
+            if (modelObject == null)
+                return;
 
 			//TODO: If this is too slow, we could keep a map of model object to ListViewItems
 			foreach (ListViewItem lvi in this.Items) {
@@ -2029,16 +2127,17 @@ namespace BrightIdeasSoftware
 			this.RefreshObjects(new object[] {modelObject});
 		}
 
-        private delegate void RefreshObjectsInvoker(IList modelObjects);
-
 		/// <summary>
 		/// Update the rows that are showing the given objects
 		/// </summary>
-  	    /// <remarks>This method does not resort or regroup the view.</remarks>
+  	    /// <remarks>
+  	    /// <para>This method does not resort or regroup the view.</para>
+		/// <para>This method can safely be called from background threads.</para>
+		/// </remark>
 		virtual public void RefreshObjects(IList modelObjects)
 		{
 			if (this.InvokeRequired) {
-                this.Invoke(new RefreshObjectsInvoker(this.RefreshObjects), new object[] { modelObjects });
+                this.Invoke((MethodInvoker)delegate { this.RefreshObjects(modelObjects); });
 				return;
 			}
 			foreach (ListViewItem lvi in this.Items) {
@@ -2202,12 +2301,6 @@ namespace BrightIdeasSoftware
         }
 
         /// <summary>
-        /// Allow the Sort method to be called in a thread safe manner
-        /// </summary>
-        /// <param name="columnToSort">The column whose values will be used for the sorting</param>
-        protected delegate void SortInvoker(OLVColumn columnToSort);
-
-        /// <summary>
 		/// Sort the items in the list view by the values in the given column.
 		/// If ShowGroups is true, the rows will be grouped by the given column,
 		/// otherwise, it will be a straight sort.
@@ -2216,7 +2309,7 @@ namespace BrightIdeasSoftware
         virtual public void Sort(OLVColumn columnToSort)
 		{
             if (this.InvokeRequired) {
-				this.Invoke(new SortInvoker(this.Sort), new object [] {columnToSort});
+                this.Invoke((MethodInvoker)delegate { this.Sort(columnToSort); });
 				return;
 			}
 
@@ -2228,7 +2321,7 @@ namespace BrightIdeasSoftware
 
 			if (lastSortOrder == SortOrder.None)
 				lastSortOrder = this.Sorting;
-
+            
             if (this.ShowGroups)
                 this.BuildGroups(columnToSort);
             else if (this.CustomSorter != null)
@@ -3134,7 +3227,7 @@ namespace BrightIdeasSoftware
         /// You cannot prevent the editing from finishing.</remarks>
         [Category("Behavior")]
         public event CellEditEventHandler CellEditFinishing;
-        
+
         /// <summary>
         /// Tell the world when a cell is about to be edited.
         /// </summary>
@@ -3480,37 +3573,37 @@ namespace BrightIdeasSoftware
     /// </summary>
     internal class NativeMethods {
 
-        private const int LVM_FIRST                    = 0x1000;
-        private const int LVM_GETHEADER                = LVM_FIRST + 31;
-        private const int LVM_SETITEMSTATE             = LVM_FIRST + 43;
+        private const int LVM_FIRST = 0x1000;
+        private const int LVM_GETHEADER = LVM_FIRST + 31;
+        private const int LVM_SETITEMSTATE = LVM_FIRST + 43;
         private const int LVM_SETEXTENDEDLISTVIEWSTYLE = LVM_FIRST + 54;
-        private const int LVM_SETITEM                  = LVM_FIRST + 76;
-        private const int LVM_GETCOLUMN                = LVM_FIRST + 95;
-        private const int LVM_SETCOLUMN                = LVM_FIRST + 96;
+        private const int LVM_SETITEM = LVM_FIRST + 76;
+        private const int LVM_GETCOLUMN = LVM_FIRST + 95;
+        private const int LVM_SETCOLUMN = LVM_FIRST + 96;
 
-        private const int LVS_EX_SUBITEMIMAGES   = 0x0002;
+        private const int LVS_EX_SUBITEMIMAGES = 0x0002;
 
-		private const int LVIF_TEXT              = 0x0001;
-		private const int LVIF_IMAGE             = 0x0002;
-		private const int LVIF_PARAM             = 0x0004;
-		private const int LVIF_STATE             = 0x0008;
-		private const int LVIF_INDENT            = 0x0010;
-		private const int LVIF_NORECOMPUTE       = 0x0800;
+        private const int LVIF_TEXT = 0x0001;
+        private const int LVIF_IMAGE = 0x0002;
+        private const int LVIF_PARAM = 0x0004;
+        private const int LVIF_STATE = 0x0008;
+        private const int LVIF_INDENT = 0x0010;
+        private const int LVIF_NORECOMPUTE = 0x0800;
 
-		private const int LVCF_FMT               = 0x0001;
-		private const int LVCF_WIDTH             = 0x0002;
-		private const int LVCF_TEXT              = 0x0004;
-		private const int LVCF_SUBITEM           = 0x0008;
-		private const int LVCF_IMAGE             = 0x0010;
-		private const int LVCF_ORDER             = 0x0020;
-		private const int LVCFMT_LEFT            = 0x0000;
-		private const int LVCFMT_RIGHT           = 0x0001;
-		private const int LVCFMT_CENTER          = 0x0002;
-		private const int LVCFMT_JUSTIFYMASK     = 0x0003;
+        private const int LVCF_FMT = 0x0001;
+        private const int LVCF_WIDTH = 0x0002;
+        private const int LVCF_TEXT = 0x0004;
+        private const int LVCF_SUBITEM = 0x0008;
+        private const int LVCF_IMAGE = 0x0010;
+        private const int LVCF_ORDER = 0x0020;
+        private const int LVCFMT_LEFT = 0x0000;
+        private const int LVCFMT_RIGHT = 0x0001;
+        private const int LVCFMT_CENTER = 0x0002;
+        private const int LVCFMT_JUSTIFYMASK = 0x0003;
 
-		private const int LVCFMT_IMAGE           = 0x0800;
-		private const int LVCFMT_BITMAP_ON_RIGHT = 0x1000;
-		private const int LVCFMT_COL_HAS_IMAGES  = 0x8000;
+        private const int LVCFMT_IMAGE = 0x0800;
+        private const int LVCFMT_BITMAP_ON_RIGHT = 0x1000;
+        private const int LVCFMT_COL_HAS_IMAGES = 0x8000;
 
         private const int HDM_FIRST = 0x1200;
         private const int HDM_HITTEST = HDM_FIRST + 6;
@@ -3535,6 +3628,18 @@ namespace BrightIdeasSoftware
         private const int HDF_SORTUP = 0x0400;
         private const int HDF_SORTDOWN = 0x0200;
 
+        private const int SB_HORZ = 0;
+        private const int SB_VERT = 1;
+        private const int SB_CTL = 2;
+        private const int SB_BOTH = 3;
+
+        private const int SIF_RANGE = 0x0001;
+        private const int SIF_PAGE = 0x0002;
+        private const int SIF_POS = 0x0004;
+        private const int SIF_DISABLENOSCROLL = 0x0008;
+        private const int SIF_TRACKPOS = 0x0010;
+        private const int SIF_ALL = (SIF_RANGE | SIF_PAGE | SIF_POS | SIF_TRACKPOS);
+
 		[StructLayout(LayoutKind.Sequential,CharSet=CharSet.Auto)]
 		private struct LVITEM
 		{
@@ -3547,7 +3652,7 @@ namespace BrightIdeasSoftware
 			public string  pszText;
 			public int     cchTextMax;
 			public int     iImage;
-			public int     lParam;
+			public IntPtr  lParam;
 			// These are available in Common Controls >= 0x0300
 			public int     iIndent;
 			// These are available in Common Controls >= 0x056
@@ -3633,10 +3738,9 @@ namespace BrightIdeasSoftware
             }
         }
 
-		// Various flavours of SendMessage: plain vanilla,
-		// others pass references to various structures
+		// Various flavours of SendMessage: plain vanilla, and passing references to various structures
 		[DllImport("user32.dll", CharSet=CharSet.Auto)]
-		private static extern IntPtr SendMessage(IntPtr hWnd, int msg, int wParam, int lParam);
+		public static extern IntPtr SendMessage(IntPtr hWnd, int msg, int wParam, int lParam);
 		[DllImport("user32.dll", EntryPoint="SendMessage", CharSet=CharSet.Auto)]
 		private static extern IntPtr SendMessageLVItem(IntPtr hWnd, int msg, int wParam, ref LVITEM lvi);
         [DllImport("user32.dll", EntryPoint = "SendMessage", CharSet = CharSet.Auto)]
@@ -3645,6 +3749,19 @@ namespace BrightIdeasSoftware
         private static extern IntPtr SendMessageHDItem(IntPtr hWnd, int msg, int wParam, ref HDITEM hdi);
         [DllImport("user32.dll", EntryPoint = "SendMessage", CharSet = CharSet.Auto)]
         public static extern IntPtr SendMessageHDHITTESTINFO(IntPtr hWnd, int Msg, IntPtr wParam, [In, Out] HDHITTESTINFO lParam);
+        
+        // Entry points used by this code
+        [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true)]
+        public static extern bool GetScrollInfo(IntPtr hWnd, int fnBar, SCROLLINFO si);
+
+        [DllImport("user32.dll", EntryPoint = "GetUpdateRect", CharSet = CharSet.Auto)]
+        private static extern IntPtr GetUpdateRectInternal(IntPtr hWnd, ref Rectangle r, bool eraseBackground);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true)]
+        public static extern bool SetScrollInfo(IntPtr hWnd, int fnBar, SCROLLINFO si, bool fRedraw);
+
+        [DllImport("user32.dll", EntryPoint = "ValidateRect", CharSet = CharSet.Auto)]
+        private static extern IntPtr ValidatedRectInternal(IntPtr hWnd, ref Rectangle r);
 
 		/// <summary>
 		/// Make sure the ListView has the extended style that says to display subitem images.
@@ -3717,9 +3834,6 @@ namespace BrightIdeasSoftware
             return OSFeature.Feature.GetVersionPresent(OSFeature.Themes) != null;
         }
 
-        [DllImport("user32.dll", EntryPoint = "GetUpdateRect", CharSet = CharSet.Auto)]
-        private static extern IntPtr GetUpdateRectInternal(IntPtr hWnd, ref Rectangle r, bool eraseBackground);
-
         /// <summary>
         /// Return the bounds of the update region on the given control.
         /// </summary>
@@ -3733,9 +3847,6 @@ namespace BrightIdeasSoftware
             GetUpdateRectInternal(cntl.Handle, ref r, false);
             return r;
         }
-
-        [DllImport("user32.dll", EntryPoint = "ValidateRect", CharSet = CharSet.Auto)]
-        private static extern IntPtr ValidatedRectInternal(IntPtr hWnd, ref Rectangle r);
 
         /// <summary>
         /// Validate an area of the given control. A validated area will not be repainted at the next redraw.
@@ -3803,7 +3914,7 @@ namespace BrightIdeasSoftware
         }
 
         /// <summary>
-        /// Return the index of the column of the header that is under the given point. 
+        /// Return the index of the column of the header that is under the given point.
         /// Return -1 if no column is under the pt
         /// </summary>
         /// <param name="list">The list we are interested in</param>
@@ -3815,35 +3926,6 @@ namespace BrightIdeasSoftware
             return NativeMethods.HeaderControlHitTest(handle, pt, HHT_ONHEADER);
         }
 
-        [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true)]
-        public static extern bool GetScrollInfo(IntPtr hWnd, int fnBar, SCROLLINFO si);
-
-        public static int GetScrollPosition(IntPtr handle, bool horizontalBar)
-        {
-            const int SB_HORZ = 0;
-            const int SB_VERT = 1;
-            //const int SB_CTL = 2;
-            //const int SB_BOTH = 3;
-
-            //const int SIF_RANGE = 0x0001;
-            //const int SIF_PAGE = 0x0002;
-            const int SIF_POS = 0x0004;
-            //const int SIF_DISABLENOSCROLL = 0x0008;
-            //const int SIF_TRACKPOS = 0x0010;
-            //const int SIF_ALL = (SIF_RANGE | SIF_PAGE | SIF_POS | SIF_TRACKPOS);
-
-            int fnBar = SB_HORZ;
-            if (!horizontalBar)
-                fnBar = SB_VERT;
-
-            SCROLLINFO si = new SCROLLINFO();
-            si.fMask = SIF_POS;
-            if (GetScrollInfo(handle, fnBar, si))
-                return si.nPos;
-            else
-                return -1;
-        }
-
         private static int HeaderControlHitTest(IntPtr handle, Point pt, int flag)
         {
             HDHITTESTINFO testInfo = new HDHITTESTINFO();
@@ -3852,6 +3934,24 @@ namespace BrightIdeasSoftware
             IntPtr result = NativeMethods.SendMessageHDHITTESTINFO(handle, HDM_HITTEST, IntPtr.Zero, testInfo);
             if ((testInfo.flags & flag) != 0)
                 return result.ToInt32();
+            else
+                return -1;
+        }
+
+        /// <summary>
+        /// Get the scroll position of the given scroll bar
+        /// </summary>
+        /// <param name="handle"></param>
+        /// <param name="horizontalBar"></param>
+        /// <returns></returns>
+        public static int GetScrollPosition(IntPtr handle, bool horizontalBar)
+        {
+            int fnBar = (horizontalBar ? SB_HORZ : SB_VERT);
+
+            SCROLLINFO si = new SCROLLINFO();
+            si.fMask = SIF_POS;
+            if (GetScrollInfo(handle, fnBar, si))
+                return si.nPos;
             else
                 return -1;
         }
@@ -3940,7 +4040,8 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Remove all items from this list
         /// </summary>
-        override public void ClearObjects()
+        /// <remark>This method can safely be called from background threads.</remark>
+		override public void ClearObjects()
         {
             if (this.InvokeRequired)
                 this.Invoke(new MethodInvoker(ClearObjects));
@@ -4153,11 +4254,12 @@ namespace BrightIdeasSoftware
         /// Set the collection of objects that this control will show.
         /// </summary>
         /// <param name="collection"></param>
+        /// <remark>This method can safely be called from background threads.</remark>
         override public void SetObjects(IEnumerable collection)
         {
 			if (this.InvokeRequired) {
-				this.Invoke(new SetObjectsInvoker(this.SetObjects), new object [] {collection});
-				return;
+                this.Invoke((MethodInvoker)delegate { this.SetObjects(collection); }); // this seems neater
+                return;
 			}
 
             if (collection == null)
@@ -4292,7 +4394,10 @@ namespace BrightIdeasSoftware
         /// <returns>A model object or null if no delegate is installed</returns>
         override protected object GetRowObjectAt(int index)
         {
-            return this.objectList[index];
+            if (index >= 0 && index < this.objectList.Count)
+                return this.objectList[index];
+            else
+                return null;
         }
 
 
@@ -6506,8 +6611,6 @@ namespace BrightIdeasSoftware
             this.Paused = false;
         }
 
-        protected delegate void OnTimerCallback(Object state);
-
         /// <summary>
         /// This is the method that is invoked by the timer. It basically switches control to the listview thread.
         /// </summary>
@@ -6518,7 +6621,8 @@ namespace BrightIdeasSoftware
                 this.tickler.Change(1000, Timeout.Infinite);
             else {
                 if (this.ListView.InvokeRequired)
-                    this.ListView.Invoke(new OnTimerCallback(this.OnTimer), new object[] { state });
+                    //this.ListView.Invoke(new OnTimerCallback(this.OnTimer), new object[] { state });
+                    this.ListView.Invoke((MethodInvoker)delegate { this.OnTimer(state); }); // this seems neater
                 else
                     this.OnTimerInThread();
             }
