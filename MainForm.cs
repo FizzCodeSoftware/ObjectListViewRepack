@@ -624,12 +624,15 @@ namespace ObjectListViewDemo
 
         private void button7_Click(object sender, EventArgs e)
         {
-            this.listViewSimple.SelectedItem = this.listViewSimple.GetNextItem(this.listViewSimple.SelectedItem);
+            //this.listViewSimple.SelectedItem = this.listViewSimple.GetNextItem(this.listViewSimple.SelectedItem);
+            Person person = new Person("Some One Else " + System.Environment.TickCount);
+            this.listViewSimple.AddObject(person);
         }
 
         private void button6_Click(object sender, EventArgs e)
         {
-            this.listViewSimple.SelectedItem = this.listViewSimple.GetPreviousItem(this.listViewSimple.SelectedItem);
+            //this.listViewSimple.SelectedItem = this.listViewSimple.GetPreviousItem(this.listViewSimple.SelectedItem);
+            this.listViewSimple.RemoveObject(this.listViewSimple.SelectedObject);
         }
 
         #endregion
@@ -1250,6 +1253,21 @@ namespace ObjectListViewDemo
         private void listViewVirtual_SelectionChanged(object sender, EventArgs e)
         {
             this.HandleSelectionChanged((ObjectListView)sender);
+        }
+
+        private void button16_Click(object sender, EventArgs e)
+        {
+            List<Person> list = new List<Person>();
+            list.Add(new Person("A New Person"));
+            list.Add(new Person("Brave New Person"));
+            list.Add(new Person("someone like e e cummings"));
+            list.Add(new Person("Luis Nova Pessoa"));
+            this.listViewComplex.AddObjects(list);
+        }
+
+        private void button17_Click(object sender, EventArgs e)
+        {
+            this.listViewComplex.RemoveObjects(this.listViewComplex.SelectedObjects);
         }
     }
 
