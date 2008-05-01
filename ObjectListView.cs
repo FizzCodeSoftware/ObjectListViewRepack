@@ -5,16 +5,15 @@
  * Date: 9/10/2006 11:15 AM
  *
  * Change log:
- * 2008-04-29  JPP  - Preserve scroll position when building the list or changing columns. 
+ * v1.11
+ * 2008-04-29  JPP  - Preserve scroll position when building the list or changing columns.
  *                  - Added TopItemIndex property. Due to problems with the underlying control, this
  *                    property is not always reliable. See property docs for info.
  * 2008-04-27  JPP  - Added SelectedIndex property.
  *                  - Use a different, more general strategy to handle Invoke(). Removed all delegates
  *                    that were only declared to support Invoke().
  *                  - Check all native structures for 64-bit correctness.
- * 
- * v1.11 - First release on SourceForge!
- * 
+ * 2008-04-25  JPP  - Released on SourceForge.
  * 2008-04-13  JPP  - Added ColumnRightClick event.
  *                  - Made the assembly CLS-compliant. To do this, our cell editors were made internal, and
  *                    the constraint on FlagRenderer template parameter was removed (the type must still
@@ -135,15 +134,25 @@
  * 2006-10-13  JPP  Implemented grouping and column sorting
  * 2006-10-09  JPP  Initial version
  *
- * CONDITIONS OF USE
- * This code may be freely used for non-commercial purposes. Commerical use requires a one-time
- * license fee obtainable from phillip_piper@bigfoot.com. In all cases, this code must be kept intact,
- * complete with this header and conditions of use.
+ * TO DO:
+ * - Extend MappedImageRender to be able to draw more than image if its Aspect returns an ICollection.
  *
  * Copyright (C) 2006-2008 Phillip Piper
  *
- * TO DO:
- * - Extend MappedImageRender to be able to draw more than image if its Aspect returns an ICollection.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * If you wish to use this code in a closed source application, please contact phillip_piper@bigfoot.com.
  */
 
 using System;
@@ -866,6 +875,19 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// This delegate can be used to sort the table in a custom fasion.
         /// </summary>
+        /// <remarks>
+        /// <para>
+        /// What the delegate has to do depends on the type of <code>ObjectListView</code> it is sorting:
+        /// </para>
+        /// <list>
+        /// <item>
+        /// If it is sorting a normal ObjectListView, the delegate must install a ListViewItemSorter on the ObjectListView. This install ItemSorter will actually do the work of sorting the ListViewItems. See ColumnComparer in the code for an example of what an ItemSorter has to do.
+        /// </item>
+        /// <item>
+        /// If the delegate is sorting a VirtualObjectListView or a FastObjectListView, the delegate must sort the model objects that are sourcing the list (remember, in a virtual list, the application holds the model objects and the list just askes for them as it needs them).
+        /// </item>
+        /// </list>
+        /// </remarks>
         [Browsable(false),
          DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public SortDelegate CustomSorter
@@ -1023,7 +1045,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Build/rebuild all the list view items in the list
         /// </summary>
-        /// <param name="shouldPreserveState">If this is true, the control will try to preserve the selection 
+        /// <param name="shouldPreserveState">If this is true, the control will try to preserve the selection
         /// and the scroll position (see Remarks)
         /// </param>
         /// <remarks>
@@ -1032,7 +1054,7 @@ namespace BrightIdeasSoftware
         /// as previously.
         /// </para>
         /// <para>
-        /// Due to limitations in .NET's ListView, the scroll position is only preserved if 
+        /// Due to limitations in .NET's ListView, the scroll position is only preserved if
         /// the control is in Details view AND it is not showing groups.
         /// </para>
         /// </remarks>
@@ -1081,7 +1103,7 @@ namespace BrightIdeasSoftware
         /// <remarks>
         /// <para>
         /// Due to the quirks of the underlying control, doing this correctly this tricky.
-        /// For example, when a ListView has groups enabled, LVM_GETTOPINDEX always returns 0, 
+        /// For example, when a ListView has groups enabled, LVM_GETTOPINDEX always returns 0,
         /// so for a grouped ListView, TopItem always returns the first item, regardless of the
         /// scroll position.
         /// </para>
@@ -1089,7 +1111,7 @@ namespace BrightIdeasSoftware
         /// This property only works when the listview is in Details view.
         /// </para>
         /// <para>
-        /// Setting this property on virtual lists is a no-op, because 
+        /// Setting this property on virtual lists is a no-op, because
         /// it relies on the Index property of ListViewItem, and the Index property
         /// is not reliable for ListViewItems within a virtual list.
         /// </para>
