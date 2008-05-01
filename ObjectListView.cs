@@ -5,6 +5,9 @@
  * Date: 9/10/2006 11:15 AM
  *
  * Change log:
+ * 2008-05-01  JPP  - Added AddObjects() and RemoveObjects() to allow faster mods to the list
+ *                  - Reorganised public properties. Now alphabetical. 
+ *                  - Made the class ObjectListViewState internal, as it always should have been.
  * v1.11
  * 2008-04-29  JPP  - Preserve scroll position when building the list or changing columns.
  *                  - Added TopItemIndex property. Due to problems with the underlying control, this
@@ -239,18 +242,6 @@ namespace BrightIdeasSoftware
         #region Public properties
 
         /// <summary>
-        /// Get/set the collection of objects that this list will show
-        /// </summary>
-        /// <remarks>The contents of the control will be updated immediately after setting this property</remarks>
-        [Browsable(false),
-         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public IEnumerable Objects
-        {
-            get { return this.objects; }
-            set { this.SetObjects(value); }
-        }
-
-        /// <summary>
         /// Get or set all the columns that this control knows about.
         /// Only those columns where IsVisible is true will be seen by the user.
         /// </summary>
@@ -279,6 +270,100 @@ namespace BrightIdeasSoftware
             set { allColumns = value; }
         }
         private List<OLVColumn> allColumns = new List<OLVColumn>();
+
+        /// <summary>
+        /// If every second row has a background different to the control, what color should it be?
+        /// </summary>
+        [Category("Appearance"),
+         Description("If using alternate colors, what color should alterate rows be?"),
+         DefaultValue(typeof(Color), "Empty")]
+        public Color AlternateRowBackColor
+        {
+            get { return alternateRowBackColor; }
+            set { alternateRowBackColor = value; }
+        }
+        private Color alternateRowBackColor = Color.Empty; 
+
+        /// <summary>
+        /// Return the alternate row background color that has been set, or the default color
+        /// </summary>
+        [Browsable(false)]
+        public Color AlternateRowBackColorOrDefault
+        {
+            get
+            {
+                if (alternateRowBackColor == Color.Empty)
+                    return Color.LemonChiffon;
+                else
+                    return alternateRowBackColor;
+            }
+        }
+
+        /// <summary>
+        /// Give access to the image list that is actually being used by the control
+        /// </summary>
+        [Browsable(false)]
+        public ImageList BaseSmallImageList
+        {
+            get { return base.SmallImageList; }
+        }
+
+        /// <summary>
+        /// How does a user indicate that they want to edit cells?
+        /// </summary>
+        public enum CellEditActivateMode
+        {
+            /// <summary>
+            /// This list cannot be edited. F2 does nothing.
+            /// </summary>
+            None = 0,
+
+            /// <summary>
+            /// A single click on  a <strong>subitem</strong> will edit the value. Single clicking the primary column,
+            /// selects the row just like normal. The user must press F2 to edit the primary column.
+            /// </summary>
+            SingleClick = 1,
+
+            /// <summary>
+            /// Double clicking a subitem or the primary column will edit that cell.
+            /// F2 will edit the primary column.
+            /// </summary>
+            DoubleClick = 2,
+
+            /// <summary>
+            /// Pressing F2 is the only way to edit the cells. Once the primary column is being edited,
+            /// the other cells in the row can be edited by pressing Tab.
+            /// </summary>
+            F2Only = 3
+        }
+
+        /// <summary>
+        /// How does the user indicate that they want to edit a cell?
+        /// None means that the listview cannot be edited.
+        /// </summary>
+        /// <remarks>Columns can also be marked as editable.</remarks>
+        [Category("Behavior"),
+        Description("How does the user indicate that they want to edit a cell?"),
+        DefaultValue(CellEditActivateMode.None)]
+        public CellEditActivateMode CellEditActivation
+        {
+            get { return cellEditActivation; }
+            set { cellEditActivation = value; }
+        }
+        private CellEditActivateMode cellEditActivation = CellEditActivateMode.None;
+
+        /// <summary>
+        /// Get/set the list of columns that should be used when the list switches to tile view.
+        /// </summary>
+        /// <remarks>If no list of columns has been installed, this value will default to the
+        /// first column plus any column where IsTileViewColumn is true.</remarks>
+        [Browsable(false),
+        Obsolete("Use GetFilteredColumns() and OLVColumn.IsTileViewColumn instead"),
+        DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public List<OLVColumn> ColumnsForTileView
+        {
+            get { return this.GetFilteredColumns(View.Tile); }
+        }
 
         /// <summary>
         /// Return the visible columns in the order they are displayed to the user
@@ -347,50 +432,29 @@ namespace BrightIdeasSoftware
         }
 
         /// <summary>
-        /// Does this listview have a message that should be drawn when the list is empty?
+        /// Get or set whether or not the listview is frozen. When the listview is
+        /// frozen, it will not update itself.
         /// </summary>
-        [Browsable(false)]
-        public bool HasEmptyListMsg
+        /// <remarks><para>The Frozen property is similar to the methods Freeze()/Unfreeze()
+        /// except that changes to the Frozen property do not nest.</para></remarks>
+        /// <example>objectListView1.Frozen = false; // unfreeze the control regardless of the number of Freeze() calls
+        /// </example>
+        [Browsable(false),
+         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool Frozen
         {
-            get { return !String.IsNullOrEmpty(this.EmptyListMsg); }
-        }
-
-        /// <summary>
-        /// Should the list view show images on subitems?
-        /// </summary>
-        /// <remarks>
-        /// <para>Under Windows, this works by sending messages to the underlying
-        /// Windows control. To make this work under Mono, we would have to owner drawing the items :-(</para></remarks>
-        [Category("Behavior"),
-         Description("Should the list view show images on subitems?"),
-         DefaultValue(false)]
-        public bool ShowImagesOnSubItems
-        {
-            get
+            get { return freezeCount > 0; }
+            set
             {
-#if MONO
-                return false;
-#else
-                return showImagesOnSubItems;
-#endif
+                if (value)
+                    Freeze();
+                else if (freezeCount > 0) {
+                    freezeCount = 1;
+                    Unfreeze();
+                }
             }
-            set { showImagesOnSubItems = value; }
         }
-
-        /// <summary>
-        /// This property controls whether group labels will be suffixed with a count of items.
-        /// </summary>
-        /// <remarks>
-        /// The format of the suffix is controlled by GroupWithItemCountFormat/GroupWithItemCountSingularFormat properties
-        /// </remarks>
-        [Category("Behavior"),
-         Description("Will group titles be suffixed with a count of the items in the group?"),
-         DefaultValue(false)]
-        public bool ShowItemCountOnGroups
-        {
-            get { return showItemCountOnGroups; }
-            set { showItemCountOnGroups = value; }
-        }
+        private int freezeCount = 0;
 
         /// <summary>
         /// When a group title has an item count, how should the lable be formatted?
@@ -411,6 +475,7 @@ namespace BrightIdeasSoftware
             get { return groupWithItemCountFormat; }
             set { groupWithItemCountFormat = value; }
         }
+        private string groupWithItemCountFormat; 
 
         /// <summary>
         /// Return this.GroupWithItemCountFormat or a reasonable default
@@ -447,6 +512,7 @@ namespace BrightIdeasSoftware
             get { return groupWithItemCountSingularFormat; }
             set { groupWithItemCountSingularFormat = value; }
         }
+        private string groupWithItemCountSingularFormat; 
 
         /// <summary>
         /// Return this.GroupWithItemCountSingularFormat or a reasonable default
@@ -464,96 +530,157 @@ namespace BrightIdeasSoftware
         }
 
         /// <summary>
-        /// Should the list give a different background color to every second row?
-        /// </summary>
-        /// <remarks><para>The color of the alternate rows is given by AlternateRowBackColor.</para>
-        /// <para>There is a "feature" in .NET for listviews in non-full-row-select mode, where
-        /// selected rows are not drawn with their correct background color.</para></remarks>
-        [Category("Appearance"),
-         Description("Should the list view use a different backcolor to alternate rows?"),
-         DefaultValue(false)]
-        public bool UseAlternatingBackColors
-        {
-            get { return useAlternatingBackColors; }
-            set { useAlternatingBackColors = value; }
-        }
-
-        /// <summary>
-        /// Should the list view show a bitmap in the column header to show the sort direction?
-        /// </summary>
-        [Category("Behavior"),
-         Description("Should the list view show sort indicators in the column headers?"),
-         DefaultValue(true)]
-        public bool ShowSortIndicators
-        {
-            get { return showSortIndicators; }
-            set { showSortIndicators = value; }
-        }
-
-        /// <summary>
-        /// If every second row has a background different to the control, what color should it be?
-        /// </summary>
-        [Category("Appearance"),
-         Description("If using alternate colors, what color should alterate rows be?"),
-         DefaultValue(typeof(Color), "Empty")]
-        public Color AlternateRowBackColor
-        {
-            get { return alternateRowBackColor; }
-            set { alternateRowBackColor = value; }
-        }
-
-        /// <summary>
-        /// Return the alternate row background color that has been set, or the default color
+        /// Does this listview have a message that should be drawn when the list is empty?
         /// </summary>
         [Browsable(false)]
-        public Color AlternateRowBackColorOrDefault
+        public bool HasEmptyListMsg
+        {
+            get { return !String.IsNullOrEmpty(this.EmptyListMsg); }
+        }
+
+        /// <summary>
+        /// Return true if a cell edit operation is currently happening
+        /// </summary>
+        [Browsable(false)]
+        public bool IsCellEditing
+        {
+            get { return this.cellEditor != null; }
+        }
+
+        /// <summary>
+        /// Get/set the collection of objects that this list will show
+        /// </summary>
+        /// <remarks>The contents of the control will be updated immediately after setting this property</remarks>
+        [Browsable(false),
+         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public IEnumerable Objects
+        {
+            get { return this.objects; }
+            set { this.SetObjects(value); }
+        }
+        private IEnumerable objects; 
+
+        /// <summary>
+        /// Get our collection of model objects as an ArrayList.
+        /// </summary>
+        /// <remarks>
+        /// If an ArrayList was passed to SetObjects(), this property will simply return that ArrayList.
+        /// Otherwise, it will convert any existing collection into a new ArrayList. This effectively
+        /// separates the 'objects' instance variable from its source. 
+        /// </remarks>
+        public ArrayList ObjectsAsList
         {
             get
             {
-                if (alternateRowBackColor == Color.Empty)
-                    return Color.LemonChiffon;
-                else
-                    return alternateRowBackColor;
+                if (this.objects is ArrayList)
+                    return (ArrayList)this.objects;
+
+                if (this.objects == null)
+                    this.objects = new ArrayList();
+                else if (this.objects is ICollection)
+                    this.objects = new ArrayList((ICollection)this.objects);
+                else {
+                    ArrayList newObjects = new ArrayList();
+                    foreach (object x in this.objects)
+                        newObjects.Add(x);
+                    this.objects = newObjects;
+                }
+
+                return (ArrayList)this.objects;
             }
         }
 
         /// <summary>
-        /// Get or set whether or not the listview is frozen. When the listview is
-        /// frozen, it will not update itself.
+        /// Specify the height of each row in the control in pixels.
         /// </summary>
-        /// <remarks><para>The Frozen property is similar to the methods Freeze()/Unfreeze()
-        /// except that changes to the Frozen property do not nest.</para></remarks>
-        /// <example>objectListView1.Frozen = false; // unfreeze the control regardless of the number of Freeze() calls
-        /// </example>
-        [Browsable(false),
-         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool Frozen
+        /// <remarks><para>The row height in a listview is normally determined by the font size and the small image list size.
+        /// This setting allows that calculation to be overridden (within reason: you still cannot set the line height to be
+        /// less than the line height of the font used in the control). </para>
+        /// <para>Setting it to -1 means use the normal calculation method.</para>
+        /// <para><bold>This feature is experiemental!</bold> Strange things may happen to your program,
+        /// your spouse or your pet if you use it.</para>
+        /// </remarks>
+        [Category("Appearance"),
+         DefaultValue(-1)]
+        public int RowHeight
         {
-            get { return freezeCount > 0; }
+            get { return rowHeight; }
             set
             {
-                if (value)
-                    Freeze();
-                else if (freezeCount > 0) {
-                    freezeCount = 1;
-                    Unfreeze();
-                }
+                if (value < 1)
+                    rowHeight = -1;
+                else
+                    rowHeight = value;
+                this.SetupExternalImageList();
             }
         }
-        private int freezeCount = 0;
+        private int rowHeight = -1;
 
         /// <summary>
-        /// Get/set the list of columns that should be used when the list switches to tile view.
+        /// Get/set the column that will be used to resolve comparisons that are equal when sorting.
         /// </summary>
-        /// <remarks>If no list of columns has been installed, this value will default to the
-        /// first column plus any column where IsTileViewColumn is true.</remarks>
+        /// <remarks>There is no user interface for this setting. It must be set programmatically.
+        /// The default is the first column.</remarks>
         [Browsable(false),
-        Obsolete("Use GetFilteredColumns() and OLVColumn.IsTileViewColumn instead"),
-        DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public List<OLVColumn> ColumnsForTileView
+         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public OLVColumn SecondarySortColumn
         {
-            get { return this.GetFilteredColumns(View.Tile); }
+            get
+            {
+                if (this.secondarySortColumn == null) {
+                    if (this.Columns.Count > 0)
+                        return this.GetColumn(0);
+                    else
+                        return null;
+                } else
+                    return this.secondarySortColumn;
+            }
+            set
+            {
+                this.secondarySortColumn = value;
+            }
         }
+        private OLVColumn secondarySortColumn;
+
+        /// <summary>
+        /// When the SecondarySortColumn is used, in what order will it compare results?
+        /// </summary>
+        [Browsable(false),
+        DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public SortOrder SecondarySortOrder
+        {
+            get { return this.secondarySortOrder; }
+            set { this.secondarySortOrder = value; }
+        }
+        private SortOrder secondarySortOrder = SortOrder.Ascending;
+
+        /// <summary>
+        /// When the user right clicks on the column headers, should a menu be presented which will allow
+        /// them to choose which columns will be shown in the view?
+        /// </summary>
+        [Category("Behavior"),
+        Description("When the user right clicks on the column headers, should a menu be presented which will allow them to choose which columns will be shown in the view?"),
+        DefaultValue(true)]
+        public bool SelectColumnsOnRightClick
+        {
+            get { return selectColumnsOnRightClick; }
+            set { selectColumnsOnRightClick = value; }
+        }
+        private bool selectColumnsOnRightClick = true;
+
+        /// <summary>
+        /// When the column select menu is open, should it stay open after an item is selected?
+        /// Staying open allows the user to turn more than one column on or off at a time.
+        /// </summary>
+        [Category("Behavior"),
+        Description("When the column select menu is open, should it stay open after an item is selected?"),
+        DefaultValue(true)]
+        public bool SelectColumnsMenuStaysOpen
+        {
+            get { return selectColumnsMenuStaysOpen; }
+            set { selectColumnsMenuStaysOpen = value; }
+        }
+        private bool selectColumnsMenuStaysOpen = true;
 
         /// <summary>
         /// Return the index of the row that is currently selected. If no row is selected,
@@ -625,6 +752,138 @@ namespace BrightIdeasSoftware
         }
 
         /// <summary>
+        /// Should the list view show a bitmap in the column header to show the sort direction?
+        /// </summary>
+        /// <remarks>
+        /// The only reason for not wanting to have sort indicators is that, on pre-XP versions of
+        /// Windows, having sort indicators required the ListView to have a small image list, and
+        /// as soon as you give a ListView a SmallImageList, the text of column 0 is bumped 16 
+        /// pixels to the right, even if you never used an image.
+        /// </remarks>
+        [Category("Behavior"),
+         Description("Should the list view show sort indicators in the column headers?"),
+         DefaultValue(true)]
+        public bool ShowSortIndicators
+        {
+            get { return showSortIndicators; }
+            set { showSortIndicators = value; }
+        }
+        private bool showSortIndicators; 
+
+        /// <summary>
+        /// Should the list view show images on subitems?
+        /// </summary>
+        /// <remarks>
+        /// <para>Under Windows, this works by sending messages to the underlying
+        /// Windows control. To make this work under Mono, we would have to owner drawing the items :-(</para></remarks>
+        [Category("Behavior"),
+         Description("Should the list view show images on subitems?"),
+         DefaultValue(false)]
+        public bool ShowImagesOnSubItems
+        {
+            get
+            {
+#if MONO
+                return false;
+#else
+                return showImagesOnSubItems;
+#endif
+            }
+            set { showImagesOnSubItems = value; }
+        }
+        private bool showImagesOnSubItems; 
+
+        /// <summary>
+        /// This property controls whether group labels will be suffixed with a count of items.
+        /// </summary>
+        /// <remarks>
+        /// The format of the suffix is controlled by GroupWithItemCountFormat/GroupWithItemCountSingularFormat properties
+        /// </remarks>
+        [Category("Behavior"),
+         Description("Will group titles be suffixed with a count of the items in the group?"),
+         DefaultValue(false)]
+        public bool ShowItemCountOnGroups
+        {
+            get { return showItemCountOnGroups; }
+            set { showItemCountOnGroups = value; }
+        }
+        private bool showItemCountOnGroups; 
+
+        /// <summary>
+        /// Override the SmallImageList property so we can correctly shadow its operations.
+        /// </summary>
+        /// <remarks><para>If you use the RowHeight property to specify the row height, the SmallImageList
+        /// must be fully initialised before setting/changing the RowHeight. If you add new images to the image
+        /// list after setting the RowHeight, you must assign the imagelist to the control again. Something as simple
+        /// as this will work:
+        /// <code>listView1.SmallImageList = listView1.SmallImageList;</code></para>
+        /// </remarks>
+        new public ImageList SmallImageList
+        {
+            get { return this.shadowedImageList; }
+            set
+            {
+                this.shadowedImageList = value;
+                this.SetupExternalImageList();
+            }
+        }
+        private ImageList shadowedImageList = null;
+
+        /// <summary>
+        /// When the listview is grouped, should the items be sorted by the primary column?
+        /// If this is false, the items will be sorted by the same column as they are grouped.
+        /// </summary>
+        [Category("Behavior"),
+         Description("When the listview is grouped, should the items be sorted by the primary column? If this is false, the items will be sorted by the same column as they are grouped."),
+         DefaultValue(true)]
+        public bool SortGroupItemsByPrimaryColumn
+        {
+            get { return this.sortGroupItemsByPrimaryColumn; }
+            set { this.sortGroupItemsByPrimaryColumn = value; }
+        }
+        private bool sortGroupItemsByPrimaryColumn = true;
+
+        /// <summary>
+        /// When resizing a column by dragging its divider, should any space filling columns be
+        /// resized at each mouse move? If this is false, the filling columns will be
+        /// updated when the mouse is released.
+        /// </summary>
+        /// <remarks>
+        /// I think that this looks very ugly, but it does give more immediate feedback.
+        /// It looks ugly because every
+        /// column to the right of the divider being dragged gets updated twice: once when
+        /// the column be resized changes size (this moves
+        /// all the columns slightly to the right); then again when the filling columns are updated, but they will be shrunk
+        /// so that the combined width is not more than the control, so everything jumps slightly back to the left again.
+        /// </remarks>
+        [Category("Misc"),
+        Description("When resizing a column by dragging its divider, should any space filling columns be resized at each mouse move?"),
+        DefaultValue(false)]
+        public bool UpdateSpaceFillingColumnsWhenDraggingColumnDivider
+        {
+            get { return updateSpaceFillingColumnsWhenDraggingColumnDivider; }
+            set { updateSpaceFillingColumnsWhenDraggingColumnDivider = value; }
+        }
+        private bool updateSpaceFillingColumnsWhenDraggingColumnDivider = false;
+
+        /// <summary>
+        /// Should the list give a different background color to every second row?
+        /// </summary>
+        /// <remarks><para>The color of the alternate rows is given by AlternateRowBackColor.</para>
+        /// <para>There is a "feature" in .NET for listviews in non-full-row-select mode, where
+        /// selected rows are not drawn with their correct background color.</para></remarks>
+        [Category("Appearance"),
+         Description("Should the list view use a different backcolor to alternate rows?"),
+         DefaultValue(false)]
+        public bool UseAlternatingBackColors
+        {
+            get { return useAlternatingBackColors; }
+            set { useAlternatingBackColors = value; }
+        }
+        private bool useAlternatingBackColors; 
+        
+
+        /// <summary>
         /// Get/set the style of view that this listview is using
         /// </summary>
         /// <remarks>Switching to tile or details view installs the columns appropriate to that view.
@@ -657,217 +916,6 @@ namespace BrightIdeasSoftware
             }
         }
 
-        /// <summary>
-        /// Specify the height of each row in the control in pixels.
-        /// </summary>
-        /// <remarks><para>The row height in a listview is normally determined by the font size and the small image list size.
-        /// This setting allows that calculation to be overridden (within reason: you still cannot set the line height to be
-        /// less than the line height of the font used in the control). </para>
-        /// <para>Setting it to -1 means use the normal calculation method.</para>
-        /// <para><bold>This feature is experiemental!</bold> Strange things may happen to your program,
-        /// your spouse or your pet if you use it.</para>
-        /// </remarks>
-        [Category("Appearance"),
-         DefaultValue(-1)]
-        public int RowHeight
-        {
-            get { return rowHeight; }
-            set
-            {
-                if (value < 1)
-                    rowHeight = -1;
-                else
-                    rowHeight = value;
-                this.SetupExternalImageList();
-            }
-        }
-        private int rowHeight = -1;
-
-        /// <summary>
-        /// Override the SmallImageList property so we can correctly shadow its operations.
-        /// </summary>
-        /// <remarks><para>If you use the RowHeight property to specify the row height, the SmallImageList
-        /// must be fully initialised before setting/changing the RowHeight. If you add new images to the image
-        /// list after setting the RowHeight, you must assign the imagelist to the control again. Something as simple
-        /// as this will work:
-        /// <code>listView1.SmallImageList = listView1.SmallImageList;</code></para>
-        /// </remarks>
-        new public ImageList SmallImageList
-        {
-            get { return this.shadowedImageList; }
-            set
-            {
-                this.shadowedImageList = value;
-                this.SetupExternalImageList();
-            }
-        }
-        private ImageList shadowedImageList = null;
-
-        /// <summary>
-        /// Give access to the image list that is actually being used by the control
-        /// </summary>
-        [Browsable(false)]
-        public ImageList BaseSmallImageList
-        {
-            get { return base.SmallImageList; }
-        }
-
-        /// <summary>
-        /// Get/set the column that will be used to resolve comparisons that are equal when sorting.
-        /// </summary>
-        /// <remarks>There is no user interface for this setting. It must be set programmatically.
-        /// The default is the first column.</remarks>
-        [Browsable(false),
-         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public OLVColumn SecondarySortColumn
-        {
-            get
-            {
-                if (this.secondarySortColumn == null) {
-                    if (this.Columns.Count > 0)
-                        return this.GetColumn(0);
-                    else
-                        return null;
-                } else
-                    return this.secondarySortColumn;
-            }
-            set
-            {
-                this.secondarySortColumn = value;
-            }
-        }
-        private OLVColumn secondarySortColumn;
-
-        /// <summary>
-        /// When the SecondarySortColumn is used, in what order will it compare results?
-        /// </summary>
-        [Browsable(false),
-        DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public SortOrder SecondarySortOrder
-        {
-            get { return this.secondarySortOrder; }
-            set { this.secondarySortOrder = value; }
-        }
-        private SortOrder secondarySortOrder = SortOrder.Ascending;
-
-        /// <summary>
-        /// When the listview is grouped, should the items be sorted by the primary column?
-        /// If this is false, the items will be sorted by the same column as they are grouped.
-        /// </summary>
-        [Category("Behavior"),
-         Description("When the listview is grouped, should the items be sorted by the primary column? If this is false, the items will be sorted by the same column as they are grouped."),
-         DefaultValue(true)]
-        public bool SortGroupItemsByPrimaryColumn
-        {
-            get { return this.sortGroupItemsByPrimaryColumn; }
-            set { this.sortGroupItemsByPrimaryColumn = value; }
-        }
-        private bool sortGroupItemsByPrimaryColumn = true;
-
-        /// <summary>
-        /// How does a user indicate that they want to edit cells?
-        /// </summary>
-        public enum CellEditActivateMode
-        {
-            /// <summary>
-            /// This list cannot be edited. F2 does nothing.
-            /// </summary>
-            None = 0,
-
-            /// <summary>
-            /// A single click on  a <strong>subitem</strong> will edit the value. Single clicking the primary column,
-            /// selects the row just like normal. The user must press F2 to edit the primary column.
-            /// </summary>
-            SingleClick = 1,
-
-            /// <summary>
-            /// Double clicking a subitem or the primary column will edit that cell.
-            /// F2 will edit the primary column.
-            /// </summary>
-            DoubleClick = 2,
-
-            /// <summary>
-            /// Pressing F2 is the only way to edit the cells. Once the primary column is being edited,
-            /// the other cells in the row can be edited by pressing Tab.
-            /// </summary>
-            F2Only = 3
-        }
-
-        /// <summary>
-        /// How does the user indicate that they want to edit a cell?
-        /// None means that the listview cannot be edited.
-        /// </summary>
-        /// <remarks>Columns can also be marked as editable.</remarks>
-        [Category("Behavior"),
-        Description("How does the user indicate that they want to edit a cell?"),
-        DefaultValue(CellEditActivateMode.None)]
-        public CellEditActivateMode CellEditActivation
-        {
-            get { return cellEditActivation; }
-            set { cellEditActivation = value; }
-        }
-        private CellEditActivateMode cellEditActivation = CellEditActivateMode.None;
-
-        /// <summary>
-        /// Return true if a cell edit operation is currently happening
-        /// </summary>
-        [Browsable(false)]
-        public bool IsCellEditing
-        {
-            get { return this.cellEditor != null; }
-        }
-
-        /// <summary>
-        /// When the user right clicks on the column headers, should a menu be presented which will allow
-        /// them to choose which columns will be shown in the view?
-        /// </summary>
-        [Category("Behavior"),
-        Description("When the user right clicks on the column headers, should a menu be presented which will allow them to choose which columns will be shown in the view?"),
-        DefaultValue(true)]
-        public bool SelectColumnsOnRightClick
-        {
-            get { return selectColumnsOnRightClick; }
-            set { selectColumnsOnRightClick = value; }
-        }
-        private bool selectColumnsOnRightClick = true;
-
-        /// <summary>
-        /// When the column select menu is open, should it stay open after an item is selected?
-        /// Staying open allows the user to turn more than one column on or off at a time.
-        /// </summary>
-        [Category("Behavior"),
-        Description("When the column select menu is open, should it stay open after an item is selected?"),
-        DefaultValue(true)]
-        public bool SelectColumnsMenuStaysOpen
-        {
-            get { return selectColumnsMenuStaysOpen; }
-            set { selectColumnsMenuStaysOpen = value; }
-        }
-        private bool selectColumnsMenuStaysOpen = true;
-
-        /// <summary>
-        /// When resizing a column by dragging its divider, should any space filling columns be
-        /// resized at each mouse move? If this is false, the filling columns will be
-        /// updated when the mouse is released.
-        /// </summary>
-        /// <remarks>
-        /// I think that this looks very ugly, but it does give more immediate feedback.
-        /// It looks ugly because every
-        /// column to the right of the divider being dragged gets updated twice: once when
-        /// the column be resized changes size (this moves
-        /// all the columns slightly to the right); then again when the filling columns are updated, but they will be shrunk
-        /// so that the combined width is not more than the control, so everything jumps slightly back to the left again.
-        /// </remarks>
-        [Category("Misc"),
-        Description("When resizing a column by dragging its divider, should any space filling columns be resized at each mouse move?"),
-        DefaultValue(false)]
-        public bool UpdateSpaceFillingColumnsWhenDraggingColumnDivider
-        {
-            get { return updateSpaceFillingColumnsWhenDraggingColumnDivider; }
-            set { updateSpaceFillingColumnsWhenDraggingColumnDivider = value; }
-        }
-        private bool updateSpaceFillingColumnsWhenDraggingColumnDivider = false;
-
         #endregion
 
         #region Callbacks
@@ -895,6 +943,7 @@ namespace BrightIdeasSoftware
             get { return customSorter; }
             set { customSorter = value; }
         }
+        private SortDelegate customSorter;
 
         /// <summary>
         /// This delegate can be used to format a OLVListItem before it is added to the control.
@@ -962,6 +1011,90 @@ namespace BrightIdeasSoftware
             }
             this.objects = collection;
             this.BuildList(false);
+        }
+
+        /// <summary>
+        /// Add the given model object to this control.
+        /// </summary>
+        /// <param name="modelObject">The model object to be displayed</param>
+        /// <remarks>See AddObjects() for more details</remarks>
+        public void AddObject(object modelObject)
+        {
+            this.AddObjects(new object[] { modelObject });
+        }
+
+        /// <summary>
+        /// Add the given collection of model objects to this control.
+        /// </summary>
+        /// <param name="modelObjects">A collection of model objects</param>
+        /// <remarks>
+        /// <para>The added objects will appear in their correct sort position, if sorting
+        /// is active. Otherwise, they will appear at the end of the list.</para>
+        /// <para>No check is performed to see if any of the objects are already in the ListView.</para>
+        /// <para>The method uses the ObjectsAsList property. See that property for a 
+        /// description of what is does.</para>
+        /// <para>Null objects are silently ignored.</para>
+        /// </remarks>
+        public void AddObjects(ICollection modelObjects)
+        {
+            if (modelObjects == null)
+                return;
+
+            this.BeginUpdate();
+
+            List<OLVListItem> itemList = new List<OLVListItem>();
+            foreach (object modelObject in modelObjects) {
+                if (modelObject != null) {
+                    this.ObjectsAsList.Add(modelObject);
+                    OLVListItem lvi = new OLVListItem(modelObject);
+                    this.FillInValues(lvi, modelObject);
+                    itemList.Add(lvi);
+                }
+            }
+            this.Items.AddRange(itemList.ToArray());
+            this.Sort(this.lastSortColumn);
+
+            foreach (OLVListItem lvi in itemList) {
+                this.SetSubItemImages(lvi.Index, lvi);
+            }
+
+            this.EndUpdate();
+        }
+
+        /// <summary>
+        /// Remove the given model object from the ListView
+        /// </summary>
+        /// <param name="modelObject">The model to be removed</param>
+        /// <remarks>See RemoveObjects() for more details</remarks>
+        public void RemoveObject(object modelObject)
+        {
+            this.RemoveObjects(new object[] { modelObject });
+        }
+
+        /// <summary>
+        /// Remove all of the given objects from the control
+        /// </summary>
+        /// <param name="modelObjects">Collection of objects to be removed</param>
+        /// <remarks>
+        /// <para>Nulls and model objects that are not in the ListView are silently ignored.</para>
+        /// </remarks>
+        virtual public void RemoveObjects(ICollection modelObjects)
+        {
+            if (modelObjects == null)
+                return;
+            
+            this.BeginUpdate();
+
+            foreach (object modelObject in modelObjects) {
+                if (modelObject != null) {
+                    this.ObjectsAsList.Remove(modelObject);
+                    int i = this.IndexOf(modelObject);
+                    if (i >= 0)
+                        this.Items.RemoveAt(i);
+                }
+            }
+
+            this.EndUpdate();
         }
 
         /// <summary>
@@ -1365,7 +1498,7 @@ namespace BrightIdeasSoftware
         }
 
         /// <summary>
-        /// Return a string that represents the current state of the ObjectListView, such
+        /// Return a byte array that represents the current state of the ObjectListView, such
         /// that the state can be restored by RestoreState()
         /// </summary>
         /// <remarks>
@@ -1382,7 +1515,7 @@ namespace BrightIdeasSoftware
         /// It does not include selection or the scroll position.
         /// </para>
         /// </remarks>
-        /// <returns>A string representing the state of the ObjectListView</returns>
+        /// <returns>A byte array representing the state of the ObjectListView</returns>
         public byte[] SaveState()
         {
             ObjectListViewState olvState = new ObjectListViewState();
@@ -1408,12 +1541,11 @@ namespace BrightIdeasSoftware
                 olvState.ColumnWidths.Add(column.Width);
             }
 
-            // Now that we have stored our state, convert it to a string
+            // Now that we have stored our state, convert it to a byte array
             MemoryStream ms = new MemoryStream();
             BinaryFormatter serializer = new BinaryFormatter();
             serializer.Serialize(ms, olvState);
 
-            //return Encoding.ASCII.GetString(ms.ToArray());
             return ms.ToArray();
         }
 
@@ -1421,11 +1553,10 @@ namespace BrightIdeasSoftware
         /// Restore the state of the control from the given string, which must have been
         /// produced by SaveState()
         /// </summary>
-        /// <param name="state">A string returned from SaveState()</param>
+        /// <param name="state">A byte array returned from SaveState()</param>
         /// <returns>Returns true if the state was restored</returns>
         public bool RestoreState(byte[] state)
         {
-            //MemoryStream ms = new MemoryStream(Encoding.ASCII.GetBytes(state));
             MemoryStream ms = new MemoryStream(state);
             BinaryFormatter deserializer = new BinaryFormatter();
             ObjectListViewState olvState;
@@ -1469,11 +1600,8 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Instances of this class are used to store the state of an ObjectListView.
         /// </summary>
-        /// <remarks>
-        /// This is an internal class. It is only public because XmlSerializer will only operate on public classes.
-        /// </remarks>
         [Serializable]
-        public class ObjectListViewState
+        internal class ObjectListViewState
         {
             public int VersionNumber = 1;
             public int NumberOfColumns = 1;
@@ -3602,15 +3730,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         protected SortOrder lastSortOrder;
 
-        private IEnumerable objects; // the collection of objects on show
-        private bool showImagesOnSubItems; // should we try to show images on subitems?
-        private bool showSortIndicators; // should we show sort indicators in the column headers?
-        private bool showItemCountOnGroups; // should we show items count in group labels?
-        private string groupWithItemCountFormat; // when a group title has an item count, how should the label be formatted?
-        private string groupWithItemCountSingularFormat; // when a group title has an item count of 1, how should the label be formatted?
-        private bool useAlternatingBackColors; // should we use different colors for alternate lines?
-        private Color alternateRowBackColor = Color.Empty; // what color background should alternate lines have?
-        private SortDelegate customSorter; // callback for handling custom sort by column processing
+        
         private Rectangle lastUpdateRectangle; // remember the update rect from the last WM_PAINT msg
     }
 
