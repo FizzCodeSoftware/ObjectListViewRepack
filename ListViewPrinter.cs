@@ -473,7 +473,7 @@ namespace BrightIdeasSoftware
         }
 
         /// <summary>
-        /// How transparent should the watermark be? <=0 is transparent, >=100 is completely opaque.
+        /// How transparent should the watermark be? &le;0 is transparent, &ge;100 is completely opaque.
         /// </summary>
         [Category("Appearance - Watermark"),
         Description("How transparent should the watermark be? 0 is transparent, 100 is completely opaque."),
@@ -981,7 +981,6 @@ namespace BrightIdeasSoftware
         /// <param name="g"></param>
         /// <param name="lv"></param>
         /// <param name="row"></param>
-        /// <param name="font"></param>
         /// <param name="rowHeight"></param>
         protected void PrintRow(Graphics g, ListView lv, int row, float rowHeight)
         {
@@ -1008,7 +1007,6 @@ namespace BrightIdeasSoftware
         /// <param name="row"></param>
         /// <param name="column"></param>
         /// <param name="cell"></param>
-        /// <param name="font"></param>
         virtual protected void PrintCell(Graphics g, ListView lv, ListViewItem lvi, int row, int column, RectangleF cell)
         {
             BlockFormat fmt = this.CellFormat;
@@ -1146,7 +1144,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="g">The graphic used for drawing</param>
         /// <param name="lv">The listview to be printed</param>
-        /// <param name="font">The font used for the list</param>
+        /// <param name="n"></param>
         /// <returns>The height of one row in pixels</returns>
         override protected float CalculateRowHeight(Graphics g, ListView lv, int n)
         {
@@ -1462,7 +1460,7 @@ namespace BrightIdeasSoftware
         /// Set the padding for a particular side. 0 means no padding on that side.
         /// </summary>
         /// <param name="side">Which side</param>
-        /// <param name="side">How much padding</param>
+        /// <param name="value">How much padding</param>
         public void SetPadding(Sides side, float value)
         {
             if (side == Sides.All) {
@@ -1530,7 +1528,6 @@ namespace BrightIdeasSoftware
         /// Change the pen of the border on a particular side.
         /// </summary>
         /// <param name="side">Which side</param>
-        /// <param name="width">How wide should it be?</param>
         /// <param name="p">What pen should be used to draw it</param>
         public void SetBorderPen(Sides side, Pen p)
         {
@@ -1561,7 +1558,7 @@ namespace BrightIdeasSoftware
         /// Set the distance that the text should be inset from the border on a given side
         /// </summary>
         /// <param name="side">Which side</param>
-        /// <param name="side">Distance of text inset</param>
+        /// <param name="value">Distance of text inset</param>
         public void SetTextInset(Sides side, float value)
         {
             if (side == Sides.All) {

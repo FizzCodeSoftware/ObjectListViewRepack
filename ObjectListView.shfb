@@ -4,12 +4,12 @@
     </assemblies>
     <namespaceSummaries>
         <namespaceSummaryItem name="" isDocumented="False" />
-        <namespaceSummaryItem name="BrightIdeasSoftware" isDocumented="True" />
+        <namespaceSummaryItem name="BrightIdeasSoftware" isDocumented="True">All ObjectListView appears in this namespace</namespaceSummaryItem>
         <namespaceSummaryItem name="ObjectListViewDemo" isDocumented="False" />
     </namespaceSummaries>
     <ProjectSummary>ObjectListViewDemo demonstrates helpful techniques when using an ObjectListView</ProjectSummary>
     <MissingTags>Summary, Parameter, Returns, AutoDocumentCtors, Namespace</MissingTags>
-    <VisibleItems>InheritedMembers, InheritedFrameworkMembers, Protected, SealedProtected</VisibleItems>
+    <VisibleItems>InheritedMembers, Protected, SealedProtected</VisibleItems>
     <HtmlHelp1xCompilerPath path="" />
     <HtmlHelp2xCompilerPath path="" />
     <OutputPath>.\Help\</OutputPath>
@@ -23,15 +23,15 @@
     <FrameworkVersion>2.0.50727</FrameworkVersion>
     <BinaryTOC>True</BinaryTOC>
     <IncludeFavorites>False</IncludeFavorites>
-    <Preliminary>False</Preliminary>
+    <Preliminary>True</Preliminary>
     <RootNamespaceContainer>False</RootNamespaceContainer>
     <RootNamespaceTitle />
     <HelpTitle>ObjectListView Reference</HelpTitle>
     <HtmlHelpName>Documentation</HtmlHelpName>
     <Language>en-US</Language>
     <CopyrightHref />
-    <CopyrightText />
-    <FeedbackEMailAddress />
+    <CopyrightText>(c) Copyright 2006-2008 Phillip Piper All Rights Reserved</CopyrightText>
+    <FeedbackEMailAddress>phillip_piper@bigfoot.com</FeedbackEMailAddress>
     <HeaderText />
     <FooterText />
     <ProjectLinkType>Local</ProjectLinkType>
@@ -39,7 +39,7 @@
     <SdkLinkTarget>Blank</SdkLinkTarget>
     <PresentationStyle>Prototype</PresentationStyle>
     <NamingMethod>Guid</NamingMethod>
-    <SyntaxFilters>Standard</SyntaxFilters>
+    <SyntaxFilters>CSharp</SyntaxFilters>
     <ShowFeedbackControl>False</ShowFeedbackControl>
     <ContentPlacement>AboveNamespaces</ContentPlacement>
     <ContentSiteMap path="" />

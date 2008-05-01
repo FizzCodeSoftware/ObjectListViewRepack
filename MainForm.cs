@@ -77,10 +77,10 @@ namespace ObjectListViewDemo
 
             // Change this value to see the performance on bigger lists.
             // Each list builds about 1000 rows per second.
-            while (list.Count < 2000) {
-                foreach (Person p in masterList)
-                    list.Add(new Person(p));
-            }
+            //while (list.Count < 2000) {
+            //    foreach (Person p in masterList)
+            //        list.Add(new Person(p));
+            //}
 
 			InitializeSimpleExample(list);
 			InitializeComplexExample(list);
@@ -239,7 +239,7 @@ namespace ObjectListViewDemo
 
             this.listViewDataSet.RowFormatter = delegate(OLVListItem olvi) {
                 string[] colorNames = new string[] { "red", "green", "blue", "yellow" };
-
+                
                 // For some reason, changes to the background of column 0 don't take place
                 // immediately. The list has to be rebuild before the background color changes.
                 foreach (ListViewItem.ListViewSubItem subItem in olvi.SubItems) {
