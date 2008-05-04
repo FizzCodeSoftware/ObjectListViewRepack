@@ -5,8 +5,17 @@
  * Date: 9/10/2006 11:15 AM
  *
  * Change log:
+ * 2008-05-03  JPP  - Changed cell editing to use values directly when the values are Strings.
+ *                    Previously, values were always handed to the AspectToStringConverter.
+ *                  - When editing a cell, tabbing no longer tries to edit the next subitem 
+ *                    when not in details view!
+ * 2008-05-02  JPP  - MappedImageRenderer can now handle a Aspects that return a collection
+ *                    of values. Each value will be drawn as its own image.
+ *                  - Made AddObjects() and RemoveObjects() work for all flavours (or at least not crash)
+ *                  - Fixed bug with clearing virtual lists that has been scrolled vertically
+ *                  - Made TopItemIndex work with virtual lists.
  * 2008-05-01  JPP  - Added AddObjects() and RemoveObjects() to allow faster mods to the list
- *                  - Reorganised public properties. Now alphabetical. 
+ *                  - Reorganised public properties. Now alphabetical.
  *                  - Made the class ObjectListViewState internal, as it always should have been.
  * v1.11
  * 2008-04-29  JPP  - Preserve scroll position when building the list or changing columns.
@@ -282,7 +291,7 @@ namespace BrightIdeasSoftware
             get { return alternateRowBackColor; }
             set { alternateRowBackColor = value; }
         }
-        private Color alternateRowBackColor = Color.Empty; 
+        private Color alternateRowBackColor = Color.Empty;
 
         /// <summary>
         /// Return the alternate row background color that has been set, or the default color
@@ -475,7 +484,7 @@ namespace BrightIdeasSoftware
             get { return groupWithItemCountFormat; }
             set { groupWithItemCountFormat = value; }
         }
-        private string groupWithItemCountFormat; 
+        private string groupWithItemCountFormat;
 
         /// <summary>
         /// Return this.GroupWithItemCountFormat or a reasonable default
@@ -512,7 +521,7 @@ namespace BrightIdeasSoftware
             get { return groupWithItemCountSingularFormat; }
             set { groupWithItemCountSingularFormat = value; }
         }
-        private string groupWithItemCountSingularFormat; 
+        private string groupWithItemCountSingularFormat;
 
         /// <summary>
         /// Return this.GroupWithItemCountSingularFormat or a reasonable default
@@ -558,7 +567,7 @@ namespace BrightIdeasSoftware
             get { return this.objects; }
             set { this.SetObjects(value); }
         }
-        private IEnumerable objects; 
+        private IEnumerable objects;
 
         /// <summary>
         /// Get our collection of model objects as an ArrayList.
@@ -566,7 +575,7 @@ namespace BrightIdeasSoftware
         /// <remarks>
         /// If an ArrayList was passed to SetObjects(), this property will simply return that ArrayList.
         /// Otherwise, it will convert any existing collection into a new ArrayList. This effectively
-        /// separates the 'objects' instance variable from its source. 
+        /// separates the 'objects' instance variable from its source.
         /// </remarks>
         public ArrayList ObjectsAsList
         {
@@ -757,7 +766,7 @@ namespace BrightIdeasSoftware
         /// <remarks>
         /// The only reason for not wanting to have sort indicators is that, on pre-XP versions of
         /// Windows, having sort indicators required the ListView to have a small image list, and
-        /// as soon as you give a ListView a SmallImageList, the text of column 0 is bumped 16 
+        /// as soon as you give a ListView a SmallImageList, the text of column 0 is bumped 16
         /// pixels to the right, even if you never used an image.
         /// </remarks>
         [Category("Behavior"),
@@ -768,7 +777,7 @@ namespace BrightIdeasSoftware
             get { return showSortIndicators; }
             set { showSortIndicators = value; }
         }
-        private bool showSortIndicators; 
+        private bool showSortIndicators;
 
         /// <summary>
         /// Should the list view show images on subitems?
@@ -791,7 +800,7 @@ namespace BrightIdeasSoftware
             }
             set { showImagesOnSubItems = value; }
         }
-        private bool showImagesOnSubItems; 
+        private bool showImagesOnSubItems;
 
         /// <summary>
         /// This property controls whether group labels will be suffixed with a count of items.
@@ -807,7 +816,7 @@ namespace BrightIdeasSoftware
             get { return showItemCountOnGroups; }
             set { showItemCountOnGroups = value; }
         }
-        private bool showItemCountOnGroups; 
+        private bool showItemCountOnGroups;
 
         /// <summary>
         /// Override the SmallImageList property so we can correctly shadow its operations.
@@ -880,8 +889,8 @@ namespace BrightIdeasSoftware
             get { return useAlternatingBackColors; }
             set { useAlternatingBackColors = value; }
         }
-        private bool useAlternatingBackColors; 
-        
+        private bool useAlternatingBackColors;
+
 
         /// <summary>
         /// Get/set the style of view that this listview is using
@@ -1031,11 +1040,11 @@ namespace BrightIdeasSoftware
         /// <para>The added objects will appear in their correct sort position, if sorting
         /// is active. Otherwise, they will appear at the end of the list.</para>
         /// <para>No check is performed to see if any of the objects are already in the ListView.</para>
-        /// <para>The method uses the ObjectsAsList property. See that property for a 
+        /// <para>The method uses the ObjectsAsList property. See that property for a
         /// description of what is does.</para>
         /// <para>Null objects are silently ignored.</para>
         /// </remarks>
-        public void AddObjects(ICollection modelObjects)
+        virtual public void AddObjects(ICollection modelObjects)
         {
             if (modelObjects == null)
                 return;
@@ -1082,7 +1091,7 @@ namespace BrightIdeasSoftware
         {
             if (modelObjects == null)
                 return;
-            
+
             this.BeginUpdate();
 
             foreach (object modelObject in modelObjects) {
@@ -1235,18 +1244,12 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <remarks>
         /// <para>
-        /// Due to the quirks of the underlying control, doing this correctly this tricky.
-        /// For example, when a ListView has groups enabled, LVM_GETTOPINDEX always returns 0,
-        /// so for a grouped ListView, TopItem always returns the first item, regardless of the
+        /// This property only works when the listview is in Details view and not showing groups.
+        /// </para>
+        /// <para>
+        /// The reason that it does not work when showing groups is that, when groups are enabled, 
+        /// the Windows message LVM_GETTOPINDEX always returns 0, regardless of the
         /// scroll position.
-        /// </para>
-        /// <para>
-        /// This property only works when the listview is in Details view.
-        /// </para>
-        /// <para>
-        /// Setting this property on virtual lists is a no-op, because
-        /// it relies on the Index property of ListViewItem, and the Index property
-        /// is not reliable for ListViewItems within a virtual list.
         /// </para>
         /// </remarks>
         [Browsable(false),
@@ -1262,9 +1265,9 @@ namespace BrightIdeasSoftware
             }
             set
             {
-                if (this.View == View.Details && !this.VirtualMode) {
-                    int newTopIndex = Math.Min(value, this.GetItemCount() - 1);
-                    this.TopItem = this.GetItem(newTopIndex);
+                int newTopIndex = Math.Min(value, this.GetItemCount() - 1);
+                if (this.View == View.Details && newTopIndex >= 0) {
+                    this.TopItem = this.Items[newTopIndex];
 
                     // Setting the TopItem sometimes gives off by one errors,
                     // that (bizarrely) are correct on a second attempt
@@ -3071,6 +3074,10 @@ namespace BrightIdeasSoftware
             if (isSimpleTabKey && this.IsCellEditing) { // Tab key while editing
                 this.FinishCellEdit();
 
+                // We can only Tab between columns when we are in Details view
+                if (this.View != View.Details)
+                    return true;
+
                 OLVListItem olvi = this.cellEditEventArgs.ListViewItem;
                 int subItemIndex = this.cellEditEventArgs.SubItemIndex;
                 int displayIndex = this.GetColumn(subItemIndex).DisplayIndex;
@@ -3203,18 +3210,22 @@ namespace BrightIdeasSoftware
             }
 
             // If we found it, use it to assign a value, otherwise simply set the text
-            if (pinfo == null)
-                c.Text = stringValue;
-            else {
+            if (pinfo != null) {
                 try {
                     pinfo.SetValue(c, value, null);
+                    return;
                 } catch (TargetInvocationException) {
                     // Not a lot we can do about this one. Something went wrong in the bowels
                     // of the method. Let's take the ostrich approach and just ignore it :-)
                 } catch (ArgumentException) {
-                    c.Text = stringValue;
                 }
             }
+
+            // There wasn't a Value property, or we couldn't set it, so set the text instead
+            if (value is String)
+                c.Text = (String)value;
+            else
+                c.Text = stringValue;
         }
 
         /// <summary>
@@ -3308,11 +3319,16 @@ namespace BrightIdeasSoftware
         private Control MakeDefaultCellEditor(OLVColumn column)
         {
             TextBox tb = new TextBox();
+            String str;
 
             // Build a list of unique values, to be used as autocomplete on the editor
             Dictionary<String, bool> alreadySeen = new Dictionary<string, bool>();
             for (int i = 0; i < Math.Min(this.GetItemCount(), 1000); i++) {
-                String str = column.GetStringValue(this.GetModelObject(i));
+                Object value = column.GetValue(this.GetModelObject(i));
+                if (value is String)
+                    str = (String)value;
+                else
+                    str = column.ValueToString(value);
                 if (!alreadySeen.ContainsKey(str)) {
                     tb.AutoCompleteCustomSource.Add(str);
                     alreadySeen[str] = true;
@@ -3730,7 +3746,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         protected SortOrder lastSortOrder;
 
-        
+
         private Rectangle lastUpdateRectangle; // remember the update rect from the last WM_PAINT msg
     }
 
@@ -4213,8 +4229,10 @@ namespace BrightIdeasSoftware
         {
             if (this.InvokeRequired)
                 this.Invoke(new MethodInvoker(ClearObjects));
-            else
+            else {
+                this.ClearCachedInfo();
                 this.VirtualListSize = 0;
+            }
         }
 
         /// <summary>
@@ -4251,6 +4269,28 @@ namespace BrightIdeasSoftware
             // do nothing
         }
 
+        /// <summary>
+        /// Add the given collection of model objects to this control.
+        /// </summary>
+        /// <param name="modelObjects">A collection of model objects</param>
+        /// <remarks>This is a no-op for virtual lists, since the control
+        /// does not have a list of model objects to which it can add this new one.
+        /// All model object management is done by the application.</remarks>
+        override public void AddObjects(ICollection modelObjects)
+        {
+        }
+
+        /// <summary>
+        /// Remove all of the given objects from the control
+        /// </summary>
+        /// <param name="modelObjects">Collection of objects to be removed</param>
+        /// <remarks>This is a no-op for virtual lists, since the control
+        /// does not have a list of model objects from which it can remove these ones.
+        /// All model object management is done by the application.</remarks>
+        override public void RemoveObjects(ICollection modelObjects)
+        {
+        }
+        
         #endregion
 
         /// <summary>
@@ -4258,11 +4298,8 @@ namespace BrightIdeasSoftware
         /// </summary>
         public override void BuildList(bool shouldPreserveSelection)
         {
-            this.lastRetrieveVirtualItemIndex = -1;
-
-            // This call was in the older code, but I can't think why since virtual lists
-            // can't be build in that fashion.
-            //base.BuildList(false);
+        	this.ClearCachedInfo();
+        	this.Invalidate();
         }
 
         /// <summary>
@@ -4328,12 +4365,20 @@ namespace BrightIdeasSoftware
                 return this.RowGetter(index);
         }
 
+        /// <summary>
+        /// Clear any cached info this list may have been using
+        /// </summary>
+		public void ClearCachedInfo()
+		{
+			this.lastRetrieveVirtualItemIndex = -1;
+		}
+
         #endregion
 
         #region Variable declaractions
 
         private RowGetterDelegate rowGetter;
-        protected int lastRetrieveVirtualItemIndex = -1;
+        private int lastRetrieveVirtualItemIndex = -1;
         private OLVListItem lastRetrieveVirtualItem;
 
         #endregion
@@ -4360,20 +4405,20 @@ namespace BrightIdeasSoftware
     /// </remarks>
     public class FastObjectListView : VirtualObjectListView
     {
+    	/// <summary>
+    	/// Make a FastObjectListView
+    	/// </summary>
         public FastObjectListView()
         {
             this.SearchForVirtualItem += new SearchForVirtualItemEventHandler(FastObjectListView_SearchForVirtualItem);
 
             this.CustomSorter = delegate(OLVColumn column, SortOrder sortOrder) {
-                this.lastRetrieveVirtualItemIndex = -1;
+                this.ClearCachedInfo();
                 if (sortOrder != SortOrder.None)
                     this.objectList.Sort(new ModelObjectComparer(column, sortOrder, this.SecondarySortColumn, this.SecondarySortOrder));
-                this.objectsToIndexMap.Clear();
-                for (int i = 0; i < this.objectList.Count; i++)
-                    this.objectsToIndexMap[this.objectList[i]] = i;
+                this.RebuildIndexMap();
             };
         }
-        Hashtable objectsToIndexMap = new Hashtable();
 
         #region Public properties
 
@@ -4393,9 +4438,11 @@ namespace BrightIdeasSoftware
             get { return this.objectList; }
             set
             {
+                this.BeginUpdate();
                 ArrayList previousSelection = this.SelectedObjects;
                 this.SetObjects(value);
                 this.SelectedObjects = previousSelection;
+                this.EndUpdate();
             }
         }
         private ArrayList objectList = new ArrayList();
@@ -4431,19 +4478,69 @@ namespace BrightIdeasSoftware
                 return;
             }
 
-            if (collection == null)
-                this.objectList = new ArrayList();
-            else if (collection is ICollection)
-                this.objectList = new ArrayList((ICollection)collection);
-            else {
-                this.objectList = new ArrayList();
-                foreach (object x in collection)
-                    this.objectList.Add(x);
+            this.BeginUpdate();
+            ArrayList newObjects = new ArrayList();
+            if (collection != null) {
+                if (collection is ICollection)
+                    newObjects = new ArrayList((ICollection)collection);
+                else {
+                    foreach (object x in collection)
+                        newObjects.Add(x);
+                }
             }
+            // There is a bug in ListView where if a virtual ListView is cleared 
+            // (i.e. VirtuaListSize set to 0) when it is
+            // scrolled vertically, the scroll position is wrong when the list is subsequently
+            // filled in again. To avoid this, before clearing a virtual list, 
+            // we make sure the list is scrolled to the top.
+            if (newObjects.Count == 0 && this.TopItemIndex > 0)
+                this.TopItemIndex = 0;
+
+            this.objectList = newObjects;
             this.VirtualListSize = this.objectList.Count;
             this.Sort();
+            this.EndUpdate();
         }
 
+        /// <summary>
+        /// Add the given collection of model objects to this control.
+        /// </summary>
+        /// <param name="modelObjects">A collection of model objects</param>
+        /// <remarks>
+        /// <para>The added objects will appear in their correct sort position, if sorting
+        /// is active. Otherwise, they will appear at the end of the list.</para>
+        /// <para>No check is performed to see if any of the objects are already in the ListView.</para>
+        /// <para>Null objects are silently ignored.</para>
+        /// </remarks>
+        override public void AddObjects(ICollection modelObjects)
+        {
+        	foreach (object modelObject in modelObjects) {
+        		if (modelObject != null)
+        			this.objectList.Add(modelObject);
+        	}
+        	this.Objects = this.objectList;
+        }
+        
+        /// <summary>
+        /// Remove all of the given objects from the control
+        /// </summary>
+        /// <param name="modelObjects">Collection of objects to be removed</param>
+        /// <remarks>
+        /// <para>Nulls and model objects that are not in the ListView are silently ignored.</para>
+        /// </remarks>
+        override public void RemoveObjects(ICollection modelObjects)
+        {
+            ArrayList selectedObjects = this.SelectedObjects;
+         	foreach (object modelObject in modelObjects) {
+        		if (modelObject != null) {
+        			this.objectList.Remove(modelObject);
+                    selectedObjects.Remove(modelObject);
+                }
+            }
+        	this.SetObjects(this.objectList);
+            this.SelectedObjects = selectedObjects;
+        }
+        
         #endregion
 
         #region Event Handlers
@@ -4555,6 +4652,17 @@ namespace BrightIdeasSoftware
         #endregion
 
         #region Implementation
+
+        /// <summary>
+        /// Rebuild the map that remembers which model object is displayed at which line
+        /// </summary>
+        protected void RebuildIndexMap()
+        {
+            this.objectsToIndexMap.Clear();
+            for (int i = 0; i < this.objectList.Count; i++)
+                this.objectsToIndexMap[this.objectList[i]] = i;
+        }
+        Hashtable objectsToIndexMap = new Hashtable();
 
         /// <summary>
         /// Return the row object for the given row index
@@ -4869,6 +4977,31 @@ namespace BrightIdeasSoftware
 
         #endregion
 
+        #region Object manipulations
+
+        /// <summary>
+        /// Add the given collection of model objects to this control.
+        /// </summary>
+        /// <param name="modelObjects">A collection of model objects</param>
+        /// <remarks>This is a no-op for data lists, since the data
+        /// is controlled by the DataSource. Manipulate the data source
+        /// rather than this view of the data source.</remarks>
+        override public void AddObjects(ICollection modelObjects)
+        {
+        }
+
+        /// <summary>
+        /// Remove the given collection of model objects from this control.
+        /// </summary>
+        /// <remarks>This is a no-op for data lists, since the data
+        /// is controlled by the DataSource. Manipulate the data source
+        /// rather than this view of the data source.</remarks>
+        override public void RemoveObjects(ICollection modelObjects)
+        {
+        }
+        
+        #endregion
+
         #region Event Handlers
 
         /// <summary>
@@ -5012,14 +5145,19 @@ namespace BrightIdeasSoftware
         }
         private bool isChangingIndex = false;
 
-
-        // Called by Windows Forms when the currently selected index of the
-        // control changes. This usually happens because the user clicked on
-        // the control. In this case we want to notify the CurrencyManager so
-        // that any other bound controls will remain in sync. This method will
-        // also be called when we changed our index as a result of a
-        // notification that originated from the CurrencyManager, and in that
-        // case we avoid notifying the CurrencyManager back!
+        /// <summary>
+        /// Handle a SelectedIndexChanged event
+        /// </summary>
+        /// <param name="e">The event</param>
+        /// <remarks>
+        /// Called by Windows Forms when the currently selected index of the
+        /// control changes. This usually happens because the user clicked on
+        /// the control. In this case we want to notify the CurrencyManager so
+        /// that any other bound controls will remain in sync. This method will
+        /// also be called when we changed our index as a result of a
+        /// notification that originated from the CurrencyManager, and in that
+        /// case we avoid notifying the CurrencyManager back!
+        /// </remarks>
         protected override void OnSelectedIndexChanged(EventArgs e)
         {
             base.OnSelectedIndexChanged(e);
@@ -5649,6 +5787,11 @@ namespace BrightIdeasSoftware
             return source;
         }
 
+        /// <summary>
+        /// Update the given model object with the given value
+        /// </summary>
+        /// <param name="rowObject">The model object to be updated</param>
+        /// <param name="newValue">The value to be put into the model</param>
         public void PutValue(Object rowObject, Object newValue)
         {
             if (this.aspectPutter == null)
@@ -5657,6 +5800,12 @@ namespace BrightIdeasSoftware
                 this.aspectPutter(rowObject, newValue);
         }
 
+        /// <summary>
+        /// Update the given model object with the given value using the column's
+        /// AspectName.
+        /// </summary>
+        /// <param name="rowObject">The model object to be updated</param>
+        /// <param name="newValue">The value to be put into the model</param>
         public void PutAspectByName(Object rowObject, Object newValue)
         {
             if (string.IsNullOrEmpty(this.aspectName))
@@ -5962,7 +6111,7 @@ namespace BrightIdeasSoftware
         /// Return the state of the animatation of the image on this subitem.
         /// Null means there is either no image, or it is not an animation
         /// </summary>
-        public ImageRenderer.AnimationState AnimationState
+        internal ImageRenderer.AnimationState AnimationState
         {
             get { return animationState; }
             set { animationState = value; }
@@ -6266,6 +6415,16 @@ namespace BrightIdeasSoftware
             set { canWrap = value; }
         }
         private bool canWrap = false;
+        
+        /// <summary>
+        /// When rendering multiple images, how many pixels should be between each image?
+        /// </summary>
+        public int Spacing
+        {
+            get { return spacing; }
+            set { spacing = value; }
+        }
+        private int spacing = 1;
 
         #endregion
 
@@ -6295,7 +6454,7 @@ namespace BrightIdeasSoftware
         /// <returns>An Image or null</returns>
         public Image GetImage(Object imageSelector)
         {
-            if (imageSelector == null)
+            if (imageSelector == null || imageSelector == System.DBNull.Value)
                 return null;
 
             ImageList il = this.ListView.BaseSmallImageList;
@@ -6602,6 +6761,13 @@ namespace BrightIdeasSoftware
             this.Add(key, image);
         }
 
+        /// <summary>
+        /// Make a new renderer that will show the given images when it receives the given keys
+        /// </summary>
+        /// <param name="key1"></param>
+        /// <param name="image1"></param>
+        /// <param name="key2"></param>
+        /// <param name="image2"></param>
         public MappedImageRenderer(Object key1, Object image1, Object key2, Object image2)
             : this()
         {
@@ -6644,17 +6810,45 @@ namespace BrightIdeasSoftware
         public override void Render(Graphics g, Rectangle r)
         {
             this.DrawBackground(g, r);
-
-            Image image = null;
-            if (this.Aspect == null)
-                image = this.GetImage(this.nullImage);
+            
+            if (this.Aspect is ICollection)
+            	this.RenderCollection(g, r, (ICollection)this.Aspect);
             else
-                if (map.ContainsKey(this.Aspect))
-                    image = this.GetImage(map[this.Aspect]);
-
-            this.DrawAlignedImage(g, r, image);
+            	this.RenderOne(g, r, this.Aspect);
         }
 
+        private void RenderCollection(Graphics g, Rectangle r, ICollection imageSelectors)
+        {
+	        Image image = null;
+            Point pt = r.Location;
+            foreach (Object selector in imageSelectors) {
+	            if (selector == null)
+	                image = this.GetImage(this.nullImage);
+	            else if (map.ContainsKey(selector))
+	                image = this.GetImage(map[selector]);
+	            else
+	            	image = null;
+	            
+	            if (image != null) {
+                    g.DrawImage(image, pt);
+                    pt.X += (image.Width + this.Spacing);
+                }
+            }
+        }
+        
+        private void RenderOne(Graphics g, Rectangle r, Object selector)
+        {
+        	Image image = null;
+            if (selector == null)
+                image = this.GetImage(this.nullImage);
+            else
+                if (map.ContainsKey(selector))
+                    image = this.GetImage(map[selector]);
+
+            if (image != null)
+	            this.DrawAlignedImage(g, r, image);
+        }
+        
         #region Private variables
 
         private Hashtable map; // Track the association between values and images
@@ -6884,7 +7078,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Instances of this class kept track of the animation state of a single image.
         /// </summary>
-        public class AnimationState
+        internal class AnimationState
         {
             const int PropertyTagTypeShort = 3;
             const int PropertyTagTypeLong = 4;
@@ -6969,11 +7163,11 @@ namespace BrightIdeasSoftware
                 this.image.SelectActiveFrame(FrameDimension.Time, this.currentFrame);
             }
 
-            public int currentFrame;
-            public long currentFrameExpiresAt;
-            public Image image;
-            public List<int> imageDuration;
-            public int frameCount;
+            internal int currentFrame;
+            internal long currentFrameExpiresAt;
+            internal Image image;
+            internal List<int> imageDuration;
+            internal int frameCount;
         }
 
         #region Private variables
@@ -7181,10 +7375,6 @@ namespace BrightIdeasSoftware
     /// each of which will be drawn horizontally one after the other.</para></remarks>
     public class ImagesRenderer : BaseRenderer
     {
-        /// <summary>
-        /// Get or set the number of pixels between each image
-        /// </summary>
-        public int Spacing = 1;
 
         /// <summary>
         /// Draw our data value
@@ -7244,11 +7434,6 @@ namespace BrightIdeasSoftware
         /// The image selector that will give the image to be drawn
         /// </summary>
         public Object ImageSelector;
-
-        /// <summary>
-        /// Get or set the number of pixels between each image
-        /// </summary>
-        public int Spacing = 1;
 
         /// <summary>
         /// What is the maximum number of images that this renderer should draw?
@@ -7321,10 +7506,11 @@ namespace BrightIdeasSoftware
     /// <typeparam name="T">The type of value that holds the bit-OR'ed flag</typeparam>
     public class FlagRenderer<T> : BaseRenderer //where T : IConvertible
     {
-        public FlagRenderer()
-        {
-        }
-
+        /// <summary>
+        /// Register the given image to the given value
+        /// </summary>
+        /// <param name="key">When this flag is present...</param>
+        /// <param name="imageSelector">...draw this image</param>
         public void Add(T key, Object imageSelector)
         {
             Int32 k2 = ((IConvertible)key).ToInt32(NumberFormatInfo.InvariantInfo);
@@ -7334,6 +7520,11 @@ namespace BrightIdeasSoftware
             this.keysInOrder.Add(k2);
         }
 
+        /// <summary>
+        /// Draw the flags
+        /// </summary>
+        /// <param name="g"></param>
+        /// <param name="r"></param>
         public override void Render(Graphics g, Rectangle r)
         {
             this.DrawBackground(g, r);
@@ -7351,11 +7542,6 @@ namespace BrightIdeasSoftware
                 }
             }
         }
-
-        /// <summary>
-        /// Get or set the number of pixels between each image
-        /// </summary>
-        public int Spacing = 1;
 
         private List<Int32> keysInOrder = new List<Int32>();
         private Dictionary<Int32, Object> imageMap = new Dictionary<Int32, object>();
