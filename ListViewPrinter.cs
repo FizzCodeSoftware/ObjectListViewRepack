@@ -56,6 +56,9 @@ namespace BrightIdeasSoftware
     {
         #region Constructors
 
+        /// <summary>
+        /// Make a new ListViewPrinterBase
+        /// </summary>
         public ListViewPrinterBase()
         {
             this.ListView = null;
@@ -68,6 +71,9 @@ namespace BrightIdeasSoftware
             this.FooterFormat = BlockFormat.Footer();
         }
 
+        /// <summary>
+        /// Make a new ListViewPrinterBase that will print the given ListView
+        /// </summary>
         public ListViewPrinterBase(ListView lv)
             : this()
         {
@@ -473,7 +479,7 @@ namespace BrightIdeasSoftware
         }
 
         /// <summary>
-        /// How transparent should the watermark be? &le;0 is transparent, &ge;100 is completely opaque.
+        /// How transparent should the watermark be? &lt;= 0 is transparent, &gt;= 100 is completely opaque.
         /// </summary>
         [Category("Appearance - Watermark"),
         Description("How transparent should the watermark be? 0 is transparent, 100 is completely opaque."),
@@ -509,7 +515,7 @@ namespace BrightIdeasSoftware
         /// Return the n'th row that will be printed
         /// </summary>
         /// <param name="lv">The listview that is being printed</param>
-        /// <param name="i">The index of the row to be printed</param>
+        /// <param name="n">The index of the row to be printed</param>
         /// <returns>A ListViewItem</returns>
         protected ListViewItem GetRow(ListView lv, int n)
         {
@@ -648,6 +654,10 @@ namespace BrightIdeasSoftware
 
         #region Event handlers
 
+        /// <summary>
+        /// A print job is about to be printed
+        /// </summary>
+        /// <param name="e"></param>
         override protected void OnBeginPrint(PrintEventArgs e)
         {
             base.OnBeginPrint(e);
@@ -665,6 +675,10 @@ namespace BrightIdeasSoftware
             this.PreparePrint();
         }
 
+        /// <summary>
+        /// Print a given page
+        /// </summary>
+        /// <param name="e"></param>
         override protected void OnPrintPage(PrintPageEventArgs e)
         {
             if (this.ListView == null || this.ListView.View != View.Details)
@@ -1123,6 +1137,9 @@ namespace BrightIdeasSoftware
     /// </summary>
     public class ListViewPrinter : ListViewPrinterBase
     {
+    	/// <summary>
+    	/// Make a ListViewPrinter
+    	/// </summary>
         public ListViewPrinter()
         {
         }
@@ -1170,6 +1187,15 @@ namespace BrightIdeasSoftware
             return true;
         }
 
+        /// <summary>
+        /// Print one cell of the ListView
+        /// </summary>
+        /// <param name="g"></param>
+        /// <param name="lv"></param>
+        /// <param name="lvi"></param>
+        /// <param name="row"></param>
+        /// <param name="column"></param>
+        /// <param name="cell"></param>
         protected override void PrintCell(Graphics g, ListView lv, ListViewItem lvi, int row, int column, RectangleF cell)
         {
             if (this.IsTextOnly || !(lv is ObjectListView)) {
@@ -1226,20 +1252,38 @@ namespace BrightIdeasSoftware
     /// </summary>
     public enum Sides
     {
+    	/// <summary>
+    	/// Left
+    	/// </summary>
         Left = 0,
+        
+    	/// <summary>
+    	/// Top
+    	/// </summary>
         Top = 1,
+        
+    	/// <summary>
+    	/// Right
+    	/// </summary>
         Right = 2,
+        
+    	/// <summary>
+    	/// Bottom
+    	/// </summary>
         Bottom = 3,
+        
+    	/// <summary>
+    	/// All
+    	/// </summary>
         All = 4
     }
 
+    /// <summary>
+    /// A BlockFormat controls the formatting and style of a single part (block) of a 
+    /// ListViewPrinter output.
+    /// </summary>
     public class BlockFormat : System.ComponentModel.Component
     {
-        public BlockFormat()
-        {
-
-        }
-
         #region Public properties
 
         /// <summary>
@@ -1380,48 +1424,72 @@ namespace BrightIdeasSoftware
         // When programming by hand, use Get/SetBorderPen() 
         // rather than these methods.
 
+        /// <summary>
+        /// Set the TopBorderWidth
+        /// </summary>
         [Category("Appearance"), Description("Width of the top border"), DefaultValue(0.0f)]
         public float TopBorderWidth
         {
             get { return this.GetBorderWidth(Sides.Top); }
             set { this.SetBorder(Sides.Top, value, this.GetBorderBrush(Sides.Top)); }
         }
+        /// <summary>
+        /// Set the TopBorderWidth
+        /// </summary>
         [Category("Appearance"), Description("Width of the Left border"), DefaultValue(0.0f)]
         public float LeftBorderWidth
         {
             get { return this.GetBorderWidth(Sides.Left); }
             set { this.SetBorder(Sides.Left, value, this.GetBorderBrush(Sides.Left)); }
         }
+        /// <summary>
+        /// Set the TopBorderWidth
+        /// </summary>
         [Category("Appearance"), Description("Width of the Bottom border"), DefaultValue(0.0f)]
         public float BottomBorderWidth
         {
             get { return this.GetBorderWidth(Sides.Bottom); }
             set { this.SetBorder(Sides.Bottom, value, this.GetBorderBrush(Sides.Bottom)); }
         }
+        /// <summary>
+        /// Set the TopBorderWidth
+        /// </summary>
         [Category("Appearance"), Description("Width of the Right border"), DefaultValue(0.0f)]
         public float RightBorderWidth
         {
             get { return this.GetBorderWidth(Sides.Right); }
             set { this.SetBorder(Sides.Right, value, this.GetBorderBrush(Sides.Right)); }
         }
+        /// <summary>
+        /// Set the TopBorderWidth
+        /// </summary>
         [Category("Appearance"), Description("Color of the top border"), DefaultValue(typeof(Color), "Empty")]
         public Color TopBorderColor
         {
             get { return this.GetSolidBorderColor(Sides.Top); }
             set { this.SetBorder(Sides.Top, this.GetBorderWidth(Sides.Top), new SolidBrush(value)); }
         }
+        /// <summary>
+        /// Set the TopBorderWidth
+        /// </summary>
         [Category("Appearance"), Description("Color of the Left border"), DefaultValue(typeof(Color), "Empty")]
         public Color LeftBorderColor
         {
             get { return this.GetSolidBorderColor(Sides.Left); }
             set { this.SetBorder(Sides.Left, this.GetBorderWidth(Sides.Left), new SolidBrush(value)); }
         }
+        /// <summary>
+        /// Set the TopBorderWidth
+        /// </summary>
         [Category("Appearance"), Description("Color of the Bottom border"), DefaultValue(typeof(Color), "Empty")]
         public Color BottomBorderColor
         {
             get { return this.GetSolidBorderColor(Sides.Bottom); }
             set { this.SetBorder(Sides.Bottom, this.GetBorderWidth(Sides.Bottom), new SolidBrush(value)); }
         }
+        /// <summary>
+        /// Set the TopBorderWidth
+        /// </summary>
         [Category("Appearance"), Description("Color of the Right border"), DefaultValue(typeof(Color), "Empty")]
         public Color RightBorderColor
         {
@@ -1733,6 +1801,14 @@ namespace BrightIdeasSoftware
             this.Draw(g, r, left, centre, right);
         }
 
+        /// <summary>
+        /// Draw this block
+        /// </summary>
+        /// <param name="g"></param>
+        /// <param name="r"></param>
+        /// <param name="left"></param>
+        /// <param name="centre"></param>
+        /// <param name="right"></param>
         public void Draw(Graphics g, RectangleF r, String left, String centre, String right)
         {
             RectangleF paddedRect = this.CalculatePaddedBox(r);
@@ -1740,7 +1816,6 @@ namespace BrightIdeasSoftware
             this.DrawBackground(g, paddedBorderedRect);
             this.DrawText(g, paddedBorderedRect, left, centre, right);
             this.DrawBorder(g, paddedRect);
-            //g.DrawRectangle(new Pen(Color.Red, 0.5f), r.X, r.Y, r.Width, r.Height);
         }
 
         private void DrawBackground(Graphics g, RectangleF r)
@@ -1863,6 +1938,10 @@ namespace BrightIdeasSoftware
         {
             return BlockFormat.Minimal(new Font("Times New Roman", 12));
         }
+        
+        /// <summary>
+        /// Return a minimal set of formatting values.
+        /// </summary>
         static public BlockFormat Minimal(Font f)
         {
             BlockFormat fmt = new BlockFormat();
@@ -1882,6 +1961,10 @@ namespace BrightIdeasSoftware
         {
             return BlockFormat.Box(new Font("Verdana", 24));
         }
+        
+        /// <summary>
+        /// Return a set of formatting values that draws boxes
+        /// </summary>
         static public BlockFormat Box(Font f)
         {
             BlockFormat fmt = new BlockFormat();
@@ -1902,6 +1985,10 @@ namespace BrightIdeasSoftware
         {
             return BlockFormat.Header(new Font("Verdana", 24));
         }
+        
+        /// <summary>
+        /// Return a format that will nicely print headers.
+        /// </summary>
         static public BlockFormat Header(Font f)
         {
             BlockFormat fmt = new BlockFormat();
@@ -1922,6 +2009,10 @@ namespace BrightIdeasSoftware
         {
             return BlockFormat.Footer(new Font("Verdana", 10, FontStyle.Italic));
         }
+        
+        /// <summary>
+        /// Return a format that will nicely print report footers.
+        /// </summary>
         static public BlockFormat Footer(Font f)
         {
             BlockFormat fmt = new BlockFormat();
@@ -1942,6 +2033,10 @@ namespace BrightIdeasSoftware
         {
             return BlockFormat.ListHeader(new Font("Verdana", 12));
         }
+
+        /// <summary>
+        /// Return a format that will nicely print list headers.
+        /// </summary>
         static public BlockFormat ListHeader(Font f)
         {
             BlockFormat fmt = new BlockFormat();
@@ -1964,6 +2059,10 @@ namespace BrightIdeasSoftware
         {
             return BlockFormat.GroupHeader(new Font("Verdana", 10, FontStyle.Bold));
         }
+        
+        /// <summary>
+        /// Return a format that will nicely print group headers.
+        /// </summary>
         static public BlockFormat GroupHeader(Font f)
         {
             BlockFormat fmt = new BlockFormat();

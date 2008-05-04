@@ -122,6 +122,7 @@ namespace BrightIdeasSoftware
         /// Example operations are "edit", "print", "explore".
         /// </summary>
         /// <param name="path">The file or directory to be operated on</param>
+        /// <param name="operation">What operation should be performed</param>
         /// <returns>Values &lt; 31 indicate some sort of error. See ShellExecute() documentation for specifics.</returns>
         public static int Execute(string path, string operation)
         {
@@ -150,6 +151,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="path">The full path to the file whose icon is to be returned</param>
         /// <param name="isSmallImage">True if the small (16x16) icon is required, otherwise the 32x32 icon will be returned</param>
+        /// <param name="useFileType">If this is true, only the file extension will be considered</param>
         /// <returns>The icon of the given file, or null if something goes wrong</returns>
         public static Icon GetFileIcon(string path, bool isSmallImage, bool useFileType)
         {

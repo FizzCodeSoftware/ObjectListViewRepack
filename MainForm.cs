@@ -138,10 +138,13 @@ namespace ObjectListViewDemo
 
 		void InitializeComplexExample(List<Person> list)
 		{
-			this.personColumn.AspectGetter = delegate (object row) {
-				return ((Person)row).Name.ToUpperInvariant();
-			};
-			this.personColumn.ImageGetter = delegate (object row) {
+            this.personColumn.AspectGetter = delegate(object row) {
+                return ((Person)row).Name;
+            };
+            this.personColumn.AspectToStringConverter = delegate(object cellValue) {
+                return ((String)cellValue).ToUpperInvariant();
+            };
+            this.personColumn.ImageGetter = delegate(object row) {
 				// People whose names start with a vowel get a star,
 				// otherwise the first half of the alphabet gets hearts
 				// and the second half gets music
@@ -1190,9 +1193,8 @@ namespace ObjectListViewDemo
 
         private void button14_Click(object sender, EventArgs e)
         {
-            int targetNumber = this.olvFastList.GetItemCount() + 1000;
-            ArrayList l = this.olvFastList.Objects;
-            while (l.Count < targetNumber)
+            ArrayList l = new ArrayList();
+            while (l.Count < 1000)
                 foreach (Person x in this.masterList)
                     l.Add(new Person(x));
 
@@ -1200,7 +1202,7 @@ namespace ObjectListViewDemo
             try {
                 this.Cursor = Cursors.WaitCursor;
                 stopWatch.Start();
-                this.olvFastList.Objects = l;
+                this.olvFastList.AddObjects(l);
             } finally {
                 stopWatch.Stop();
                 this.Cursor = Cursors.Default;
@@ -1262,6 +1264,10 @@ namespace ObjectListViewDemo
             list.Add(new Person("Brave New Person"));
             list.Add(new Person("someone like e e cummings"));
             list.Add(new Person("Luis Nova Pessoa"));
+            
+            // Give him a birthday that will display an image to make sure the image appears.
+            list[list.Count - 1].BirthDate = new DateTime(1984, 12, 25);
+
             this.listViewComplex.AddObjects(list);
         }
 
@@ -1269,6 +1275,11 @@ namespace ObjectListViewDemo
         {
             this.listViewComplex.RemoveObjects(this.listViewComplex.SelectedObjects);
         }
+		
+		void Button18Click(object sender, EventArgs e)
+		{
+            this.olvFastList.RemoveObjects(this.olvFastList.SelectedObjects);			
+		}
     }
 
 	class Person

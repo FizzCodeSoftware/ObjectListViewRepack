@@ -22,6 +22,9 @@ namespace ObjectListViewDemo
     /// </remarks>
     public partial class ColumnSelectionForm : Form
     {
+    	/// <summary>
+    	/// Make a new ColumnSelectionForm
+    	/// </summary>
         public ColumnSelectionForm()
         {
             InitializeComponent();
@@ -54,6 +57,11 @@ namespace ObjectListViewDemo
                 this.ProcessOK(olv, view);
         }
 
+        /// <summary>
+        /// Initialize the form to show the columns of the given view
+        /// </summary>
+        /// <param name="olv"></param>
+        /// <param name="view"></param>
         protected void InitializeForm(ObjectListView olv, View view)
         {
             this.AllColumns = olv.AllColumns;
@@ -85,6 +93,11 @@ namespace ObjectListViewDemo
         private List<OLVColumn> RearrangableColumns = new List<OLVColumn>();
         private Dictionary<OLVColumn, bool> MapColumnToVisible = new Dictionary<OLVColumn, bool>();
 
+        /// <summary>
+        /// The user has pressed OK. Do what's requied.
+        /// </summary>
+        /// <param name="olv"></param>
+        /// <param name="view"></param>
         protected void ProcessOK(ObjectListView olv, View view)
         {
             olv.Freeze();
@@ -186,6 +199,9 @@ namespace ObjectListViewDemo
             return (col == this.AllColumns[0]);
         }
 
+        /// <summary>
+        /// Enable the controls on the dialog to match the current state
+        /// </summary>
         protected void EnableControls()
         {
             if (this.objectListView1.SelectedIndices.Count == 0) {
