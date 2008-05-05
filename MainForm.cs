@@ -57,19 +57,17 @@ namespace ObjectListViewDemo
 		void InitializeExamples() 
 		{
 			masterList = new List<Person>();
-            masterList.Add(new Person("Wilhelm Frat", "Gymnast", 19, new DateTime(1984, 9, 23), 45.67, false, "Aggressive, belligerent "));
-            masterList.Add(new Person("Alana Roderick", "Gymnast", 21, new DateTime(1974, 9, 23), 245.67, false, "Beautiful, exquisite"));
-            masterList.Add(new Person("Frank Price", "Dancer", 30, new DateTime(1965, 11, 1), 75.5, false, "Competitive, spirited"));
-            masterList.Add(new Person("Eric", "Half-a-bee", 1, new DateTime(1966, 10, 12), 12.25, true, "Diminutive, vertically challenged"));
-            masterList.Add(new Person("Madalene Alright", "School Teacher", 21, new DateTime(1964, 9, 23), 145.67, false, "Extensive, dimensionally challenged"));
-            masterList.Add(new Person("Ned Peirce", "School Teacher", 21, new DateTime(1960, 1, 23), 145.67, false, "Fulsome, effusive"));
-            masterList.Add(new Person("Felicity Brown", "Economist", 30, new DateTime(1975, 1, 12), 175.5, false, "Gifted, exceptional"));
-            masterList.Add(new Person("Urny Unmin", "Economist", 41, new DateTime(1956, 9, 24), 212.25, true, "Heinous, aesthetically challenged"));
-            masterList.Add(new Person("Terrance Darby", "Singer", 35, new DateTime(1970, 9, 29), 1145, false, "Introverted, relationally challenged"));
-            masterList.Add(new Person("Phillip Nottingham", "Programmer", 27, new DateTime(1974, 8, 28), 245.7, false, "Jocular, gregarious"));
+            masterList.Add(new Person("Wilhelm Frat", "Gymnast", 19, new DateTime(1984, 9, 23), 45.67, false, "ak", "Aggressive, belligerent "));
+            masterList.Add(new Person("Alana Roderick", "Gymnast", 21, new DateTime(1974, 9, 23), 245.67, false, "gp", "Beautiful, exquisite"));
+            masterList.Add(new Person("Frank Price", "Dancer", 30, new DateTime(1965, 11, 1), 75.5, false, "ns", "Competitive, spirited"));
+            masterList.Add(new Person("Eric", "Half-a-bee", 1, new DateTime(1966, 10, 12), 12.25, true, "cp", "Diminutive, vertically challenged"));
+            masterList.Add(new Person("Madalene Alright", "School Teacher", 21, new DateTime(1964, 9, 23), 145.67, false, "jr", "Extensive, dimensionally challenged"));
+            masterList.Add(new Person("Ned Peirce", "School Teacher", 21, new DateTime(1960, 1, 23), 145.67, false, "gab", "Fulsome, effusive"));
+            masterList.Add(new Person("Felicity Brown", "Economist", 30, new DateTime(1975, 1, 12), 175.5, false, "sp", "Gifted, exceptional"));
+            masterList.Add(new Person("Urny Unmin", "Economist", 41, new DateTime(1956, 9, 24), 212.25, true, "cr", "Heinous, aesthetically challenged"));
+            masterList.Add(new Person("Terrance Darby", "Singer", 35, new DateTime(1970, 9, 29), 1145, false, "mb", "Introverted, relationally challenged"));
+            masterList.Add(new Person("Phillip Nottingham", "Programmer", 27, new DateTime(1974, 8, 28), 245.7, false, "sj", "Jocular, gregarious"));
 			masterList.Add(new Person("Mister Null"));
-
-
 
             List<Person> list = new List<Person>();
             foreach (Person p in masterList)
@@ -219,7 +217,135 @@ namespace ObjectListViewDemo
             comboBox1.SelectedIndex = 4;
             comboBox5.SelectedIndex = 0;
             listViewComplex.SetObjects(list);
+
+            this.personColumn.Renderer = new BusinessCardRenderer();
 		}
+        
+        /// <summary>
+        /// Hackish renderer that draw a fancy version of a person for a Tile view
+        /// </summary>
+        internal class BusinessCardRenderer : BaseRenderer
+        {
+            public override bool RenderWithDefault(Graphics g, Rectangle r)
+            {
+                // If we're in any other view than Tile, just let the default process do it's stuff
+                if (this.ListView.View != View.Tile)
+                    return true;
+
+                // Use buffered graphics to kill flickers
+                BufferedGraphics buffered = BufferedGraphicsManager.Current.Allocate(g, r);
+                g = buffered.Graphics;
+                g.Clear(this.ListView.BackColor);
+
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                Pen grey13Pen = new Pen(Color.FromArgb(0x33, 0x33, 0x33));
+                SolidBrush grey13Brush = new SolidBrush(Color.FromArgb(0x33, 0x33, 0x33));
+
+                // Allow a border around the card
+                r.Inflate(-2, -2);
+
+
+                // Draw card background
+                const int rounding = 20;
+                GraphicsPath path = this.GetRoundedRect(r, rounding);
+                g.FillPath(Brushes.LemonChiffon, path);
+                if (this.IsItemSelected)
+                    g.DrawPath(Pens.Blue, path);
+                else
+                    g.DrawPath(grey13Pen, path);
+
+                g.Clip = new Region(r);
+
+                // Draw the photo
+                Rectangle photoRect = r;
+                photoRect.Inflate(-8, -8);
+                Person person = this.RowObject as Person;
+                if (person != null) {
+                    try {
+                        photoRect.Width = 75;
+                        Image photo = Image.FromFile(String.Format(@".\Photos\{0}.png", person.Photo));
+                        if (photo.Width > photoRect.Width)
+                            photoRect.Height = (int)(photo.Height * ((float)photoRect.Width / photo.Width));
+                        else
+                            photoRect.Height = photo.Height;
+                        g.DrawImage(photo, photoRect);
+                    } catch (FileNotFoundException) {
+                        g.DrawRectangle(Pens.DarkGray, photoRect);
+                    }
+                }
+
+                // Now draw the text portion
+                RectangleF textBoxRect = photoRect;
+                textBoxRect.X += (photoRect.Width + 8);
+                textBoxRect.Width = r.Right - textBoxRect.X - 8;
+
+                // Measure the height of the title
+                StringFormat fmt = new StringFormat(StringFormatFlags.NoWrap);
+                fmt.Trimming = StringTrimming.EllipsisCharacter;
+                fmt.Alignment = StringAlignment.Center;
+                fmt.LineAlignment = StringAlignment.Near;
+                Font font = new Font("Tahoma", 11);
+                String txt = this.ListItem.Text;
+                SizeF size = g.MeasureString(txt, font, (int)textBoxRect.Width, fmt);
+
+                // Draw the title
+                RectangleF r3 = textBoxRect;
+                r3.Height = size.Height;
+                if (this.IsItemSelected)
+                    g.FillRectangle(new SolidBrush(this.GetTextBackgroundColor()), r3);
+                else
+                    g.FillRectangle(grey13Brush, r3);
+                g.DrawString(txt, font, Brushes.AliceBlue, textBoxRect, fmt);
+                textBoxRect.Y += size.Height + 8;
+
+                // Draw the other bits of information
+                font = new Font("Tahoma", 8);
+                size = g.MeasureString("Wj", font, r.Width, fmt);
+                textBoxRect.Height = size.Height;
+                fmt.Alignment = StringAlignment.Near;
+                for (int i = 0; i < this.ListView.Columns.Count; i++) {
+                    OLVColumn column = this.ListView.GetColumn(i);
+                    if (column.IsTileViewColumn) {
+                        txt = column.GetStringValue(this.RowObject);
+                        g.DrawString(txt, font, grey13Brush, textBoxRect, fmt);
+                        textBoxRect.Y += size.Height;
+                    }
+                }
+
+                // Finally render the buffered graphics
+                buffered.Render();
+                buffered.Dispose();
+
+                // Return false to say that we've handled the drawing
+                return false;
+            }
+
+            private GraphicsPath GetRoundedRect(RectangleF rect, float diameter)
+            {
+                RectangleF arc = new RectangleF(rect.X, rect.Y, diameter, diameter);
+
+                GraphicsPath path = new GraphicsPath();
+
+                // Top left
+                path.AddArc(arc, 180, 90); 
+
+                // Top right
+                arc.X = rect.Right - diameter;
+                path.AddArc(arc, 270, 90); 
+
+                // Bottom right
+                arc.Y = rect.Bottom - diameter;
+                path.AddArc(arc, 0, 90); 
+
+                // Bottom left
+                arc.X = rect.Left;
+                path.AddArc(arc, 90, 90);
+
+                path.CloseFigure();
+                return path;
+            } 
+
+        }
 
 		void InitializeDataSetExample ()
 		{
@@ -665,11 +791,17 @@ namespace ObjectListViewDemo
         		
 		void CheckBox6CheckedChanged(object sender, EventArgs e)
 		{
+            if (comboBox1.SelectedIndex == 3 && this.checkBox6.Checked)
+                this.listViewComplex.TileSize = new Size(250, 120); 
+            
             ChangeOwnerDrawn(this.listViewComplex, (CheckBox)sender);
 		}
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
+            if (comboBox1.SelectedIndex == 3 && this.listViewComplex.OwnerDraw)
+                this.listViewComplex.TileSize = new Size(250, 120);
+
             this.ChangeView(this.listViewComplex, (ComboBox)sender);
         }
         #endregion
@@ -1289,7 +1421,7 @@ namespace ObjectListViewDemo
 			this.name = name;
 		}
 
-		public Person(string name, string occupation, int culinaryRating, DateTime birthDate, double hourlyRate, bool canTellJokes, string comments)
+		public Person(string name, string occupation, int culinaryRating, DateTime birthDate, double hourlyRate, bool canTellJokes, string photo, string comments)
 		{
 			this.name = name;
 			this.Occupation = occupation;
@@ -1298,6 +1430,7 @@ namespace ObjectListViewDemo
 			this.hourlyRate = hourlyRate;
             this.CanTellJokes = canTellJokes;
             this.Comments = comments;
+            this.Photo = photo;
 		}
 
         public Person(Person other)
@@ -1308,6 +1441,7 @@ namespace ObjectListViewDemo
             this.birthDate = other.BirthDate;
             this.hourlyRate = other.GetRate();
             this.CanTellJokes = other.CanTellJokes;
+            this.Photo = other.Photo;
             this.Comments = other.Comments;
         }
 
@@ -1356,6 +1490,7 @@ namespace ObjectListViewDemo
         }
 
 		// Allows tests for fields.
+        public string Photo;
         public string Comments;
 		public int serialNumber;
         public bool CanTellJokes;

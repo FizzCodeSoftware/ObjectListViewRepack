@@ -5,6 +5,13 @@
  * Date: 9/10/2006 11:15 AM
  *
  * Change log:
+ * 2008-05-05  JPP  - Non detail views can now be owner drawn. The renderer installed for 
+ *                    primary column is given the chance to render the whole item.
+ *                    See BusinessCardRenderer in the demo for an example.
+ *                  - BREAKING CHANGE: RenderDelegate now returns a bool to indicate if default
+ *                    rendering should be done. Previously returned void. Only important if your 
+ *                    code used RendererDelegate directly. Renderers derived from BaseRenderer
+ *                    are unchanged.
  * 2008-05-03  JPP  - Changed cell editing to use values directly when the values are Strings.
  *                    Previously, values were always handed to the AspectToStringConverter.
  *                  - When editing a cell, tabbing no longer tries to edit the next subitem 
@@ -2870,8 +2877,21 @@ namespace BrightIdeasSoftware
         /// <param name="e"></param>
         protected override void OnDrawItem(DrawListViewItemEventArgs e)
         {
-            e.DrawDefault = (this.View != View.Details);
-            base.OnDrawItem(e);
+            // If there is a custom renderer installed for the primary column,
+            // give it a chance to draw the item. This means that the renderer
+            // for the primary column has two roles: in non-details view, it gets
+            // a change to draw the whole item; in details view, it gets two chances
+            // once to draw the whole row, and then immediately afterwards to draw
+            // just cell 0.
+            OLVColumn column = this.GetColumn(0);
+            if (column.RendererDelegate != null) {
+                Object row = ((OLVListItem)e.Item).RowObject;
+                e.DrawDefault = column.RendererDelegate(e, e.Graphics, e.Bounds, row);
+            } else 
+                e.DrawDefault = (this.View != View.Details);
+
+            if (e.DrawDefault)
+                base.OnDrawItem(e);
         }
 
         int[] columnRightEdge = new int[128]; // will anyone ever want more than 128 columns??
@@ -2905,31 +2925,33 @@ namespace BrightIdeasSoftware
             if (e.ColumnIndex == 0 && e.Header.DisplayIndex != 0) {
                 r.X = this.columnRightEdge[e.Header.DisplayIndex - 1] + 1;
             } else
-                //TODO: Check the size of columnRightEdge and dynamically reallocate?
                 this.columnRightEdge[e.Header.DisplayIndex] = e.Bounds.Right;
 
             // Optimize drawing by only redrawing subitems that touch the area that was damaged
+#if !MONO
             if (!r.IntersectsWith(this.lastUpdateRectangle)) {
                 return;
             }
-
+#endif
             // Get a graphics context for the renderer to use.
             // But we have more complications. Virtual lists have a nasty habit of drawing column 0
             // whenever there is any mouse move events over a row, and doing it in an un-double buffered manner,
             // which results in nasty flickers! There are also some unbuffered draw when a mouse is first
             // hovered over column 0 of a normal row. So, to avoid all complications,
             // we always manually double-buffer the drawing.
+            // Except with Mono, which doesn't seem to handle double buffering at all :-(
             Graphics g = e.Graphics;
             BufferedGraphics buffer = null;
+#if !MONO
             bool avoidFlickerMode = true; // set this to false to see the probems with flicker
             if (avoidFlickerMode) {
                 buffer = BufferedGraphicsManager.Current.Allocate(e.Graphics, r);
                 g = buffer.Graphics;
             }
-
+#endif
             // Finally, give the renderer a chance to draw something
             Object row = ((OLVListItem)e.Item).RowObject;
-            column.RendererDelegate(e, g, r, row);
+            e.DrawDefault = column.RendererDelegate(e, g, r, row);
 
             if (buffer != null) {
                 buffer.Render();
@@ -5236,7 +5258,7 @@ namespace BrightIdeasSoftware
     /// <summary>
     /// These delegates are used to draw a cell
     /// </summary>
-    public delegate void RenderDelegate(DrawListViewSubItemEventArgs e, Graphics g, Rectangle r, Object rowObject);
+    public delegate bool RenderDelegate(EventArgs e, Graphics g, Rectangle r, Object rowObject);
 
     /// <summary>
     /// These delegates are used to fetch a row object for virtual lists
@@ -5312,6 +5334,7 @@ namespace BrightIdeasSoftware
             get { return aspectName; }
             set { aspectName = value; }
         }
+        private string aspectName;
 
         /// <summary>
         /// This format string will be used to convert an aspect to its string representation.
@@ -5328,6 +5351,7 @@ namespace BrightIdeasSoftware
             get { return aspectToStringFormat; }
             set { aspectToStringFormat = value; }
         }
+        private string aspectToStringFormat;
 
         /// <summary>
         /// Group objects by the initial letter of the aspect of the column
@@ -5344,6 +5368,7 @@ namespace BrightIdeasSoftware
             get { return useInitialLetterForGroup; }
             set { useInitialLetterForGroup = value; }
         }
+        private bool useInitialLetterForGroup;
 
         /// <summary>
         /// Get/set whether this column should be used when the view is switched to tile view.
@@ -5377,6 +5402,7 @@ namespace BrightIdeasSoftware
                 aspectGetterAutoGenerated = false;
             }
         }
+        private AspectGetterDelegate aspectGetter;
 
         /// <summary>
         /// The delegate that will be used to translate the aspect to display in this column into a string.
@@ -5389,6 +5415,7 @@ namespace BrightIdeasSoftware
             get { return aspectToStringConverter; }
             set { aspectToStringConverter = value; }
         }
+        private AspectToStringConverterDelegate aspectToStringConverter;
 
         /// <summary>
         /// This delegate is called to get the image selector of the image that should be shown in this column.
@@ -5409,6 +5436,7 @@ namespace BrightIdeasSoftware
             get { return imageGetter; }
             set { imageGetter = value; }
         }
+        private ImageGetterDelegate imageGetter;
 
         /// <summary>
         /// This delegate is called to get the object that is the key for the group
@@ -5421,6 +5449,7 @@ namespace BrightIdeasSoftware
             get { return groupKeyGetter; }
             set { groupKeyGetter = value; }
         }
+        private GroupKeyGetterDelegate groupKeyGetter;
 
         /// <summary>
         /// This delegate is called to convert a group key into a title for that group.
@@ -5432,6 +5461,7 @@ namespace BrightIdeasSoftware
             get { return groupKeyToTitleConverter; }
             set { groupKeyToTitleConverter = value; }
         }
+        private GroupKeyToTitleConverterDelegate groupKeyToTitleConverter;
 
         /// <summary>
         /// This delegate is called when a cell needs to be drawn in OwnerDrawn mode.
@@ -5443,6 +5473,7 @@ namespace BrightIdeasSoftware
             get { return rendererDelegate; }
             set { rendererDelegate = value; }
         }
+        private RenderDelegate rendererDelegate;
 
         /// <summary>
         /// Get/set the renderer that will be invoked when a cell needs to be redrawn
@@ -5695,6 +5726,7 @@ namespace BrightIdeasSoftware
             get { return aspectPutter; }
             set { aspectPutter = value; }
         }
+        private AspectPutterDelegate aspectPutter;
 
         /// <summary>
         /// Can the values shown in this column be edited?
@@ -5981,16 +6013,6 @@ namespace BrightIdeasSoftware
 
         #region Private Variables
 
-        private string aspectName;
-        private string aspectToStringFormat;
-        private bool useInitialLetterForGroup;
-        private AspectGetterDelegate aspectGetter;
-        private AspectPutterDelegate aspectPutter;
-        private AspectToStringConverterDelegate aspectToStringConverter;
-        private ImageGetterDelegate imageGetter;
-        private GroupKeyGetterDelegate groupKeyGetter;
-        private GroupKeyToTitleConverterDelegate groupKeyToTitleConverter;
-        private RenderDelegate rendererDelegate;
 
 
         #endregion
@@ -6245,9 +6267,18 @@ namespace BrightIdeasSoftware
     /// Renderers are responsible for drawing a single cell within an owner drawn ObjectListView.
     /// </summary>
     /// <remarks>
-    /// <para>Methods on this class are called during the DrawSubItem event.</para>
-    /// <para>Subclasses will normally override the Render method, and use the other
+    /// <para>Methods on this class are called during the DrawItem or DrawSubItemEvent.
+    /// Subclasses can tell which type of event they are handling by examining DrawItemEvent: if this
+    /// is not null, it is a DrawItem event.</para>
+    /// <para>Subclasses will normally override the RenderWithDefault or Render method, and use the other
     /// methods as helper functions.</para>
+    /// <para>If a renderer is installed on the primary column (column 0), it will be given a chance
+    /// to draw the whole item in all views (Details, Tile, etc.). If the renderer returns true,
+    /// default processing will continue. If it returns false, no other rendering will happen.</para>
+    /// <para>This means that when an ObjectListView is in Details view, the renderer on column 0
+    /// will be called twice: once to handle the DrawItem event, and then again to draw only the
+    /// first cell. Subclasses must distinguish between these two very different events (using
+    /// the "this.DrawItemEvent == null" test).</para>
     /// </remarks>
     [Browsable(false)]
     public class BaseRenderer
@@ -6270,6 +6301,16 @@ namespace BrightIdeasSoftware
             set { eventArgs = value; }
         }
         private DrawListViewSubItemEventArgs eventArgs;
+
+        /// <summary>
+        /// Get/set the event that caused this renderer to be called
+        /// </summary>
+        public DrawListViewItemEventArgs DrawItemEvent
+        {
+            get { return drawItemEventArgs; }
+            set { drawItemEventArgs = value; }
+        }
+        private DrawListViewItemEventArgs drawItemEventArgs;
 
         /// <summary>
         /// Get/set the listview for which the drawing is to be done
@@ -6612,20 +6653,28 @@ namespace BrightIdeasSoftware
         /// <param name="g">The context that our drawing should be done using</param>
         /// <param name="r">The bounds of the cell within which the renderer can draw</param>
         /// <param name="rowObject">The model object for this row</param>
-        public void HandleRendering(DrawListViewSubItemEventArgs e, Graphics g, Rectangle r, Object rowObject)
+        /// <returns>A boolean indicating whether the default process should occur</returns>
+        public bool HandleRendering(EventArgs e, Graphics g, Rectangle r, Object rowObject)
         {
-            this.Event = e;
             this.ListView = (ObjectListView)this.Column.ListView;
+            if (e is DrawListViewSubItemEventArgs) {
+                this.Event = (DrawListViewSubItemEventArgs)e;
+                this.ListItem = this.Event.Item as OLVListItem;
+                this.SubItem = this.Event.SubItem;
+                this.Column = this.ListView.GetColumn(this.Event.ColumnIndex);
+            } else {
+                this.DrawItemEvent = (DrawListViewItemEventArgs)e;
+                this.ListItem = this.DrawItemEvent.Item as OLVListItem;
+                this.SubItem = null;
+                this.Column = this.ListView.GetColumn(0);
+            }
             this.RowObject = rowObject;
-            this.ListItem = e.Item as OLVListItem;
-            this.SubItem = e.SubItem;
-            this.Column = this.ListView.GetColumn(e.ColumnIndex);
             this.Aspect = null; // uncache previous result
             this.IsItemSelected = this.ListItem.Selected; // ((e.ItemState & ListViewItemStates.Selected) == ListViewItemStates.Selected);
             this.IsDrawBackground = true;
             this.Font = null;
             this.TextBrush = null;
-            this.Render(g, r);
+            return this.RenderWithDefault(g, r);
         }
 
         /// <summary>
@@ -6633,6 +6682,24 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <remarks>
         /// <para>Subclasses should override this method.</para></remarks>
+        /// <param name="g">The graphics context that should be used for drawing</param>
+        /// <param name="r">The bounds of the subitem cell</param>
+        /// <returns>Returns whether the default processing should take place? If the
+        /// renderer decides that it doesn't want to render this case, it should
+        /// return true to allow the default processing.
+        /// </returns>
+        virtual public bool RenderWithDefault(Graphics g, Rectangle r)
+        {
+            this.Render(g, r);
+            return false;
+        }
+
+        /// <summary>
+        /// Draw our data into the given rectangle using the given graphics context.
+        /// </summary>
+        /// <remarks>
+        /// <para>Subclasses should override this method if they never want
+        /// to fall back on the default processing</para></remarks>
         /// <param name="g">The graphics context that should be used for drawing</param>
         /// <param name="r">The bounds of the subitem cell</param>
         virtual public void Render(Graphics g, Rectangle r)
@@ -6653,7 +6720,10 @@ namespace BrightIdeasSoftware
         /// <param name="r">Bounds of the cell</param>
         protected void DrawImageAndText(Graphics g, Rectangle r)
         {
-            DrawImageAndText(g, r, this.SubItem.Text, this.GetImage());
+            if (this.SubItem == null)
+                DrawImageAndText(g, r, this.ListItem.Text, this.GetImage());
+            else
+                DrawImageAndText(g, r, this.SubItem.Text, this.GetImage());
         }
 
         /// <summary>
