@@ -146,9 +146,10 @@ namespace ObjectListViewDemo
 				// People whose names start with a vowel get a star,
 				// otherwise the first half of the alphabet gets hearts
 				// and the second half gets music
-				if ("AEIOU".Contains(((Person)row).Name.Substring(0, 1)))
+                string name = ((Person)row).Name;
+				if (name.Length > 0 && "AEIOU".Contains(name.Substring(0, 1)))
 					return 0; // star
-				else if (((Person)row).Name.CompareTo("N") < 0)
+				else if (name.CompareTo("N") < 0)
 					return 1; // heart
 				else
 					return 2; // music
@@ -222,8 +223,11 @@ namespace ObjectListViewDemo
 		}
         
         /// <summary>
-        /// Hackish renderer that draw a fancy version of a person for a Tile view
+        /// Hackish renderer that draw a fancy version of a person for a Tile view.
         /// </summary>
+        /// <remarks>This is not the way to write a professional level renderer.
+        /// It is hideously inefficient (we should at least cache the images), 
+        /// but it is obvious</remarks>
         internal class BusinessCardRenderer : BaseRenderer
         {
             public override bool RenderWithDefault(Graphics g, Rectangle r)
@@ -231,6 +235,8 @@ namespace ObjectListViewDemo
                 // If we're in any other view than Tile, just let the default process do it's stuff
                 if (this.ListView.View != View.Tile)
                     return true;
+
+                const int spacing = 8;
 
                 // Use buffered graphics to kill flickers
                 BufferedGraphics buffered = BufferedGraphicsManager.Current.Allocate(g, r);
@@ -243,7 +249,6 @@ namespace ObjectListViewDemo
 
                 // Allow a border around the card
                 r.Inflate(-2, -2);
-
 
                 // Draw card background
                 const int rounding = 20;
@@ -258,7 +263,7 @@ namespace ObjectListViewDemo
 
                 // Draw the photo
                 Rectangle photoRect = r;
-                photoRect.Inflate(-8, -8);
+                photoRect.Inflate(-spacing, -spacing);
                 Person person = this.RowObject as Person;
                 if (person != null) {
                     try {
@@ -276,8 +281,8 @@ namespace ObjectListViewDemo
 
                 // Now draw the text portion
                 RectangleF textBoxRect = photoRect;
-                textBoxRect.X += (photoRect.Width + 8);
-                textBoxRect.Width = r.Right - textBoxRect.X - 8;
+                textBoxRect.X += (photoRect.Width + spacing);
+                textBoxRect.Width = r.Right - textBoxRect.X - spacing;
 
                 // Measure the height of the title
                 StringFormat fmt = new StringFormat(StringFormatFlags.NoWrap);
@@ -291,12 +296,13 @@ namespace ObjectListViewDemo
                 // Draw the title
                 RectangleF r3 = textBoxRect;
                 r3.Height = size.Height;
+                path = this.GetRoundedRect(r3, 15);
                 if (this.IsItemSelected)
-                    g.FillRectangle(new SolidBrush(this.GetTextBackgroundColor()), r3);
+                    g.FillPath(new SolidBrush(this.GetTextBackgroundColor()), path);
                 else
-                    g.FillRectangle(grey13Brush, r3);
+                    g.FillPath(grey13Brush, path);
                 g.DrawString(txt, font, Brushes.AliceBlue, textBoxRect, fmt);
-                textBoxRect.Y += size.Height + 8;
+                textBoxRect.Y += size.Height + spacing;
 
                 // Draw the other bits of information
                 font = new Font("Tahoma", 8);
@@ -322,26 +328,18 @@ namespace ObjectListViewDemo
 
             private GraphicsPath GetRoundedRect(RectangleF rect, float diameter)
             {
-                RectangleF arc = new RectangleF(rect.X, rect.Y, diameter, diameter);
-
                 GraphicsPath path = new GraphicsPath();
 
-                // Top left
+                RectangleF arc = new RectangleF(rect.X, rect.Y, diameter, diameter);
                 path.AddArc(arc, 180, 90); 
-
-                // Top right
                 arc.X = rect.Right - diameter;
                 path.AddArc(arc, 270, 90); 
-
-                // Bottom right
                 arc.Y = rect.Bottom - diameter;
                 path.AddArc(arc, 0, 90); 
-
-                // Bottom left
                 arc.X = rect.Left;
                 path.AddArc(arc, 90, 90);
-
                 path.CloseFigure();
+
                 return path;
             } 
 
@@ -1410,8 +1408,13 @@ namespace ObjectListViewDemo
 		
 		void Button18Click(object sender, EventArgs e)
 		{
-            this.olvFastList.RemoveObjects(this.olvFastList.SelectedObjects);			
-		}
+            this.olvFastList.RemoveObjects(this.olvFastList.SelectedObjects);
+        }
+
+        private void command1ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 
 	class Person
