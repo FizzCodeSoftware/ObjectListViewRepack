@@ -69,6 +69,7 @@ namespace ObjectListViewDemo
             this.command1ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.command2ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.command3ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.appearOnTheColumnHeadersToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.tabPage2 = new System.Windows.Forms.TabPage();
             this.button16 = new System.Windows.Forms.Button();
             this.button17 = new System.Windows.Forms.Button();
@@ -227,7 +228,6 @@ namespace ObjectListViewDemo
             this.olvColumn6 = new BrightIdeasSoftware.OLVColumn();
             this.olvColumn11 = new BrightIdeasSoftware.OLVColumn();
             this.olvColumn16 = new BrightIdeasSoftware.OLVColumn();
-            this.appearOnTheColumnHeadersToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.listViewSimple)).BeginInit();
@@ -529,7 +529,7 @@ namespace ObjectListViewDemo
             // command1ToolStripMenuItem
             // 
             this.command1ToolStripMenuItem.Name = "command1ToolStripMenuItem";
-            this.command1ToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
+            this.command1ToolStripMenuItem.Size = new System.Drawing.Size(269, 22);
             this.command1ToolStripMenuItem.Text = "Dummy commands...";
             this.command1ToolStripMenuItem.Click += new System.EventHandler(this.command1ToolStripMenuItem_Click);
             // 
@@ -544,6 +544,12 @@ namespace ObjectListViewDemo
             this.command3ToolStripMenuItem.Name = "command3ToolStripMenuItem";
             this.command3ToolStripMenuItem.Size = new System.Drawing.Size(269, 22);
             this.command3ToolStripMenuItem.Text = "...appears here and a different one...";
+            // 
+            // appearOnTheColumnHeadersToolStripMenuItem
+            // 
+            this.appearOnTheColumnHeadersToolStripMenuItem.Name = "appearOnTheColumnHeadersToolStripMenuItem";
+            this.appearOnTheColumnHeadersToolStripMenuItem.Size = new System.Drawing.Size(269, 22);
+            this.appearOnTheColumnHeadersToolStripMenuItem.Text = "...appear on the column headers.";
             // 
             // tabPage2
             // 
@@ -2476,12 +2482,6 @@ namespace ObjectListViewDemo
             this.olvColumn16.DisplayIndex = 4;
             this.olvColumn16.IsVisible = false;
             this.olvColumn16.Text = "Five";
-            // 
-            // appearOnTheColumnHeadersToolStripMenuItem
-            // 
-            this.appearOnTheColumnHeadersToolStripMenuItem.Name = "appearOnTheColumnHeadersToolStripMenuItem";
-            this.appearOnTheColumnHeadersToolStripMenuItem.Size = new System.Drawing.Size(269, 22);
-            this.appearOnTheColumnHeadersToolStripMenuItem.Text = "...appear on the column headers.";
             // 
             // MainForm
             // 

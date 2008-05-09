@@ -30,7 +30,7 @@ namespace ObjectListViewDemo
 	public partial class MainForm
 	{
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="args"></param>
 		[STAThread]
@@ -42,7 +42,7 @@ namespace ObjectListViewDemo
 		}
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
 		public MainForm()
 		{
@@ -54,7 +54,7 @@ namespace ObjectListViewDemo
 		}
 
 		List<Person> masterList;
-		void InitializeExamples() 
+		void InitializeExamples()
 		{
 			masterList = new List<Person>();
             masterList.Add(new Person("Wilhelm Frat", "Gymnast", 19, new DateTime(1984, 9, 23), 45.67, false, "ak", "Aggressive, belligerent "));
@@ -127,7 +127,7 @@ namespace ObjectListViewDemo
             this.columnHeader16.AspectGetter = delegate(object x) { return ((Person)x).GetRate(); };
             // Give this column an aspect putter, since it fetches its value using a method rather than a property
             this.columnHeader16.AspectPutter = delegate(object x, object newValue) { ((Person)x).SetRate((double)newValue); };
-            
+
             this.comboBox6.SelectedIndex = 0;
 
 			// Just one line of code make everything happen.
@@ -166,7 +166,7 @@ namespace ObjectListViewDemo
 
             // Hourly rate column
             this.hourlyRateColumn.MakeGroupies(
-                new Double[] { 100, 1000 }, 
+                new Double[] { 100, 1000 },
                 new string[] { "Less than $100", "$100-$1000", "Megabucks" });
             this.hourlyRateColumn.AspectPutter = delegate(object x, object newValue) { ((Person)x).SetRate((double)newValue); };
 
@@ -221,20 +221,20 @@ namespace ObjectListViewDemo
 
             this.personColumn.Renderer = new BusinessCardRenderer();
 		}
-        
+
         /// <summary>
         /// Hackish renderer that draw a fancy version of a person for a Tile view.
         /// </summary>
         /// <remarks>This is not the way to write a professional level renderer.
-        /// It is hideously inefficient (we should at least cache the images), 
+        /// It is hideously inefficient (we should at least cache the images),
         /// but it is obvious</remarks>
         internal class BusinessCardRenderer : BaseRenderer
         {
-            public override bool RenderWithDefault(Graphics g, Rectangle r)
+            public override bool OptionalRender(Graphics g, Rectangle r)
             {
                 // If we're in any other view than Tile, just let the default process do it's stuff
                 if (this.ListView.View != View.Tile)
-                    return true;
+                    return false;
 
                 const int spacing = 8;
 
@@ -322,8 +322,8 @@ namespace ObjectListViewDemo
                 buffered.Render();
                 buffered.Dispose();
 
-                // Return false to say that we've handled the drawing
-                return false;
+                // Return true to say that we've handled the drawing
+                return true;
             }
 
             private GraphicsPath GetRoundedRect(RectangleF rect, float diameter)
@@ -331,17 +331,17 @@ namespace ObjectListViewDemo
                 GraphicsPath path = new GraphicsPath();
 
                 RectangleF arc = new RectangleF(rect.X, rect.Y, diameter, diameter);
-                path.AddArc(arc, 180, 90); 
+                path.AddArc(arc, 180, 90);
                 arc.X = rect.Right - diameter;
-                path.AddArc(arc, 270, 90); 
+                path.AddArc(arc, 270, 90);
                 arc.Y = rect.Bottom - diameter;
-                path.AddArc(arc, 0, 90); 
+                path.AddArc(arc, 0, 90);
                 arc.X = rect.Left;
                 path.AddArc(arc, 90, 90);
                 path.CloseFigure();
 
                 return path;
-            } 
+            }
 
         }
 
@@ -350,23 +350,23 @@ namespace ObjectListViewDemo
 			this.olvColumn1.ImageGetter  = delegate (object row) { return "user"; };
 
             this.salaryColumn.MakeGroupies(
-                new UInt32[] { 20000, 100000 }, 
+                new UInt32[] { 20000, 100000 },
                 new string[] { "Lowly worker", "Middle management", "Rarified elevation" });
             this.salaryColumn.Renderer = new MultiImageRenderer(Resource1.tick16, 5, 10000, 500000);
 
             this.heightColumn.MakeGroupies(
-                new Double[] { 1.50, 1.70, 1.85 }, 
+                new Double[] { 1.50, 1.70, 1.85 },
                 new string[] { "Shortie",  "Normal", "Tall", "Really tall" });
             this.heightColumn.Renderer = new BarRenderer(0, 2);
 
             this.olvColumnGif.Renderer = new ImageRenderer(true);
-            
+
             this.comboBox3.SelectedIndex = 4;
             this.comboBox7.SelectedIndex = 0;
 
             this.listViewDataSet.RowFormatter = delegate(OLVListItem olvi) {
                 string[] colorNames = new string[] { "red", "green", "blue", "yellow" };
-                
+
                 // For some reason, changes to the background of column 0 don't take place
                 // immediately. The list has to be rebuild before the background color changes.
                 foreach (ListViewItem.ListViewSubItem subItem in olvi.SubItems) {
@@ -380,15 +380,15 @@ namespace ObjectListViewDemo
                         }
                     }
                     FontStyle style = FontStyle.Regular;
-                    if (subItem.Text.ToLowerInvariant().Contains("bold")) 
+                    if (subItem.Text.ToLowerInvariant().Contains("bold"))
                         style |= FontStyle.Bold;
-                    if (subItem.Text.ToLowerInvariant().Contains("italic")) 
+                    if (subItem.Text.ToLowerInvariant().Contains("italic"))
                         style |= FontStyle.Italic;
-                    if (subItem.Text.ToLowerInvariant().Contains("underline")) 
+                    if (subItem.Text.ToLowerInvariant().Contains("underline"))
                         style |= FontStyle.Underline;
-                    if (subItem.Text.ToLowerInvariant().Contains("strikeout")) 
+                    if (subItem.Text.ToLowerInvariant().Contains("strikeout"))
                         style |= FontStyle.Strikeout;
-                        
+
                     if (style != FontStyle.Regular) {
                         olvi.UseItemStyleForSubItems = false;
                         subItem.Font = new Font(subItem.Font, style);
@@ -426,9 +426,9 @@ namespace ObjectListViewDemo
                             result = 1;
                         else
                             result = -1;
-                } else 
+                } else
                     result = xValue.CompareTo(yValue);
-                
+
                 if (this.sortOrder == SortOrder.Ascending)
                     return result;
                 else
@@ -452,7 +452,7 @@ namespace ObjectListViewDemo
                 masterList.Sort(new MasterListSorter(col, order));
                 this.listViewVirtual.BuildList();
             };
-			
+
 			// Install aspect getters to optimize performance
 			this.olvColumn4.AspectGetter = delegate (object x) {return ((Person)x).Name;};
 			this.olvColumn5.AspectGetter = delegate (object x) {return ((Person)x).Occupation;};
@@ -466,7 +466,7 @@ namespace ObjectListViewDemo
             this.listViewVirtual.RowFormatter = delegate(OLVListItem lvi) {
                 lvi.ToolTipText = "This is a long tool tip for '" + lvi.Text + "' that does nothing except waste space.";
             };
-				
+
 			this.olvColumn4.ImageGetter = delegate (object row) {
 				// People whose names start with a vowel get a star,
 				// otherwise the first half of the alphabet gets hearts
@@ -480,14 +480,14 @@ namespace ObjectListViewDemo
 			};
 			this.olvColumn5.ImageGetter  = delegate (object row) { return "user"; }; // user icon
             this.olvColumn5.Renderer = new BaseRenderer();
-			
+
             this.olvColumn7.Renderer = new MultiImageRenderer("star", 5, 0, 50);
 
 
             this.comboBox2.SelectedIndex = 4;
             this.comboBox8.SelectedIndex = 0;
 		}
-		
+
 		void InitializeExplorerExample()
 		{
             // Draw the system icon next to the name
@@ -496,8 +496,8 @@ namespace ObjectListViewDemo
 			this.olvColumnFileName.ImageGetter = delegate(object x) {
                 return helper.GetImageIndex(((FileSystemInfo)x).FullName);
 			};
-#endif   
-            // Show the size of files as GB, MB and KBs. Also, group them by 
+#endif
+            // Show the size of files as GB, MB and KBs. Also, group them by
             // some meaningless divisions
             this.olvColumnSize.AspectGetter = delegate(object x) {
                 if (x is DirectoryInfo)
@@ -548,13 +548,13 @@ namespace ObjectListViewDemo
             this.olvColumnAttributes.AspectGetter = delegate(object x) {
                 return ((FileSystemInfo)x).Attributes;
             };
-            FlagRenderer<FileAttributes> attributesRenderer = new FlagRenderer<FileAttributes>();
-            attributesRenderer.Add(FileAttributes.Archive, "archive");
-            attributesRenderer.Add(FileAttributes.ReadOnly, "readonly");
-            attributesRenderer.Add(FileAttributes.System, "system");
-            attributesRenderer.Add(FileAttributes.Hidden, "hidden");
-            attributesRenderer.Add(FileAttributes.Temporary, "temporary");
-            this.olvColumnAttributes.Renderer = attributesRenderer;
+FlagRenderer<FileAttributes> attributesRenderer = new FlagRenderer<FileAttributes>();
+attributesRenderer.Add(FileAttributes.Archive, "archive");
+attributesRenderer.Add(FileAttributes.ReadOnly, "readonly");
+attributesRenderer.Add(FileAttributes.System, "system");
+attributesRenderer.Add(FileAttributes.Hidden, "hidden");
+attributesRenderer.Add(FileAttributes.Temporary, "temporary");
+this.olvColumnAttributes.Renderer = attributesRenderer;
 
             this.comboBox4.SelectedIndex = 4;
             this.textBoxFolderPath.Text = @"c:\";
@@ -592,7 +592,7 @@ namespace ObjectListViewDemo
 #if !MONO
 				this.dataGridView1.DataSource = ds;
 				this.dataGridView1.DataMember = "Person";
-#endif								
+#endif
                 // Install this data source
 #if MONO
                 DataTable personTable = ds.Tables["Person"];
@@ -669,7 +669,7 @@ namespace ObjectListViewDemo
         private void MainForm_Load(object sender, EventArgs e)
         {
         }
-        
+
         #endregion
 
         #region Utilities
@@ -721,7 +721,7 @@ namespace ObjectListViewDemo
             listview.OwnerDraw = cb.Checked;
             listview.BuildList();
         }
-		
+
         #endregion
 
         #region Simple Tab Event Handlers
@@ -774,7 +774,7 @@ namespace ObjectListViewDemo
 		void CheckBox2CheckedChanged(object sender, System.EventArgs e)
 		{
 			ShowLabelsOnGroupsChecked(this.listViewComplex, (CheckBox)sender);
-		}        
+		}
 
 		void Button2Click(object sender, System.EventArgs e)
 		{
@@ -786,12 +786,12 @@ namespace ObjectListViewDemo
             listViewComplex.SelectedObjects = listViewSimple.SelectedObjects;
             listViewComplex.Select();
 		}
-        		
+
 		void CheckBox6CheckedChanged(object sender, EventArgs e)
 		{
             if (comboBox1.SelectedIndex == 3 && this.checkBox6.Checked)
-                this.listViewComplex.TileSize = new Size(250, 120); 
-            
+                this.listViewComplex.TileSize = new Size(250, 120);
+
             ChangeOwnerDrawn(this.listViewComplex, (CheckBox)sender);
 		}
 
@@ -857,7 +857,7 @@ namespace ObjectListViewDemo
         #endregion
 
         #region Virtual Tab Event Handlers
-		
+
 		void CheckBox9CheckedChanged(object sender, EventArgs e)
 		{
             this.ChangeOwnerDrawn(this.listViewVirtual, (CheckBox)sender);
@@ -894,13 +894,13 @@ namespace ObjectListViewDemo
                 this.buttonUp.Enabled = false;
             }
         }
-		
+
 		void ButtonGoClick(object sender, EventArgs e)
 		{
 			string path = this.textBoxFolderPath.Text;
 			this.PopulateListFromPath(path);
 		}
-		
+
 		void PopulateListFromPath(string path)
 		{
 			DirectoryInfo pathInfo = new DirectoryInfo(path);
@@ -919,22 +919,22 @@ namespace ObjectListViewDemo
             this.toolStripStatusLabel1.Text = String.Format("Timed build: {0} items in {1}ms ({2:F}ms per item)",
                 listViewFiles.Items.Count, sw.ElapsedMilliseconds, msPerItem);
 		}
-		
+
 		void CheckBox12CheckedChanged(object sender, EventArgs e)
 		{
-			ShowGroupsChecked(this.listViewFiles, (CheckBox)sender);			
+			ShowGroupsChecked(this.listViewFiles, (CheckBox)sender);
 		}
-		
+
 		void CheckBox11CheckedChanged(object sender, EventArgs e)
 		{
             this.ShowLabelsOnGroupsChecked(this.listViewFiles, (CheckBox)sender);
 		}
-		
+
 		void CheckBox10CheckedChanged(object sender, EventArgs e)
 		{
             this.ChangeOwnerDrawn(this.listViewFiles, (CheckBox)sender);
 		}
-		
+
 		void ComboBox4SelectedIndexChanged(object sender, EventArgs e)
 		{
            this.ChangeView(this.listViewFiles, (ComboBox)sender);
@@ -1065,16 +1065,16 @@ namespace ObjectListViewDemo
                 this.listViewPrinter1.ListView = this.listViewVirtual;
             else if (this.rbShowFileExplorer.Checked == true)
                 this.listViewPrinter1.ListView = this.listViewFiles;
-			
+
 			this.listViewPrinter1.DocumentName = this.tbTitle.Text;
 			this.listViewPrinter1.Header = this.tbHeader.Text.Replace("\\t", "\t");
             this.listViewPrinter1.Footer = this.tbFooter.Text.Replace("\\t", "\t");
 			this.listViewPrinter1.Watermark = this.tbWatermark.Text;
-			
+
 			this.listViewPrinter1.IsShrinkToFit = this.cbShrinkToFit.Checked;
 			this.listViewPrinter1.IsTextOnly = !this.cbIncludeImages.Checked;
 			this.listViewPrinter1.IsPrintSelectionOnly = this.cbPrintOnlySelection.Checked;
-			
+
 			if (this.rbStyleMinimal.Checked == true)
 				this.ApplyMinimalFormatting();
 			else if (this.rbStyleModern.Checked == true)
@@ -1156,7 +1156,7 @@ namespace ObjectListViewDemo
             this.listViewPrinter1.FooterFormat.TextBrush = Brushes.Blue;
             this.listViewPrinter1.FooterFormat.BackgroundBrush = new LinearGradientBrush(new Point(0, 0), new Point(200, 0), Color.Gold, Color.Green);
             this.listViewPrinter1.FooterFormat.SetBorderPen(Sides.All, new Pen(Color.FromArgb(128, Color.Green), 5));
-            
+
             this.listViewPrinter1.GroupHeaderFormat = BlockFormat.GroupHeader();
             Brush brush = new HatchBrush(HatchStyle.LargeConfetti, Color.Blue, Color.Empty);
             this.listViewPrinter1.GroupHeaderFormat.SetBorder(Sides.Bottom, 5, brush);
@@ -1378,7 +1378,7 @@ namespace ObjectListViewDemo
         {
             if (this.takeNoticeOfSelectionEvent)
                 this.HandleSelectionChanged((ObjectListView)sender);
-         
+
             this.takeNoticeOfSelectionEvent = true;
         }
 
@@ -1394,7 +1394,7 @@ namespace ObjectListViewDemo
             list.Add(new Person("Brave New Person"));
             list.Add(new Person("someone like e e cummings"));
             list.Add(new Person("Luis Nova Pessoa"));
-            
+
             // Give him a birthday that will display an image to make sure the image appears.
             list[list.Count - 1].BirthDate = new DateTime(1984, 12, 25);
 
@@ -1405,7 +1405,7 @@ namespace ObjectListViewDemo
         {
             this.listViewComplex.RemoveObjects(this.listViewComplex.SelectedObjects);
         }
-		
+
 		void Button18Click(object sender, EventArgs e)
 		{
             this.olvFastList.RemoveObjects(this.olvFastList.SelectedObjects);
