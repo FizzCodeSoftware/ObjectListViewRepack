@@ -2904,7 +2904,7 @@ namespace BrightIdeasSoftware
             OLVColumn column = this.GetColumn(0);
             if (this.View != View.Details && column.RendererDelegate != null) {
                 Object row = ((OLVListItem)e.Item).RowObject;
-                e.DrawDefault = column.RendererDelegate(e, e.Graphics, e.Bounds, row);
+                e.DrawDefault = !column.RendererDelegate(e, e.Graphics, e.Bounds, row);
             } else 
                 e.DrawDefault = (this.View != View.Details);
 
@@ -2969,7 +2969,7 @@ namespace BrightIdeasSoftware
 #endif
             // Finally, give the renderer a chance to draw something
             Object row = ((OLVListItem)e.Item).RowObject;
-            e.DrawDefault = column.RendererDelegate(e, g, r, row);
+            e.DrawDefault = !column.RendererDelegate(e, g, r, row);
 
             if (!e.DrawDefault && buffer != null) {
                 buffer.Render();
@@ -6490,6 +6490,18 @@ namespace BrightIdeasSoftware
         #region Utilities
 
         /// <summary>
+        /// Return the string that should be drawn within this 
+        /// </summary>
+        /// <returns></returns>
+        public string GetText()
+        {
+            if (this.SubItem == null)
+                return this.ListItem.Text;
+            else
+                return this.SubItem.Text;
+        }
+
+        /// <summary>
         /// Return the image that should be drawn against this subitem
         /// </summary>
         /// <returns>An Image or null if no image should be drawn.</returns>
@@ -6692,7 +6704,7 @@ namespace BrightIdeasSoftware
             this.IsDrawBackground = true;
             this.Font = null;
             this.TextBrush = null;
-            return this.RenderWithDefault(g, r);
+            return this.OptionalRender(g, r);
         }
 
         /// <summary>
@@ -6702,14 +6714,13 @@ namespace BrightIdeasSoftware
         /// <para>Subclasses should override this method.</para></remarks>
         /// <param name="g">The graphics context that should be used for drawing</param>
         /// <param name="r">The bounds of the subitem cell</param>
-        /// <returns>Returns whether the default processing should take place? If the
-        /// renderer decides that it doesn't want to render this case, it should
-        /// return true to allow the default processing.
+        /// <returns>Returns whether the renderering has already taken place.
+        /// If this returns false, the default processing will take over.
         /// </returns>
-        virtual public bool RenderWithDefault(Graphics g, Rectangle r)
+        virtual public bool OptionalRender(Graphics g, Rectangle r)
         {
             this.Render(g, r);
-            return false;
+            return true;
         }
 
         /// <summary>
@@ -6738,10 +6749,7 @@ namespace BrightIdeasSoftware
         /// <param name="r">Bounds of the cell</param>
         protected void DrawImageAndText(Graphics g, Rectangle r)
         {
-            if (this.SubItem == null)
-                DrawImageAndText(g, r, this.ListItem.Text, this.GetImage());
-            else
-                DrawImageAndText(g, r, this.SubItem.Text, this.GetImage());
+            this.DrawImageAndText(g, r, this.GetText(), this.GetImage());
         }
 
         /// <summary>
