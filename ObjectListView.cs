@@ -5,16 +5,19 @@
  * Date: 9/10/2006 11:15 AM
  *
  * Change log:
- * 2008-05-05  JPP  - Non detail views can now be owner drawn. The renderer installed for 
+ * v1.12
+ * 2008-05-08  JPP  - Fixed bug where the column select menu would not appear if the
+ *                    ObjectListView has a context menu installed.
+ * 2008-05-05  JPP  - Non detail views can now be owner drawn. The renderer installed for
  *                    primary column is given the chance to render the whole item.
  *                    See BusinessCardRenderer in the demo for an example.
  *                  - BREAKING CHANGE: RenderDelegate now returns a bool to indicate if default
- *                    rendering should be done. Previously returned void. Only important if your 
+ *                    rendering should be done. Previously returned void. Only important if your
  *                    code used RendererDelegate directly. Renderers derived from BaseRenderer
  *                    are unchanged.
  * 2008-05-03  JPP  - Changed cell editing to use values directly when the values are Strings.
  *                    Previously, values were always handed to the AspectToStringConverter.
- *                  - When editing a cell, tabbing no longer tries to edit the next subitem 
+ *                  - When editing a cell, tabbing no longer tries to edit the next subitem
  *                    when not in details view!
  * 2008-05-02  JPP  - MappedImageRenderer can now handle a Aspects that return a collection
  *                    of values. Each value will be drawn as its own image.
@@ -1256,7 +1259,7 @@ namespace BrightIdeasSoftware
         /// This property only works when the listview is in Details view and not showing groups.
         /// </para>
         /// <para>
-        /// The reason that it does not work when showing groups is that, when groups are enabled, 
+        /// The reason that it does not work when showing groups is that, when groups are enabled,
         /// the Windows message LVM_GETTOPINDEX always returns 0, regardless of the
         /// scroll position.
         /// </para>
@@ -2907,7 +2910,7 @@ namespace BrightIdeasSoftware
             if (this.View != View.Details && column.RendererDelegate != null) {
                 Object row = ((OLVListItem)e.Item).RowObject;
                 e.DrawDefault = !column.RendererDelegate(e, e.Graphics, e.Bounds, row);
-            } else 
+            } else
                 e.DrawDefault = (this.View != View.Details);
 
             if (e.DrawDefault)
@@ -4332,7 +4335,7 @@ namespace BrightIdeasSoftware
         override public void RemoveObjects(ICollection modelObjects)
         {
         }
-        
+
         #endregion
 
         /// <summary>
@@ -4530,10 +4533,10 @@ namespace BrightIdeasSoftware
                         newObjects.Add(x);
                 }
             }
-            // There is a bug in ListView where if a virtual ListView is cleared 
+            // There is a bug in ListView where if a virtual ListView is cleared
             // (i.e. VirtuaListSize set to 0) when it is
             // scrolled vertically, the scroll position is wrong when the list is subsequently
-            // filled in again. To avoid this, before clearing a virtual list, 
+            // filled in again. To avoid this, before clearing a virtual list,
             // we make sure the list is scrolled to the top.
             if (newObjects.Count == 0 && this.TopItemIndex > 0)
                 this.TopItemIndex = 0;
@@ -4562,7 +4565,7 @@ namespace BrightIdeasSoftware
         	}
         	this.Objects = this.objectList;
         }
-        
+
         /// <summary>
         /// Remove all of the given objects from the control
         /// </summary>
@@ -4582,7 +4585,7 @@ namespace BrightIdeasSoftware
         	this.SetObjects(this.objectList);
             this.SelectedObjects = selectedObjects;
         }
-        
+
         #endregion
 
         #region Event Handlers
@@ -5041,7 +5044,7 @@ namespace BrightIdeasSoftware
         override public void RemoveObjects(ICollection modelObjects)
         {
         }
-        
+
         #endregion
 
         #region Event Handlers
@@ -6476,7 +6479,7 @@ namespace BrightIdeasSoftware
             set { canWrap = value; }
         }
         private bool canWrap = false;
-        
+
         /// <summary>
         /// When rendering multiple images, how many pixels should be between each image?
         /// </summary>
@@ -6492,7 +6495,7 @@ namespace BrightIdeasSoftware
         #region Utilities
 
         /// <summary>
-        /// Return the string that should be drawn within this 
+        /// Return the string that should be drawn within this
         /// </summary>
         /// <returns></returns>
         public string GetText()
@@ -6908,7 +6911,7 @@ namespace BrightIdeasSoftware
         public override void Render(Graphics g, Rectangle r)
         {
             this.DrawBackground(g, r);
-            
+
             if (this.Aspect is ICollection)
             	this.RenderCollection(g, r, (ICollection)this.Aspect);
             else
@@ -6926,14 +6929,14 @@ namespace BrightIdeasSoftware
 	                image = this.GetImage(map[selector]);
 	            else
 	            	image = null;
-	            
+
 	            if (image != null) {
                     g.DrawImage(image, pt);
                     pt.X += (image.Width + this.Spacing);
                 }
             }
         }
-        
+
         private void RenderOne(Graphics g, Rectangle r, Object selector)
         {
         	Image image = null;
@@ -6946,7 +6949,7 @@ namespace BrightIdeasSoftware
             if (image != null)
 	            this.DrawAlignedImage(g, r, image);
         }
-        
+
         #region Private variables
 
         private Hashtable map; // Track the association between values and images
