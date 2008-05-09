@@ -584,7 +584,9 @@ namespace BrightIdeasSoftware
         /// Otherwise, it will convert any existing collection into a new ArrayList. This effectively
         /// separates the 'objects' instance variable from its source.
         /// </remarks>
-        public ArrayList ObjectsAsList
+        [Browsable(false),
+         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        protected ArrayList ObjectsAsList
         {
             get
             {
@@ -872,7 +874,7 @@ namespace BrightIdeasSoftware
         /// all the columns slightly to the right); then again when the filling columns are updated, but they will be shrunk
         /// so that the combined width is not more than the control, so everything jumps slightly back to the left again.
         /// </remarks>
-        [Category("Misc"),
+        [Category("Behavior"),
         Description("When resizing a column by dragging its divider, should any space filling columns be resized at each mouse move?"),
         DefaultValue(false)]
         public bool UpdateSpaceFillingColumnsWhenDraggingColumnDivider
