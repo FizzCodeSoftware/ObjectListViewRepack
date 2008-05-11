@@ -453,6 +453,8 @@ namespace ObjectListViewDemo
             this.olvColumn34});
             this.listViewSimple.ContextMenuStrip = this.contextMenuStrip1;
             this.listViewSimple.HideSelection = false;
+            this.listViewSimple.HighlightBackgroundColor = System.Drawing.Color.Empty;
+            this.listViewSimple.HighlightForegroundColor = System.Drawing.Color.Empty;
             this.listViewSimple.Location = new System.Drawing.Point(6, 55);
             this.listViewSimple.Name = "listViewSimple";
             this.listViewSimple.ShowGroups = false;
@@ -752,6 +754,8 @@ namespace ObjectListViewDemo
             this.listViewComplex.GroupWithItemCountFormat = "{0} ({1} people)";
             this.listViewComplex.GroupWithItemCountSingularFormat = "{0} ({1} person)";
             this.listViewComplex.HideSelection = false;
+            this.listViewComplex.HighlightBackgroundColor = System.Drawing.Color.Empty;
+            this.listViewComplex.HighlightForegroundColor = System.Drawing.Color.Empty;
             this.listViewComplex.LargeImageList = this.imageList2;
             this.listViewComplex.Location = new System.Drawing.Point(6, 48);
             this.listViewComplex.Name = "listViewComplex";
@@ -1037,6 +1041,8 @@ namespace ObjectListViewDemo
             this.listViewDataSet.GroupWithItemCountFormat = "{0} ({1} people)";
             this.listViewDataSet.GroupWithItemCountSingularFormat = "{0} (1 person)";
             this.listViewDataSet.HideSelection = false;
+            this.listViewDataSet.HighlightBackgroundColor = System.Drawing.Color.Crimson;
+            this.listViewDataSet.HighlightForegroundColor = System.Drawing.Color.DarkGreen;
             this.listViewDataSet.LargeImageList = this.imageList2;
             this.listViewDataSet.Location = new System.Drawing.Point(6, 19);
             this.listViewDataSet.Name = "listViewDataSet";
@@ -1308,6 +1314,8 @@ namespace ObjectListViewDemo
             this.listViewVirtual.FullRowSelect = true;
             this.listViewVirtual.GridLines = true;
             this.listViewVirtual.HideSelection = false;
+            this.listViewVirtual.HighlightBackgroundColor = System.Drawing.Color.Empty;
+            this.listViewVirtual.HighlightForegroundColor = System.Drawing.Color.Empty;
             this.listViewVirtual.LargeImageList = this.imageList2;
             this.listViewVirtual.Location = new System.Drawing.Point(6, 48);
             this.listViewVirtual.Name = "listViewVirtual";
@@ -1568,6 +1576,8 @@ namespace ObjectListViewDemo
             this.listViewFiles.EmptyListMsg = "This folder is completely empty!";
             this.listViewFiles.EmptyListMsgFont = new System.Drawing.Font("Comic Sans MS", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.listViewFiles.HideSelection = false;
+            this.listViewFiles.HighlightBackgroundColor = System.Drawing.Color.Empty;
+            this.listViewFiles.HighlightForegroundColor = System.Drawing.Color.Empty;
             this.listViewFiles.LargeImageList = this.imageList2;
             this.listViewFiles.Location = new System.Drawing.Point(6, 83);
             this.listViewFiles.Name = "listViewFiles";
@@ -2288,6 +2298,8 @@ namespace ObjectListViewDemo
             this.olvFastList.FullRowSelect = true;
             this.olvFastList.GridLines = true;
             this.olvFastList.HideSelection = false;
+            this.olvFastList.HighlightBackgroundColor = System.Drawing.Color.Empty;
+            this.olvFastList.HighlightForegroundColor = System.Drawing.Color.Empty;
             this.olvFastList.LargeImageList = this.imageList2;
             this.olvFastList.Location = new System.Drawing.Point(6, 47);
             this.olvFastList.Name = "olvFastList";

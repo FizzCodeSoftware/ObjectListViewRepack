@@ -89,7 +89,7 @@ namespace ObjectListViewDemo
             InitializeFastListExample(list);
 
 #if MONO
-            // As of 2008-03-23, grid lines on virtual lists crashes the program
+            // As of 2008-03-23, grid lines on virtual lists on Windows Mono crashes the program
             this.listViewVirtual.GridLines = false;
             this.olvFastList.GridLines = false;
 #endif
@@ -397,6 +397,7 @@ namespace ObjectListViewDemo
             };
 
             this.rowHeightUpDown.Value = 32;
+            listViewDataSet.EnableCustomSelectionColors();
 
             LoadXmlIntoList();
 		}
