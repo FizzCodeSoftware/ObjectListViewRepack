@@ -5,6 +5,10 @@
  * Date: 9/10/2006 11:15 AM
  *
  * Change log:
+ * 2008-05-11  JPP  - Allow selection foreground and background colors to be changed.
+ *                    Windows doesn't allow this, so we can only make it happen when owner
+ *                    drawing. Set the HighlightForegroundColor and  HighlightBackgroundColor 
+ *                    properties and then call EnableCustomSelectionColors().
  * v1.12
  * 2008-05-08  JPP  - Fixed bug where the column select menu would not appear if the
  *                    ObjectListView has a context menu installed.
@@ -558,6 +562,81 @@ namespace BrightIdeasSoftware
         }
 
         /// <summary>
+        /// What color should be used for the background of selected rows?
+        /// </summary>
+        /// <remarks>Windows does not give the option of changing the selection background. 
+        /// So this color is only used when control is owner drawn and when columns have a
+        /// renderer installed -- a basic new BaseRenderer() will suffice.</remarks>
+        [Category("Appearance"),
+         Description("The background color of selected rows when the control is owner drawn"),
+         DefaultValue(typeof(Color), "Empty")]
+        public Color HighlightBackgroundColor
+        {
+            get { return highlightBackgroundColor; }
+            set { highlightBackgroundColor = value; }
+        }
+        private Color highlightBackgroundColor = Color.Empty;
+
+        /// <summary>
+        /// Return the color should be used for the background of selected rows or a reasonable default
+        /// </summary>
+        [Browsable(false)]
+        public Color HighlightBackgroundColorOrDefault
+        {
+            get  {
+                if (this.HighlightBackgroundColor.IsEmpty)
+                    return SystemColors.Highlight;
+                else
+                    return this.HighlightBackgroundColor;
+            }
+        }
+
+        /// <summary>
+        /// Setup the list so it will draw selected rows using custom colours.
+        /// </summary>
+        /// <remarks>
+        /// This method makes the list owner drawn, and ensures that all columns have at 
+        /// least a BaseRender installed.
+        /// </remarks>
+        public void EnableCustomSelectionColors()
+        {
+            this.OwnerDraw = true;
+
+            foreach (OLVColumn column in this.AllColumns) {
+                if (column.RendererDelegate == null)
+                    column.Renderer = new BaseRenderer();
+            }
+        }
+        /// <summary>
+        /// What color should be used for the foreground of selected rows?
+        /// </summary>
+        /// <remarks>Windows does not give the option of changing the selection foreground (text color). 
+        /// So this color is only used when control is owner drawn and when columns have a
+        /// renderer installed -- a basic new BaseRenderer() will suffice.</remarks>
+        [Category("Appearance"),
+         Description("The foreground color of selected rows when the control is owner drawn"),
+         DefaultValue(typeof(Color), "Empty")]
+        public Color HighlightForegroundColor
+        {
+            get { return highlightForegroundColor; }
+            set { highlightForegroundColor = value; }
+        }
+        private Color highlightForegroundColor = Color.Empty;
+
+        /// <summary>
+        /// Return the color should be used for the foreground of selected rows or a reasonable default
+        /// </summary>
+        public Color HighlightForegroundColorOrDefault
+        {
+            get {
+                if (this.HighlightForegroundColor.IsEmpty)
+                    return SystemColors.HighlightText;
+                else
+                    return this.HighlightForegroundColor;
+            }
+        }	
+
+        /// <summary>
         /// Return true if a cell edit operation is currently happening
         /// </summary>
         [Browsable(false)]
@@ -583,7 +662,7 @@ namespace BrightIdeasSoftware
         /// Get our collection of model objects as an ArrayList.
         /// </summary>
         /// <remarks>
-        /// If an ArrayList was passed to SetObjects(), this property will simply return that ArrayList.
+        /// <para></para>If an ArrayList was passed to SetObjects(), this property will simply return that ArrayList.
         /// Otherwise, it will convert any existing collection into a new ArrayList. This effectively
         /// separates the 'objects' instance variable from its source.
         /// </remarks>
@@ -2901,11 +2980,10 @@ namespace BrightIdeasSoftware
         protected override void OnDrawItem(DrawListViewItemEventArgs e)
         {
             // If there is a custom renderer installed for the primary column,
-            // give it a chance to draw the item. This means that the renderer
-            // for the primary column has two roles: in non-details view, it gets
-            // a change to draw the whole item; in details view, it gets two chances
-            // once to draw the whole row, and then immediately afterwards to draw
-            // just cell 0.
+            // and we're not in details view, give it a chance to draw the item. 
+            // So the renderer on the primary column can have two distinct tasks,
+            // in details view, it draws the primary cell; in non-details view,
+            // it draws the whole item.
             OLVColumn column = this.GetColumn(0);
             if (this.View != View.Details && column.RendererDelegate != null) {
                 Object row = ((OLVListItem)e.Item).RowObject;
@@ -2917,7 +2995,7 @@ namespace BrightIdeasSoftware
                 base.OnDrawItem(e);
         }
 
-        int[] columnRightEdge = new int[128]; // will anyone ever want more than 128 columns??
+        int[] columnRightEdge = new int[256]; // will anyone ever want more than 256 columns??
 
         /// <summary>
         /// Owner draw a single subitem
@@ -6562,7 +6640,7 @@ namespace BrightIdeasSoftware
         {
             if (this.IsItemSelected && this.ListView.FullRowSelect) {
                 if (this.ListView.Focused)
-                    return SystemColors.Highlight;
+                    return this.ListView.HighlightBackgroundColorOrDefault;
                 else
                     if (!this.ListView.HideSelection)
                         return SystemColors.Control; //TODO: What color should this be?
@@ -6580,7 +6658,7 @@ namespace BrightIdeasSoftware
         protected Color GetTextBackgroundColor()
         {
             if (this.IsItemSelected && (this.Column.Index == 0 || this.ListView.FullRowSelect))
-                return SystemColors.Highlight;
+                return this.ListView.HighlightBackgroundColorOrDefault;
             else
                 if (this.ListItem.UseItemStyleForSubItems)
                     return this.ListItem.BackColor;
@@ -6595,7 +6673,7 @@ namespace BrightIdeasSoftware
         protected Color GetForegroundColor()
         {
             if (this.IsItemSelected && (this.Column.Index == 0 || this.ListView.FullRowSelect))
-                return SystemColors.HighlightText;
+                return this.ListView.HighlightForegroundColorOrDefault;
             else
                 if (this.ListItem.UseItemStyleForSubItems)
                     return this.ListItem.ForeColor;
@@ -6673,8 +6751,11 @@ namespace BrightIdeasSoftware
         /// <param name="r">Bounds of the cell</param>
         protected void DrawBackground(Graphics g, Rectangle r)
         {
-            if (this.IsDrawBackground)
-                g.FillRectangle(new SolidBrush(this.GetBackgroundColor()), r);
+            if (this.IsDrawBackground) {
+                using (Brush brush = new SolidBrush(this.GetBackgroundColor())) {
+                    g.FillRectangle(brush, r);
+                }
+            }
         }
 
         #endregion
@@ -6792,8 +6873,12 @@ namespace BrightIdeasSoftware
             // and it's selected and it's not in FullRowSelect mode.
             if (this.IsDrawBackground && this.IsItemSelected && this.Column.Index == 0 && !this.ListView.FullRowSelect) {
                 SizeF size = g.MeasureString(txt, this.Font, r.Width, fmt);
-                Rectangle r2 = this.AlignRectangle(r, new Rectangle(0, 0, (int)(size.Width + 1), (int)(size.Height + 1)));
-                g.FillRectangle(new SolidBrush(SystemColors.Highlight), r2);
+                // This is a tighter selection box
+                //Rectangle r2 = this.AlignRectangle(r, new Rectangle(0, 0, (int)(size.Width + 1), (int)(size.Height + 1)));
+                Rectangle r2 = r;
+                r2.Width = (int)size.Width + 1;
+                using (Brush brush = new SolidBrush(this.ListView.HighlightBackgroundColorOrDefault))
+                    g.FillRectangle(brush, r2);
             }
 
             RectangleF rf = r;
@@ -7112,8 +7197,7 @@ namespace BrightIdeasSoftware
                 this.tickler.Change(1000, Timeout.Infinite);
             else {
                 if (this.ListView.InvokeRequired)
-                    //this.ListView.Invoke(new OnTimerCallback(this.OnTimer), new object[] { state });
-                    this.ListView.Invoke((MethodInvoker)delegate { this.OnTimer(state); }); // this seems neater
+                    this.ListView.Invoke((MethodInvoker)delegate { this.OnTimer(state); }); 
                 else
                     this.OnTimerInThread();
             }
