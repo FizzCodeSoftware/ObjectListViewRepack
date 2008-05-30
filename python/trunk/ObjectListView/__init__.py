@@ -19,13 +19,11 @@ work, then gives it the list of objects to display.
 
 __version__ = '1.0'
 
-# Copyright notice string
-__copyright__ = """\
-Copyright (c) 2008 Phillip Piper (phillip[underscore]piper[at]bigfoot[dot]com)
-"""
+__copyright__ = "Copyright (c) 2008 Phillip Piper (phillip_piper@bigfoot.com)"
 
 from ObjectListView import ObjectListView, VirtualObjectListView, ColumnDefn, FastObjectListView
-from OLVEvent import CellEditFinishingEvent, CellEditStartingEvent, EVT_CELL_EDIT_STARTING, EVT_CELL_EDIT_FINISHING
+from OLVEvent import CellEditFinishingEvent, CellEditStartingEvent
+from OLVEvent import EVT_CELL_EDIT_STARTING, EVT_CELL_EDIT_FINISHING
 from CellEditor import CellEditorRegistry, MakeAutoCompleteTextBox, MakeAutoCompleteComboBox
 
 __all__ = [

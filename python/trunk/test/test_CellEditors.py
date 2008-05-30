@@ -1,7 +1,10 @@
 import unittest
 import wx
 from datetime import datetime, date, time
-from CellEditor import BooleanEditor, DateEditor, DateTimeEditor, TimeEditor
+
+import sys
+sys.path.append("..")
+from ObjectListView.CellEditor import BooleanEditor, DateEditor, DateTimeEditor, TimeEditor
 
 #----------------------------------------------------------------------------
 
@@ -127,8 +130,8 @@ if __name__ == '__main__':
             global gBooleanEditor, gDateEditor, gDateTimeEditor, gTimeEditor
             gBooleanEditor = BooleanEditor(self)
             gDateEditor = DateEditor(self)
-            gDateTimeEditor = DateTimeEditor(self)
-            gTimeEditor = TimeEditor(self)
+            gDateTimeEditor = DateTimeEditor(self, 0)
+            gTimeEditor = TimeEditor(self, 0)
             sizer_1 = wx.BoxSizer(wx.VERTICAL)
             sizer_1.Add(gBooleanEditor, 1, wx.ALL|wx.EXPAND, 4)
             sizer_1.Add(gDateEditor, 1, wx.ALL|wx.EXPAND, 4)

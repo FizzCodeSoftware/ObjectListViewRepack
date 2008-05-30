@@ -8,6 +8,7 @@
 # License:      wxWindows license
 #----------------------------------------------------------------------------
 # Change log:
+# 2008/05/26  JPP   Fixed pyLint annoyances
 # 2008/04/04  JPP   Initial version complete
 #----------------------------------------------------------------------------
 # To do:
@@ -17,10 +18,9 @@ The OLVEvent module ...
 """
 
 __author__ = "Phillip Piper"
-__date__ = "3 April 2008"
+__date__ = "3 May 2008"
 __version__ = "1.0"
 
-import datetime
 import wx
 
 #======================================================================

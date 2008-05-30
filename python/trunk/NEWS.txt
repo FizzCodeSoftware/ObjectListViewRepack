@@ -1,0 +1,6 @@
+
+NEWS
+====
+
+See the docs/whatsnew.rst for all the latest changes
+

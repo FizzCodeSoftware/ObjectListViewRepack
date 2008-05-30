@@ -1,0 +1,12 @@
+.. -*- coding: UTF-8 -*-
+
+TO DO
+=====
+
+- images in the column headers
+- hidden columns, selectable on right click on header
+- copy selection to clipboard (text and HTML format)
+- secondary sort column
+- optionally preserve selection on RepopulateList
+- find on sort column on keypress
+- get rid of scrollbar when editing label in icon view

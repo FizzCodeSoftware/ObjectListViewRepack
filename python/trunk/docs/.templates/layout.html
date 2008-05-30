@@ -1,0 +1,87 @@
+{# Filename: .templates/layout.html #}
+{% extends '!layout.html' %}
+
+{% block rootrellink %}
+  <li>
+  <a href="{{ pathto('index') }}">ObjectListView (v{{ release }})</a>
+  &raquo;
+  </li>
+{% endblock %}
+
+{% macro GetSubTitle %}
+    {% if current_page_name == "index" %}
+        <h2><span>How I learned to stop worrying and love wx.ListCtrl</span></h2>
+    {% endif %}
+    {% if current_page_name == "faq" %}
+        <h2><span>Just the FAQs, Ma'am</span></h2>
+    {% endif %}
+    {% if current_page_name == "whatsnew" %}
+        <h2><span>Recent improvements in loving wx.ListCtrl</span></h2>
+    {% endif %}
+    {% if current_page_name == "gettingStarted" %}
+        <h2><span>First steps in learning to love wx.ListCtrl</span></h2>
+    {% endif %}
+    {% if current_page_name == "recipes" %}
+        <h2><span>(G)-rated techniques for loving wx.ListCtrl</span></h2>
+    {% endif %}
+    {% if current_page_name == "cellEditing" %}
+        <h2><span>How to edit the cell values in an ObjectListView</span></h2>
+    {% endif %}
+    {% if current_page_name == "search" %}
+        <h2><span>Search all documentation on this site</span></h2>
+    {% endif %}
+    {% if current_page_name == "changelog" %}
+        <h2><span>Detailed records of what changed when</span></h2>
+    {% endif %}
+    {% if current_page_name == "features" %}
+        <h2><span>Why should I learn to love the wx.ListCtrl?</span></h2>
+    {% endif %}
+{% endmacro %}
+
+{% block relbar1 %}
+    <div class="dialog">
+        <div class="content">
+            <div class="t"></div>
+            <table class="nomargin"><tr>
+            <td valign="bottom"><img src="_static/{{ current_page_name }}-icon.png" /></td>
+            <td><h1><span>{{ title }}</span></h1>
+            {{ GetSubTitle() }}
+            </td></tr></table>
+        </div>
+        <div class="b"><div></div></div>
+    </div>
+    <div class="navBar">
+        <div class="dialog type2">
+            <div class="content">
+                <div class="t"></div>
+                <h3><span><a href="index.html">Home</a></span></h3>
+                <h3><span><a href="whatsnew.html">What&rsquo;s New?</a></span></h3>
+                <h3><span><a href="features.html">Features</a></span></h3>
+                <h3><span><a href="gettingStarted.html">Getting Started </a></span></h3>
+                <h3><span><a href="recipes.html">Cookbook</a></span></h3>
+                <h3><span><a href="faq.html">FAQ</a></span></h3>
+                <h3><span><a href="https://sourceforge.net/forum/forum.php?forum_id=825500">Discussion</a></span></h3>
+                <h3><span><a href="http://objectlistview.sourceforge.net/samples/ObjectListView-{{ release }}.zip">Download</a></span></h3>
+                <p>Version {{ release }} (2008/05/30)</p>
+                <h3><span><a href="search.html">Quick search</a></span></h3>
+                <form class="search" action="search.html" method="get">
+                  <input type="text" name="q" size="14" />
+                  <input type="hidden" name="check_keywords" value="yes" />
+                  <input type="hidden" name="area" value="default" />
+                </form>
+                <p>&nbsp;</p>
+                <p><a href="http://sourceforge.net"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=225207&amp;type=4" width="125" height="37" border="0" alt="SourceForge.net Logo" /></a></p>
+            </div>
+            <div class="b"><div></div></div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block relbar2 %}
+{% endblock %}
+
+{% block sidebar1 %}
+{% endblock %}
+
+{% block sidebar2 %}
+{% endblock %}

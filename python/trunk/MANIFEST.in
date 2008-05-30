@@ -1,0 +1,5 @@
+include *.txt
+include pylint.rc
+include ObjectListView/*.py
+recursive-include Examples *.py *.png *.bat *.wxg
+recursive-include docs *.rst *.png *.css *.html

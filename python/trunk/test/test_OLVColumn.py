@@ -1,6 +1,9 @@
 import unittest
 import wx
 from datetime import datetime, date, time
+
+import sys
+sys.path.append("..")
 from ObjectListView import ObjectListView, ColumnDefn
 
 class TestColumnDefn(unittest.TestCase):
@@ -352,6 +355,41 @@ class TestValueSettingWithGetter(unittest.TestCase):
         self.assertEqual(col.GetValue(data), None)
         col.SetValue(data, 3)
         self.assertEqual(data, ["zero", "first", 2, "third"])
+
+
+class TestCheckState(unittest.TestCase):
+
+    def testGetting(self):
+
+        class DataObject:
+            def __init__(self):
+                self.isChecked = True
+
+            def ShouldBeChecked(self):
+                return False
+
+        data = DataObject()
+        col = ColumnDefn(checkStateGetter="isChecked")
+        self.assertEqual(col.GetCheckState(data), True)
+
+        col = ColumnDefn(checkStateGetter="ShouldBeChecked")
+        self.assertEqual(col.GetCheckState(data), False)
+
+    def testSetting(self):
+
+        class DataObject:
+            def __init__(self):
+                self.isChecked = True
+
+        data = DataObject()
+        col = ColumnDefn(checkStateGetter="isChecked")
+        self.assertEqual(col.GetCheckState(data), True)
+
+        col.SetCheckState(data, None)
+        self.assertEqual(col.GetCheckState(data), None)
+
+        col.SetCheckState(data, False)
+        self.assertEqual(col.GetCheckState(data), False)
 
 #======================================================================
 

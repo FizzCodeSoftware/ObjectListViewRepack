@@ -1,0 +1,5 @@
+
+Installing is the normal::
+
+    python setup.py install
+
