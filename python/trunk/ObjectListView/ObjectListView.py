@@ -239,6 +239,7 @@ class ObjectListView(wx.ListCtrl):
         def _makeBitmap(state, size):
             bitmap = wx.EmptyBitmap(size, size)
             dc = wx.MemoryDC(bitmap)
+            dc.Clear()
             wx.RendererNative.Get().DrawCheckBox(self, dc, (0, 0, size, size), state)
             dc.SelectObject(wx.NullBitmap)
             return bitmap
