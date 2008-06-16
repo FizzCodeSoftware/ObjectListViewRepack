@@ -1,4 +1,4 @@
-# -*- coding: ISO-8859-1 -*-
+# -*- coding: utf-8 -*-
 #----------------------------------------------------------------------------
 # Name:         ObjectListView.py
 # Author:       Phillip Piper
@@ -8,6 +8,10 @@
 # License:      wxWindows license
 #----------------------------------------------------------------------------
 # Change log:
+# 2008/06/16  JPP   - Search by sorted column works, even on virtual lists
+# 2008/06/12  JPP   - Added sortable parameter
+#                   - Renamed sortColumn to be sortColumnIndex to make it clear
+#                   - Allow returns in multiline cell editors
 # 2008/05/29  JPP   Used named images internally
 # 2008/05/26  JPP   Fixed pyLint annoyances
 # 2008/05/24  JPP   Images can be referenced by name
@@ -20,26 +24,30 @@
 # 2006/11/03  JPP   First version under wax
 #----------------------------------------------------------------------------
 # To do:
+# - cancellable Sort event
 # - images in the column headers
-# - hidden columns, selectable on right click on header
+# - selectable columns, triggered on right click on header
 # - copy selection to clipboard (text and HTML format)
 # - secondary sort column
 # - optionally preserve selection on RepopulateList
-# - find on sort column on keypress
 # - get rid of scrollbar when editing label in icon view
+# - need a ChangeView() method to help when switching between views
 
 """
 An `ObjectListView` provides a more convienent and powerful interface to a ListCtrl.
 
 The major features of an `ObjectListView` are:
 
+    * Automatically transforms a collection of model objects into a ListCtrl.
     * Automatically sorts rows by their data type.
     * Easily edits the values shown in the ListCtrl.
+    * Supports all ListCtrl views (report, list, large and small icons).
     * Columns can be fixed-width, have a minimum and/or maximum width, or be space-filling.
     * Displays a "list is empty" message when the list is empty (obviously).
     * Supports custom formatting of rows
     * Supports alternate rows background colors.
     * Supports checkbox columns
+    * Supports searching (by typing) on the sorted column -- even on virtual lists.
     * The `FastObjectListView` version can build a list of 10,000 objects in less than 0.1 seconds.
     * The `VirtualObjectListView` version supports millions of rows through ListCtrl's virtual mode.
 
@@ -56,8 +64,9 @@ __date__ = "2 May 2008"
 __version__ = "1.0"
 
 import wx
-import locale
 import datetime
+import locale
+import string
 
 import CellEditor
 import OLVEvent
@@ -116,6 +125,12 @@ class ObjectListView(wx.ListCtrl):
         Remember: the background and text colours are overridden by system defaults
         while a row is selected.
 
+    * typingSearchesSortColumn
+        If this boolean is True (the default), when the user types into the list, the
+        control will try to find a prefix match on the values in the sort column. If this
+        is False, or the list is unsorted or if the sorted column is marked as not
+        searchable (via `isSearchable` attribute), the primary column will be matched.
+
     * useAlternateBackColors
         If this property is true, even and odd rows will be given different
         background. The background colors are controlled by the properties
@@ -136,6 +151,14 @@ class ObjectListView(wx.ListCtrl):
     NAME_UNCHECKED_IMAGE = "objectListView.uncheckedImage"
     NAME_UNDETERMINED_IMAGE = "objectListView.undeterminedImage"
 
+    """When typing into the list, a delay between keystrokes greater than this (in ms)
+    will be interpretted as a new search and any previous search text will be cleared"""
+    SEARCH_KEYSTROKE_DELAY = 750
+
+    """When typing into a list and searching on an unsorted column, we don't even try to search
+    if there are more than this many rows."""
+    MAX_ROWS_FOR_UNSORTED_SEARCH = 100000
+
     def __init__(self, *args, **kwargs):
         """
         Create an ObjectListView.
@@ -144,14 +167,20 @@ class ObjectListView(wx.ListCtrl):
 
             * `cellEditMode`
             * `rowFormatter`
+            * `sortable`
             * `useAlternateBackColors`
 
-        The behaviour of these properties are described in the class documentation.
+        The behaviour of these properties are described in the class documentation, except for `sortable.`
+
+        `sortable` controls whether the rows of the control will be sorted when the user clicks on the header.
+        This is true by default. If it is False, clicking the header will be nothing, and no images will be
+        registered in the image lists. This parameter only has effect at creation time -- it has no impact
+        after creation.
 
         """
         self.modelObjects = []
         self.columns = []
-        self.sortColumn = None
+        self.sortColumnIndex = None
         self.sortAscending = True
         self.smallImageList = None
         self.normalImageList = None
@@ -162,15 +191,19 @@ class ObjectListView(wx.ListCtrl):
 
         self.rowFormatter = kwargs.pop("rowFormatter", None)
         self.useAlternateBackColors = kwargs.pop("useAlternateBackColors", True)
+        self.sortable = kwargs.pop("sortable", True)
         self.cellEditMode = kwargs.pop("cellEditMode", self.CELLEDIT_NONE)
+        self.typingSearchesSortColumn = kwargs.pop("typingSearchesSortColumn", True)
 
         self.evenRowsBackColor = wx.Colour(240, 248, 255) # ALICE BLUE
         self.oddRowsBackColor = wx.Colour(255, 250, 205) # LEMON CHIFFON
 
         wx.ListCtrl.__init__(self, *args, **kwargs)
 
-        self.SetImageLists()
-        self.EnableSorting()
+        if self.sortable:
+            self.EnableSorting()
+
+        # NOTE: On Windows, ListCtrl's don't trigger EVT_LEFT_UP :(
 
         self.Bind(wx.EVT_CHAR, self._HandleChar)
         self.Bind(wx.EVT_LEFT_DOWN, self._HandleLeftDown)
@@ -192,6 +225,8 @@ class ObjectListView(wx.ListCtrl):
         self.stEmptyListMsg.SetBackgroundColour(self.GetBackgroundColour())
         self.stEmptyListMsg.SetFont(wx.Font(24, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, ""))
 
+        self.searchPrefix = u""
+        self.whenLastTypingEvent = 0
 
     #--------------------------------------------------------------#000000#FFFFFF
     # Setup
@@ -228,6 +263,8 @@ class ObjectListView(wx.ListCtrl):
         """
         self.InsertColumn(len(self.columns), defn.title, defn.GetAlignment(), defn.width)
         self.columns.append(defn)
+
+        # The first checkbox column becomes the check state column for the control
         if defn.HasCheckState() and self.checkStateColumn is None:
             self.InstallCheckStateColumn(defn)
 
@@ -317,14 +354,16 @@ class ObjectListView(wx.ListCtrl):
         column.checkStateSetter = _handleSetCheckState
 
 
-    def RegisterSortIndicators(self, sortUp, sortDown):
+    def RegisterSortIndicators(self, sortUp=None, sortDown=None):
         """
         Register the bitmaps that should be used to indicated which column is being sorted
         These bitmaps must be the same dimensions as the small image list (not sure
         why that should be so, but it is)
+
+        If no parameters are given, 16x16 default images will be registered
         """
-        self.AddNamedImages(ObjectListView.NAME_DOWN_IMAGE, sortDown)
-        self.AddNamedImages(ObjectListView.NAME_UP_IMAGE, sortUp)
+        self.AddNamedImages(ObjectListView.NAME_DOWN_IMAGE, sortDown or _getSmallDownArrowBitmap())
+        self.AddNamedImages(ObjectListView.NAME_UP_IMAGE, sortUp or _getSmallUpArrowBitmap())
 
 
     def SetImageLists(self, smallImageList=None, normalImageList=None):
@@ -334,9 +373,6 @@ class ObjectListView(wx.ListCtrl):
         Call this without parameters to create reasonable default image lists.
 
         Use this to change the size of images shown by the list control.
-        If the small image list is 16x16 in size, the default sort indicators
-        will be registered in the image lists. Otherwise, the user will have
-        to call RegisterSortIndicators() with images of the correct size
         """
         if isinstance(smallImageList, NamedImageList):
             self.smallImageList = smallImageList
@@ -350,9 +386,6 @@ class ObjectListView(wx.ListCtrl):
             self.normalImageList = NamedImageList(normalImageList, 32)
         self.SetImageList(self.normalImageList.imageList, wx.IMAGE_LIST_NORMAL)
 
-        # Install the default sort indicators
-        if self.smallImageList.GetSize(0) == (16,16):
-            self.RegisterSortIndicators(_getSmallUpArrowBitmap(), _getSmallDownArrowBitmap())
 
     #--------------------------------------------------------------#000000#FFFFFF
     # Commands
@@ -375,6 +408,10 @@ class ObjectListView(wx.ListCtrl):
             smallImage = wx.Bitmap(smallImage)
         if isinstance(normalImage, basestring):
             normalImage = wx.Bitmap(normalImage)
+
+        # We must have image lists for images to be added to them
+        if self.smallImageList is None or self.normalImageList is None:
+            self.SetImageLists()
 
         # There must always be the same number of small and normal bitmaps,
         # so if we aren't given one, we have to make an empty one of the right size
@@ -462,7 +499,7 @@ class ObjectListView(wx.ListCtrl):
         """
         Give the given row it's correct background color
         """
-        if self.useAlternateBackColors:
+        if self.useAlternateBackColors and self.InReportView():
             if index & 1:
                 item.SetBackgroundColour(self.oddRowsBackColor)
             else:
@@ -489,7 +526,7 @@ class ObjectListView(wx.ListCtrl):
             # Sort the objects so they are in the order they will be displayed.
             # Sorting like this is 5-10x faster than relying on the ListCtrl::SortItems()
             # (under Windows, at least)
-            if self.sortColumn is not None:
+            if self.sortColumnIndex is not None:
                 self._SortObjects()
 
             # Insert all the rows
@@ -892,9 +929,13 @@ class ObjectListView(wx.ListCtrl):
 
         # We have to catch Return/Enter/Escape here since some types of controls
         # (e.g. ComboBox, UserControl) don't trigger key events that we can listen for.
-        # Treat Return or Enter as committing the current edit operation
+        # Treat Return or Enter as committing the current edit operation unless the control
+        # is a multiline text control, in which case we treat it as data
         if evt.GetKeyCode() in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER) and self.IsCellEditing():
-            return self.FinishCellEdit()
+            if self.cellEditor and self.cellEditor.HasFlag(wx.TE_MULTILINE):
+                return evt.Skip()
+            else:
+                return self.FinishCellEdit()
 
         # Treat Escape as cancel the current edit operation
         if evt.GetKeyCode() in (wx.WXK_ESCAPE, wx.WXK_CANCEL) and self.IsCellEditing():
@@ -911,7 +952,126 @@ class ObjectListView(wx.ListCtrl):
             self.GetSelectedItemCount() > 0):
             return self._ToggleCheckBoxForSelection()
 
+        if not self.IsCellEditing():
+            if self._HandleTypingEvent(evt):
+                return
+
         evt.Skip()
+
+    def _HandleTypingEvent(self, evt):
+        """
+        """
+        if self.GetItemCount() == 0 or self.GetColumnCount() == 0:
+            return False
+
+        if evt.GetModifiers() != 0 and evt.GetModifiers() != wx.MOD_SHIFT:
+            return False
+
+        if evt.GetKeyCode() > wx.WXK_START:
+            return False
+
+        if evt.GetKeyCode() in (wx.WXK_BACK, wx.WXK_DELETE):
+            self.searchPrefix = u""
+            return True
+
+        # On which column are we going to compare values? If we should search on the
+        # sorted column, and there is a sorted column and it is searchable, we use that
+        # one, otherwise we fallback to the primary column
+        if self.typingSearchesSortColumn and self.sortColumnIndex is not None:
+            searchColumn = self.columns[self.sortColumnIndex]
+            if not searchColumn.isSearchable:
+                searchColumn = self.columns[0]
+        else:
+            searchColumn = self.columns[0]
+
+        uniChar = unichr(evt.GetUnicodeKey())
+        if uniChar not in string.printable:
+            return False
+
+        if (evt.GetTimestamp() - self.whenLastTypingEvent) > self.SEARCH_KEYSTROKE_DELAY:
+            self.searchPrefix = uniChar
+        else:
+            self.searchPrefix += uniChar
+        self.whenLastTypingEvent = evt.GetTimestamp()
+
+        import time
+        start = time.clock()
+        self.__rows = 0
+        self._FindByTyping(searchColumn, self.searchPrefix)
+        print "Considered %d rows in %2f secs" % (self.__rows, time.clock() - start)
+
+        return True
+
+    def _FindByTyping(self, searchColumn, prefix):
+        """
+        Select the first row passed the currently focused row that has a string representation
+        that begins with 'prefix' in the given column
+        """
+        start = max(self.GetFocusedRow(), 0)
+
+        # If the user is starting a new search, we don't want to consider the current row
+        if len(prefix) == 1:
+            start = (start + 1) % self.GetItemCount()
+
+        # If we are searching on a sorted column, use a binary search
+        if self.sortColumnIndex is not None and self.columns[self.sortColumnIndex] == searchColumn:
+            if self._bisect(searchColumn, prefix, start, self.GetItemCount()):
+                return
+            if self._bisect(searchColumn, prefix, 0, start):
+                return
+        else:
+            # A binary search on a sorted column can handle any number of rows. A linear
+            # search cannot. So we impose an arbitrary limit on the number of rows to
+            # consider. Above that, we don't even try
+            if self.GetItemCount() > self.MAX_ROWS_FOR_UNSORTED_SEARCH:
+                self.DeselectAll()
+                self.Select(0)
+                self.Focus(0)
+                return
+
+            # Consider the rows in two partitions: start to the end of the collection, and
+            # then from the beginning to the start position.
+            # This is pain to express in other languages -- I just love Python :)
+            # Yes, I could use itertools.chain, but this way is more obvious
+            for partition in [range(start, self.GetItemCount()), range(0, start)]:
+                for i in partition:
+                    self.__rows += 1
+                    strValue = searchColumn.GetStringValue(self.GetObjectAt(i))
+                    if strValue.lower().startswith(prefix):
+                        self.DeselectAll()
+                        self.Select(i)
+                        self.Focus(i)
+                        return
+        wx.Bell()
+
+    def _FindByBisect(self, searchColumn, prefix, start, end):
+        """
+        Use a binary search to look for rows that match the given prefix between the rows given
+
+        If a match was found, select/focus/reveal that row and return True.
+        """
+
+        # Adapted from bisect std module
+        lo = start
+        hi = end
+        while lo < hi:
+            mid = (lo+hi)//2
+            self.__rows += 1
+            strValue = searchColumn.GetStringValue(self.GetObjectAt(mid))
+            if strValue.lower() < prefix:
+                lo = mid+1
+            else:
+                hi = mid
+
+        if lo >= end:
+            return False
+
+        strValue = searchColumn.GetStringValue(self.GetObjectAt(lo))
+        if strValue.lower().startswith(prefix):
+            self.DeselectAll()
+            self.Select(lo)
+            self.Focus(lo)
+            return True
 
     def _ToggleCheckBoxForSelection(self):
         """
@@ -945,7 +1105,7 @@ class ObjectListView(wx.ListCtrl):
         evt.Skip()
 
         # Toggle the sort column on the second click
-        if evt.GetColumn() == self.sortColumn:
+        if evt.GetColumn() == self.sortColumnIndex:
             self.sortAscending = not self.sortAscending
         else:
             self.sortAscending = True
@@ -993,6 +1153,8 @@ class ObjectListView(wx.ListCtrl):
         """
         Handle a left down on the ListView
         """
+        evt.Skip()
+
         # Test for a mouse down on the image of the check box column
         if self.InReportView():
             (row, flags, subitem) = self.HitTestSubItem(evt.GetPosition())
@@ -1007,8 +1169,8 @@ class ObjectListView(wx.ListCtrl):
                 column.SetCheckState(modelObject, not column.GetCheckState(modelObject))
                 self.RefreshIndex(row, modelObject)
                 return
-
         evt.Skip()
+
 
     def _HandleLeftClickOrDoubleClick(self, evt):
         """
@@ -1106,17 +1268,24 @@ class ObjectListView(wx.ListCtrl):
         """
         self.Bind(wx.EVT_LIST_COL_CLICK, self._HandleColumnClick)
 
+        # Install sort indicators if they don't already exist
+        if self.smallImageList is None:
+            self.SetImageLists()
+        if (not self.smallImageList.HasName(ObjectListView.NAME_DOWN_IMAGE) and
+            self.smallImageList.GetSize(0) == (16,16)):
+            self.RegisterSortIndicators()
+
 
     def SortBy(self, newColumn, ascending=True):
         """
         Sort the items by the given column
         """
-        oldSortColumn = self.sortColumn
-        self.sortColumn = newColumn
+        oldSortColumnIndex = self.sortColumnIndex
+        self.sortColumnIndex = newColumn
         self.sortAscending = ascending
 
         self.SortItems(self._SorterCallback)
-        self._UpdateColumnSortIndicators(self.sortColumn, oldSortColumn)
+        self._UpdateColumnSortIndicators(self.sortColumnIndex, oldSortColumnIndex)
 
 
     def _SortObjects(self):
@@ -1125,7 +1294,7 @@ class ObjectListView(wx.ListCtrl):
 
         This does not change the information shown in the control itself.
         """
-        col = self.columns[self.sortColumn]
+        col = self.columns[self.sortColumnIndex]
 
         def _getLowerCaseSortValue(x):
             value = col.GetValue(x)
@@ -1143,7 +1312,7 @@ class ObjectListView(wx.ListCtrl):
 
         For some reason, key1 and key2 are the item data for each item.
         """
-        col = self.sortColumn
+        col = self.sortColumnIndex
         item1 = self.GetValueAt(self.modelObjects[key1], col)
         item2 = self.GetValueAt(self.modelObjects[key2], col)
 
@@ -1161,21 +1330,21 @@ class ObjectListView(wx.ListCtrl):
             return -cmpVal
 
 
-    def _UpdateColumnSortIndicators(self, sortColumn, oldSortColumn):
+    def _UpdateColumnSortIndicators(self, sortColumnIndex, oldSortColumnIndex):
         """
         Change the column that is showing a sort indicator
         """
-        if oldSortColumn is not None:
-            self.ClearColumnImage(oldSortColumn)
+        if oldSortColumnIndex is not None:
+            self.ClearColumnImage(oldSortColumnIndex)
 
-        if sortColumn is not None and self.smallImageList is not None:
+        if sortColumnIndex is not None and self.smallImageList is not None:
             if self.sortAscending:
                 imageIndex = self.smallImageList.GetImageIndex(ObjectListView.NAME_UP_IMAGE)
             else:
                 imageIndex = self.smallImageList.GetImageIndex(ObjectListView.NAME_DOWN_IMAGE)
 
             if imageIndex != -1:
-                self.SetColumnImage(sortColumn, imageIndex)
+                self.SetColumnImage(sortColumnIndex, imageIndex)
 
 
     #--------------------------------------------------------------#000000#FFFFFF
@@ -1185,26 +1354,28 @@ class ObjectListView(wx.ListCtrl):
         """
         Selected all rows in the control
         """
-                    # On Windows, -1 indicates 'all items'. Not sure about other platforms
+        # On Windows, -1 indicates 'all items'. Not sure about other platforms
         self.SetItemState(-1, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
 
                     # Elsewhere, use this code. But it's much slower especially for virtual lists
-#        for i in range(self.GetItemCount()):
-#            self.SetItemState(i, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
+        #if wx.Platform != "__WXMSW__":
+        #    for i in range(self.GetItemCount()):
+        #        self.SetItemState(i, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
 
 
     def DeselectAll(self):
         """
         De-selected all rows in the control
         """
-                    # On Windows, -1 indicates 'all items'. Not sure about other platforms
+        # On Windows, -1 indicates 'all items'. Not sure about other platforms
         self.SetItemState(-1, 0, wx.LIST_STATE_SELECTED)
 
                     # Elsewhere, use this code. But it's much slower especially for virtual lists
-#        i = self.GetNextItem(-1, wx.LIST_NEXT_ALL, wx.LIST_STATE_SELECTED)
-#        while i != -1:
-#            self.SetItemState(i, 0, wx.LIST_STATE_SELECTED)
-#            i = self.GetNextItem(i, wx.LIST_NEXT_ALL, wx.LIST_STATE_SELECTED)
+        #if wx.Platform != "__WXMSW__":
+        #    i = self.GetNextItem(-1, wx.LIST_NEXT_ALL, wx.LIST_STATE_SELECTED)
+        #    while i != -1:
+        #        self.SetItemState(i, 0, wx.LIST_STATE_SELECTED)
+        #        i = self.GetNextItem(i, wx.LIST_NEXT_ALL, wx.LIST_STATE_SELECTED)
 
 
     def SelectObject(self, modelObject, deselectOthers=True):
@@ -1483,8 +1654,14 @@ class VirtualObjectListView(ObjectListView):
         #self.cacheMiss = 0
 
         self.SetObjectGetter(kwargs.pop("getter", None))
-        if kwargs.has_key("count"):
+
+        # We have to set the item count after the list has been created
+        if "count" in kwargs:
             wx.CallAfter(self.SetItemCount, kwargs.pop("count"))
+
+        # By default, virtual lists aren't sortable
+        if "sortable" not in kwargs:
+            kwargs["sortable"] = False
 
         # Virtual lists have to be in report format
         kwargs["style"] = kwargs.get("style", 0) | wx.LC_REPORT | wx.LC_VIRTUAL
@@ -1678,6 +1855,10 @@ class FastObjectListView(VirtualObjectListView):
 
     def __init__(self, *args, **kwargs):
 
+        # By default, fast lists are sortable
+        if "sortable" not in kwargs:
+            kwargs["sortable"] = True
+
         VirtualObjectListView.__init__(self, *args, **kwargs)
 
         self.SetObjectGetter(lambda index: self.modelObjects[index])
@@ -1688,7 +1869,7 @@ class FastObjectListView(VirtualObjectListView):
         Completely rebuild the contents of the list control
         """
         self.lastGetObjectIndex = -1
-        if self.sortColumn is not None:
+        if self.sortColumnIndex is not None:
             self._SortObjects()
 
         self.SetItemCount(len(self.modelObjects))
@@ -1750,14 +1931,14 @@ class FastObjectListView(VirtualObjectListView):
         """
         Sort the items by the given column
         """
-        oldSortColumn = self.sortColumn
-        self.sortColumn = newColumn
+        oldSortColumn = self.sortColumnIndex
+        self.sortColumnIndex = newColumn
         self.sortAscending = ascending
 
         selection = self.GetSelectedObjects()
         self._SortObjects()
         self.SelectObjects(selection)
-        self._UpdateColumnSortIndicators(self.sortColumn, oldSortColumn)
+        self._UpdateColumnSortIndicators(self.sortColumnIndex, oldSortColumn)
         self.RefreshObjects()
 
 
@@ -1893,7 +2074,7 @@ class ColumnDefn(object):
                  valueGetter=None, imageGetter=None, stringConverter=None, valueSetter=None, isEditable=True,
                  fixedWidth=None, minimumWidth=-1, maximumWidth=-1, isSpaceFilling=False,
                  cellEditorCreator=None, autoCompleteCellEditor=False, autoCompleteComboBoxCellEditor=False,
-                 checkStateGetter=None, checkStateSetter=None):
+                 checkStateGetter=None, checkStateSetter=None, isSearchable=True):
         """
         Create a new ColumnDefn using the given attributes.
 
@@ -1922,6 +2103,7 @@ class ColumnDefn(object):
         self.cellEditorCreator = cellEditorCreator
         self.freeSpaceProportion = 1
         self.isEditable = isEditable
+        self.isSearchable = isSearchable
 
         self.minimumWidth = minimumWidth
         self.maximumWidth = maximumWidth
@@ -2189,13 +2371,11 @@ class NamedImageList(object):
         """
         Return a pair that represents the size of the image in this list
         """
-        size = self.imageList.GetSize(0)
-
-        # Linux always returns (0,0) for empty image lists
-        if size == (0, 0):
+        # Mac and Linux have trouble getting the size of empty image lists
+        if self.imageList.GetImageCount() == 0:
             return (self.imageSize, self.imageSize)
         else:
-            return size
+            return self.imageList.GetSize(0)
 
 
     def AddNamedImage(self, name, image):
