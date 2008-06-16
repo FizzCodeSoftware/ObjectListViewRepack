@@ -20,14 +20,16 @@ Without wasting my time, just tell me what it does!
 
 OK, here's the bullet point feature list:
 
+* Automatically transforms a collection of model objects into a fully functional wx.ListCtrl.
 * Automatically sorts rows.
 * Easily edits the cell values.
 * Supports all ListCtrl views (report, list, large and small icons).
 * Columns can be fixed-width, have a minimum and/or maximum width, or be space-filling.
-* Displays a “list is empty” message when the list is empty (obviously).
+* Displays a "list is empty" message when the list is empty (obviously).
 * Supports checkboxes in any column
 * Supports alternate rows background colors.
 * Supports custom formatting of rows.
+* Supports searching (by typing) on any column, even on massive lists.
 * The `FastObjectListView` version can build a list of 10,000 objects in less than 0.1 seconds.
 * The `VirtualObjectListView` version supports millions of rows through ListCtrl's virtual mode.
 
@@ -35,7 +37,7 @@ OK, I'm interested. What do I do next?
 --------------------------------------
 
 You can download a `source package of the ObjectListView
-<http://objectlistview.sourceforge.net/samples/ObjectListView-1.0.zip>`_ which includes
+<https://sourceforge.net/project/showfiles.php?group_id=225207&package_id=280564>`_ which includes
 the ObjectListView module, as well as some demo applications showing ObjectListView in
 action.
 

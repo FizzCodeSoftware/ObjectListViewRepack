@@ -60,3 +60,20 @@ behaviour of the control.
 
 Two things I would really like to add are collapsible groups and owner drawing. But these
 things are not supported by a ListCtrl. Until they are, ObjectListView cannot have them either.
+
+
+Why is the text of the first column indented by about 20 pixels?
+----------------------------------------------------------------
+
+This shows up when you have a ListCtrl that doesn't have an icon in the first column.
+The control still leaves space for the icon, even when there isn't one.
+
+If the ListCtrl doesn't have a small image list, this indent disappears. But as soon as
+the control has a small image list, even an empty one, the text of the first column will
+be indented. Unfortunately, almost all ObjectListViews have a small image list, since
+showing sort indicators in the column headers uses the small image list.
+
+So, if you really want to get rid of this indent, make an ObjectListView which isn't
+sortable (pass "sortable=False" to the constructor) and don't add any images to the
+control. The indent will disappear -- but the list will not be sortable.
+

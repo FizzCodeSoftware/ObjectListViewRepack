@@ -32,6 +32,20 @@ The ObjectListView was designed to take away all these repetitive tasks and so
 make a ListCtrl much easier to use.
 
 
+Seeing the big picture
+----------------------
+
+If you are a visual person, the process I'm about to explain is this:
+
+.. image:: images/ModelToScreenProcess.png
+
+You give the ObjectListView a list of model objects. It extracts aspects from those
+objects, converts those aspects to strings, and then builds the control with those
+strings.
+
+Keep this image in mind when reading the following text.
+
+
 Mental gear shift
 -----------------
 
@@ -40,11 +54,10 @@ Mental gear shift
 
     ignored
 
-Before you start trying to use an ObjectListView, you should understand that the process
-of using one is different to the process of using a normal ListCtrl. A normal ListCtrl is
-essentially passive: it sits there, and you poke and prod it and eventually it shows
-you want. An ObjectListView is much more active. You tell it what you want done and the
-ObjectListView does it for you.
+Before trying to use an ObjectListView, you should understand that it is different to a
+normal ListCtrl. A normal ListCtrl is essentially passive: it sits there, and you poke and
+prod it and eventually it shows you want. An ObjectListView is much more active. You tell
+it what you want done and the ObjectListView does it for you.
 
 An ObjectListView is used declaratively: you state what you want the ObjectListView to do
 (via its configuration), then you give it your collection of model objects, and the
@@ -178,14 +191,6 @@ So, we would configure our "Last Played" column like this::
 
     lastPlayedColumn = ColumnDefn("Last Played", "left", 100,
                                   "lastPlayed", stringConverter="%d-%m-%Y")
-
-
-Can't you draw me a picture to explain this?
---------------------------------------------
-
-You can visualise this process like this:
-
-.. image:: images/ModelToScreenProcess.png
 
 
 Put it all together and what have you got?

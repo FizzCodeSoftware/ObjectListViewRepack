@@ -25,6 +25,8 @@ Learning to cook
 
     :ref:`recipe-nonclasses`
 
+    :ref:`recipe-partial`
+
 
 .. _recipe-flavour:
 
@@ -62,7 +64,6 @@ VirtualObjectListView is for you. It can handle any number of objects.
 But it does so at a cost:
 
 * You have to implement your own sorting method.
-* Typing into the list does not change the selected row.
 * You cannot use object level commands like `SelectObject` or `RefreshObject`
   since the list has no way of knowing where any given model object is in the list.
 
@@ -250,6 +251,7 @@ alter the text and its font using the following methods::
 	self.objectListView1.SetEmptyListMsg("This database has no rows")
 	self.objectListView1.SetEmptyListMsgFont(wx.FFont(24, wx.DEFAULT, face="Tekton"))
 
+
 .. _recipe-nonclasses:
 
 9. How can I show a list of dictionaries in the ObjectListView?
@@ -260,7 +262,7 @@ alter the text and its font using the following methods::
 
 In your ColumnDefn, set the ``valueGetter`` to the key of the data you want to display in that column.
 Everything should just work. As a bonus, your dictionary will be automatically updated when the user
-edits a cell value (if the ObjectListView is editable)
+edits a cell value (if the ObjectListView is editable).
 
 Example::
 
@@ -276,3 +278,47 @@ Example::
         ColumnDefn("Album", "center", -1, "album")
     ])
     self.myOlv.SetObjects(self.listOfDictionaries)
+
+
+.. _recipe-partial:
+
+10. How can I reference the column in a valueGetter function?
+-------------------------------------------------------------
+
+    *I've got a super-duper valueGetter function, but it needs to know which column
+    it's being used for. How can I do that?*
+
+Normally, valueGetter functions don't know which column they are being used for. But there
+could be cases where you might want to know the column: for example, you might have a
+central getter function that decides that to do based on which column is being used.
+
+So, imagine our super valueGetter looks like this::
+
+    def MySuperValueGetter(modelObject, columnDefn):
+        # Do something clever here
+        return value
+
+There are (at least) three possible solutions:
+
+a) Use functools.partial()::
+
+    import functools
+
+    for column in self.olv1.columns:
+        column.valueGetter = functools.partial(MySuperValueGetter, columnDefn=column)
+
+This only works with Python 2.5 and later.
+
+b) Use local functions and default parameters::
+
+    for column in self.olv1.columns:
+        def myFunc(modelObject, col=column):
+            return MySuperValueGetter(modelObject, col)
+        column.valueGetter = myFunc
+
+c) Subclass ColumnDefn and override GetValue()::
+
+    class MyColumnDefn(ColumnDefn):
+
+        def GetValue(self, modelObject):
+            return MySuperValueGetter(modelObject, self)
