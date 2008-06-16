@@ -1,15 +1,9 @@
 import sys
 
-CLASSIFIERS = [
-    'Development Status :: 4 - Beta',
-    'Intended Audience :: Developers',
-    'Topic :: Software Development :: User Interfaces',
-]
-
 NAME = "ObjectListView"
 VERSION = "1.0"
 URL = "http://objectlistview.sourceforge.net/python"
-DOWNLOAD_URL = "http://objectlistview.sourceforge.net/Samples/PyObjectListView.zip"
+DOWNLOAD_URL = "http://objectlistview.sourceforge.net/samples/ObjectListView-" + VERSION + ".zip"
 LICENSE = "wxWindows"
 AUTHOR = "Phillip Piper"
 AUTHOR_EMAIL = "phillip_piper@bigfoot.com"
@@ -37,10 +31,16 @@ list control easier to use. It also provides some useful extra functionality.*
 
 Dependancies
 ============
+
   * Python 2.4+
   * wxPython 2.8+
 
 """
+CLASSIFIERS = [
+    'Development Status :: 4 - Beta',
+    'Intended Audience :: Developers',
+    'Topic :: Software Development :: User Interfaces',
+]
 
 if 'bdist_egg' in sys.argv:
     try:
