@@ -65,7 +65,9 @@ __version__ = "1.0"
 
 import wx
 import datetime
+import itertools
 import locale
+import operator
 import string
 
 import CellEditor
@@ -994,11 +996,11 @@ class ObjectListView(wx.ListCtrl):
             self.searchPrefix += uniChar
         self.whenLastTypingEvent = evt.GetTimestamp()
 
-        import time
-        start = time.clock()
+        #import time
+        #start = time.clock()
         self.__rows = 0
         self._FindByTyping(searchColumn, self.searchPrefix)
-        print "Considered %d rows in %2f secs" % (self.__rows, time.clock() - start)
+        #print "Considered %d rows in %2f secs" % (self.__rows, time.clock() - start)
 
         return True
 
@@ -1015,63 +1017,76 @@ class ObjectListView(wx.ListCtrl):
 
         # If we are searching on a sorted column, use a binary search
         if self.sortColumnIndex is not None and self.columns[self.sortColumnIndex] == searchColumn:
-            if self._bisect(searchColumn, prefix, start, self.GetItemCount()):
+            if self._FindByBisect(searchColumn, prefix, start, self.GetItemCount()):
                 return
-            if self._bisect(searchColumn, prefix, 0, start):
+            if self._FindByBisect(searchColumn, prefix, 0, start):
                 return
         else:
             # A binary search on a sorted column can handle any number of rows. A linear
             # search cannot. So we impose an arbitrary limit on the number of rows to
             # consider. Above that, we don't even try
             if self.GetItemCount() > self.MAX_ROWS_FOR_UNSORTED_SEARCH:
-                self.DeselectAll()
-                self.Select(0)
-                self.Focus(0)
+                self._SelectAndFocus(0)
                 return
 
             # Consider the rows in two partitions: start to the end of the collection, and
-            # then from the beginning to the start position.
-            # This is pain to express in other languages -- I just love Python :)
-            # Yes, I could use itertools.chain, but this way is more obvious
-            for partition in [range(start, self.GetItemCount()), range(0, start)]:
-                for i in partition:
-                    self.__rows += 1
-                    strValue = searchColumn.GetStringValue(self.GetObjectAt(i))
-                    if strValue.lower().startswith(prefix):
-                        self.DeselectAll()
-                        self.Select(i)
-                        self.Focus(i)
-                        return
+            # then from the beginning to the start position. Expressing this in other
+            # languages is a pain, but it's elegant in Python. I just love Python :)
+            for i in itertools.chain(range(start, self.GetItemCount()), range(0, start)):
+                self.__rows += 1
+                strValue = searchColumn.GetStringValue(self.GetObjectAt(i))
+                if strValue.lower().startswith(prefix):
+                    self._SelectAndFocus(i)
+                    return
         wx.Bell()
 
     def _FindByBisect(self, searchColumn, prefix, start, end):
         """
-        Use a binary search to look for rows that match the given prefix between the rows given
+        Use a binary search to look for rows that match the given prefix between the rows given.
 
         If a match was found, select/focus/reveal that row and return True.
         """
+
+        # If the sorting is ascending, we use less than to find the first match
+        # If the sort is descending, we have to use greater-equal, and suffix the
+        # search string to make sure we find the first match (without the suffix
+        # we always find the last match)
+        if self.sortAscending:
+            cmpFunc = operator.lt
+            searchFor = prefix
+        else:
+            cmpFunc = operator.ge
+            searchFor = prefix + "z"
 
         # Adapted from bisect std module
         lo = start
         hi = end
         while lo < hi:
-            mid = (lo+hi)//2
             self.__rows += 1
+            mid = (lo + hi) // 2
             strValue = searchColumn.GetStringValue(self.GetObjectAt(mid))
-            if strValue.lower() < prefix:
-                lo = mid+1
-            else:
+            if cmpFunc(searchFor, strValue.lower()):
                 hi = mid
+            else:
+                lo = mid+1
 
-        if lo >= end:
+        if lo < start or lo >= end:
             return False
 
         strValue = searchColumn.GetStringValue(self.GetObjectAt(lo))
         if strValue.lower().startswith(prefix):
-            self.DeselectAll()
-            self.Select(lo)
-            self.Focus(lo)
+            self._SelectAndFocus(lo)
             return True
+
+        return False
+
+    def _SelectAndFocus(self, rowIndex):
+        """
+        Select and focus on the given row.
+        """
+        self.DeselectAll()
+        self.Select(rowIndex)
+        self.Focus(rowIndex)
 
     def _ToggleCheckBoxForSelection(self):
         """
