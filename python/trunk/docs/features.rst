@@ -19,6 +19,14 @@ investment of creating column definitions, you receive a great deal of convenien
 value added functions. See :ref:`getting-started-label` for an
 introduction to the basics.
 
+Automatically create the ListCtrl from model objects
+----------------------------------------------------
+
+The major way in which the ObjectListView makes your life easier is by being able to
+automatically build the ListCtrl from a collection of model objects. Once the columns
+are defined, an ObjectListView is able to build the rows of the ListCtrl without any
+other help. It only takes a single method call: `SetObjects()`.
+
 Editing cell values
 -------------------
 
@@ -127,3 +135,28 @@ interface to the ListCtrl.
 The VirtualObjectListView is an unfortunate exception to these features. It does not know
 where any given model object is located in the control (since it never deals with the
 whole list of objects), so these model level operations are not available to it.
+
+Searching on the sort column
+----------------------------
+
+When a user types into a normal ListCtrl, the control tries to find the first row where
+the value in cell 0 begins with the character that the user typed.
+
+ObjectListView extends this idea so that the searching can be done on the column by which
+the control is sorted (the "sort column"). If your music collection is sorted by "Album"
+and the user presses "z", ObjectListView will move the selection to the first track of the
+"Zooropa" album, rather than find the next track whose title starts with "z".
+
+In many cases, this is behaviour is quite intuitive. iTunes works in this fashion on its
+string value columns (e.g. Name, Artist, Album, Genre).
+
+Fast searching on sorted column
+-------------------------------
+
+When the user types something into a control, the ObjectListView will use a binary search
+(if possible) to find a match for what was typed. A binary search is normally possible if
+the ObjectListView is sorted on a column that shows strings.
+
+A binary search is able to handle very large collections: 10,000,000 rows can be searched
+in about 24 comparisons. This makes it feasible to seach by typing even on large virtual
+lists.

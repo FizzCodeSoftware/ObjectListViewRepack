@@ -1,9 +1,18 @@
 .. -*- coding: UTF-8 -*-
 
-What's New? 
+What's New?
 ===========
 
 For the (mostly) complete change log, :ref:`see here <changelog>`.
+
+v1.0.1 - June 2008
+------------------
+
+* Sorting can now be customised throught the EVT_SORT event
+* Added searching by sort column
+* Added binary search
+* VirtualObjectListView can now be sorted, using the EVT_SORT event. By default, they are still not sortable
+* Fixed some bugs on Mac and Linux
 
 v1.0 - June 2008
 ----------------

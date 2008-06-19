@@ -1,7 +1,7 @@
 .. -*- coding: UTF-8 -*-
 
 Major Classes Reference
-=======================
+======================= 
 
 .. autoclass:: ObjectListView.ObjectListView
    :members:

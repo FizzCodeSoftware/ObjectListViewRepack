@@ -46,7 +46,7 @@ copyright = '2008, Phillip Piper'
 # The short X.Y version.
 version = '1.0'
 # The full version, including alpha/beta/rc tags.
-release = '1.0'
+release = '1.0.1'
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -62,7 +62,7 @@ today_fmt = '%B %d, %Y'
 #exclude_dirs = []
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
-#add_function_parentheses = True
+add_function_parentheses = True
 
 # If true, the current module name will be prepended to all description
 # unit titles (such as .. function::).
