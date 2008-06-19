@@ -8,18 +8,19 @@
 # License:      wxWindows license
 #----------------------------------------------------------------------------
 # Change log:
+# 2008/06/19  JPP   Added EVT_SORT
 # 2008/05/26  JPP   Fixed pyLint annoyances
 # 2008/04/04  JPP   Initial version complete
 #----------------------------------------------------------------------------
 # To do:
 
 """
-The OLVEvent module ...
+The OLVEvent module holds all the events used by the ObjectListView module.
 """
 
 __author__ = "Phillip Piper"
 __date__ = "3 May 2008"
-__version__ = "1.0"
+__version__ = "1.0.1"
 
 import wx
 
@@ -32,6 +33,7 @@ def _EventMaker():
 
 (olv_EVT_CELL_EDIT_STARTING, EVT_CELL_EDIT_STARTING) = _EventMaker()
 (olv_EVT_CELL_EDIT_FINISHING, EVT_CELL_EDIT_FINISHING) = _EventMaker()
+(olv_EVT_SORT, EVT_SORT) = _EventMaker()
 
 #======================================================================
 # Event parameter blocks
@@ -104,11 +106,11 @@ class CellEditStartingEvent(CellEditEvent):
         """
         The editor will not be automatically configured.
 
-        If this is called, the event handler must handle all configuration. In particular,
-        it must call ObjectListView.CancelCellEdit() when the user presses Cancel, and it
-        must call ObjectListView.CancelCellEdit() when the user presses Enter/Return or
-        when the editor loses focus.
-        """
+        If this is called, the event handler must handle all configuration. In
+        particular, it must configure its own event handlers to that
+        ObjectListView.CancelCellEdit() is called when the user presses Escape,
+        and ObjectListView.CommitCellEdit() is called when the user presses
+        Enter/Return or when the editor loses focus. """
         self.shouldConfigureEditor = False
 
 
@@ -130,3 +132,38 @@ class CellEditFinishingEvent(CellEditEvent):
         object, rather than the value that was actually in the cell editor
         """
         self.cellValue = value
+
+
+class SortEvent(VetoableEvent):
+    """
+    The user wants to sort the ObjectListView.
+
+    When sortModelObjects is True, the event handler should sort the model objects used by
+    the given ObjectListView. For a plain OLV and a FastObjectListView, this is the
+    "modelObjects" collection. For a VirtualObjectListView, this is whatever backing store
+    is being used.
+
+    When sortModelObjects is False, the event handler must sort the actual ListItems in
+    the OLV. It does this by calling SortListItemsBy(), passing a callable that accepts
+    two model objects as parameters. sortModelObjects cannot only be False for a
+    VirtualObjectListView or a FastObjectListView.
+
+    If the handler calls Veto(), no further default processing will be done.
+    If the handler calls Handled(), default processing concerned with UI will be done. This
+    includes updating sort indicators.
+    If the handler calls neither of these, all default processing will be done.
+    """
+    def __init__(self, objectListView, sortColumnIndex, sortAscending, sortModelObjects):
+        VetoableEvent.__init__(self, olv_EVT_SORT)
+        self.objectListView = objectListView
+        self.sortColumnIndex = sortColumnIndex
+        self.sortAscending = sortAscending
+        self.sortModelObjects = sortModelObjects
+        self.wasHandled = False
+
+    def Handled(self, wasHandled=True):
+        """
+        Indicate that the event handler has sorted the ObjectListView.
+        The OLV will handle other tasks like updating sort indicators
+        """
+        self.wasHandled = wasHandled
