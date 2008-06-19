@@ -427,7 +427,7 @@ class MyFrame(wx.Frame):
             Track(title="Explode", artist="Nelly Furtado", size=4.1, album="Folklore", genre="Pop", rating=80, duration="3:44", lastPlayed="15/03/2008 6:53 PM"),
             Track(title="Try", artist="Nelly Furtado", size=4.9, album="Folklore", genre="Pop", rating=80, duration="4:39", lastPlayed="15/03/2008 11:49 AM"),
             Track(title="Fresh off the Boat", artist="Nelly Furtado", size=3.7, album="Folklore", genre="Pop", rating=60, duration="3:16", lastPlayed="22/02/2008 12:49 PM"),
-            Track(title="Força", artist="Nelly Furtado", size=4, album="Folklore", genre="Pop", rating=40, duration="3:40", lastPlayed="22/02/2008 12:53 PM"),
+            Track(title=u"Força", artist="Nelly Furtado", size=4, album="Folklore", genre="Pop", rating=40, duration="3:40", lastPlayed="22/02/2008 12:53 PM"),
             Track(title="The Grass Is Green", artist="Nelly Furtado", size=4.2, album="Folklore", genre="Pop", rating=40, duration="3:50", lastPlayed="22/02/2008 12:57 PM"),
             Track(title="Picture Perfect", artist="Nelly Furtado", size=5.5, album="Folklore", genre="Pop", rating=40, duration="5:15", lastPlayed="19/01/2008 12:08 PM"),
             Track(title="Saturdays", artist="Jarvis Church/Nelly Furtado", size=2.6, album="Folklore", genre="Pop", rating=40, duration="2:05", lastPlayed="7/01/2008 7:33 PM"),
@@ -643,7 +643,7 @@ class MyFrame(wx.Frame):
         # These columns are defined without any callbacks.
         # Note: the "Album" column is space filling, so it will get larger and smaller as the window resizes
         simpleColumns = [
-            ColumnDefn("Title", "left", 160, valueGetter="title", imageGetter=musicImageIndex, minimumWidth=40, maximumWidth=200),
+            ColumnDefn("Title", "left", 160, valueGetter="title", checkStateGetter="isChecked", minimumWidth=40, maximumWidth=200),
             ColumnDefn("Artist", valueGetter="artist", minimumWidth=40, maximumWidth=200, autoCompleteCellEditor=True),
             ColumnDefn("Album", valueGetter="album", maximumWidth=250, isSpaceFilling=True, autoCompleteCellEditor=True),
             ColumnDefn("Genre", "left", 60, valueGetter="genre", autoCompleteComboBoxCellEditor=True),
@@ -656,11 +656,10 @@ class MyFrame(wx.Frame):
             ]
 
         self.olvSimple.SetColumns(simpleColumns)
-        self.olvSimple.CreateCheckStateColumn() # this makes a checkbox column
         self.olvSimple.SetObjects(self.dataObjects)
 
         # Allow the cell values to be edited when double-clicked
-        self.olvSimple.cellEditMode = ObjectListView.CELLEDIT_DOUBLECLICK
+        self.olvSimple.cellEditMode = ObjectListView.CELLEDIT_SINGLECLICK
 
         #----------------------------------------------------------------------
         # Init Complex list
@@ -693,10 +692,6 @@ class MyFrame(wx.Frame):
                 listItem.SetTextColour(track.trackColour)
             if track.font:
                 listItem.SetFont(track.font)
-            else:
-                diff = datetime.now() - track.lastPlayed
-                if diff.days > 90:
-                    listItem.SetFont(wx.FFont(10, wx.DEFAULT, face="Impact"))
 
         def colourToString(colour):
             return wx.TheColourDatabase.FindName(colour) or str(colour)
@@ -765,7 +760,7 @@ class MyFrame(wx.Frame):
 
         # A virtual list must have these two methods called
         self.olvVirtual.SetObjectGetter(objectGetter)
-        self.olvVirtual.SetItemCount(10000000)
+        self.olvVirtual.SetItemCount(100000)
 
         #----------------------------------------------------------------------
         # Init Fast list
@@ -784,7 +779,7 @@ class MyFrame(wx.Frame):
 
         self.olvFast.rowFormatter = rowFormatter
         self.olvFast.SetColumns(columns)
-        self.olvFast.SetObjects(self._MakeAtLeast([], 10000))
+        self.olvFast.SetObjects(self._MakeAtLeast([], 100000))
         self.olvFast.cellEditMode = ObjectListView.CELLEDIT_DOUBLECLICK
 
     def _imagePath(self, imageFile):
@@ -834,7 +829,7 @@ class MyFrame(wx.Frame):
         def func():
             objs = [x for x in olv.modelObjects if x.artist == "U2"]
             olv.SelectObjects(objs)
-        self._timeCall(func, "Selecting Ownens items out of %d items took %%0.2f milliseconds" % olv.GetItemCount())
+        self._timeCall(func, "Selecting U2's items out of %d items took %%0.2f milliseconds" % olv.GetItemCount())
 
     def DoSelectNone(self, olv):
         self._timeCall(olv.DeselectAll, "Deselecting all %d items took %%0.2f milliseconds" % olv.GetItemCount())
@@ -995,7 +990,7 @@ class MyFrame(wx.Frame):
 
 
 if __name__ == "__main__":
-    app = wx.PySimpleApp(0)
+    app = wx.PySimpleApp(1)
     wx.InitAllImageHandlers()
     frame_1 = MyFrame(None, -1, "")
     app.SetTopWindow(frame_1)
