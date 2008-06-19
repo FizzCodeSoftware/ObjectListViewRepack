@@ -12,6 +12,7 @@
 # 2008/06/12  JPP   - Added sortable parameter
 #                   - Renamed sortColumn to be sortColumnIndex to make it clear
 #                   - Allow returns in multiline cell editors
+# v1.0
 # 2008/05/29  JPP   Used named images internally
 # 2008/05/26  JPP   Fixed pyLint annoyances
 # 2008/05/24  JPP   Images can be referenced by name
@@ -60,8 +61,8 @@ back into the model. See `ColumnDefn` for more information.
 """
 
 __author__ = "Phillip Piper"
-__date__ = "2 May 2008"
-__version__ = "1.0"
+__date__ = "18 June 2008"
+__version__ = "1.0.1"
 
 import wx
 import datetime
@@ -1016,7 +1017,7 @@ class ObjectListView(wx.ListCtrl):
             start = (start + 1) % self.GetItemCount()
 
         # If we are searching on a sorted column, use a binary search
-        if self.sortColumnIndex is not None and self.columns[self.sortColumnIndex] == searchColumn:
+        if self._CanUseBisect(searchColumn):
             if self._FindByBisect(searchColumn, prefix, start, self.GetItemCount()):
                 return
             if self._FindByBisect(searchColumn, prefix, 0, start):
@@ -1029,9 +1030,10 @@ class ObjectListView(wx.ListCtrl):
                 self._SelectAndFocus(0)
                 return
 
-            # Consider the rows in two partitions: start to the end of the collection, and
-            # then from the beginning to the start position. Expressing this in other
-            # languages is a pain, but it's elegant in Python. I just love Python :)
+            # Do a linear, wrapping search to find the next match. To wrap, we consider
+            # the rows in two partitions: start to the end of the collection, and then
+            # from the beginning to the start position. Expressing this in other languages
+            # is a pain, but it's elegant in Python. I just love Python :)
             for i in itertools.chain(range(start, self.GetItemCount()), range(0, start)):
                 self.__rows += 1
                 strValue = searchColumn.GetStringValue(self.GetObjectAt(i))
@@ -1039,6 +1041,27 @@ class ObjectListView(wx.ListCtrl):
                     self._SelectAndFocus(i)
                     return
         wx.Bell()
+
+    def _CanUseBisect(self, searchColumn):
+        """
+        Return True if we can use binary search on the given column
+        """
+        # If the list isn't sorted, we can't
+        if self.sortColumnIndex is None:
+            return False
+
+        # If the list is sorted by some other column, we can't
+        if self.columns[self.sortColumnIndex] != searchColumn:
+            return False
+
+        # If the column doesn't knows whether it should or not, make a guess based on the
+        # type of data in the column (strings and booleans are probably safe). We already
+        # know that the list isn't empty.
+        if searchColumn.useBinarySearch is None:
+            aspect = searchColumn.GetValue(self.GetObjectAt(0))
+            searchColumn.useBinarySearch = isinstance(aspect, (basestring, bool))
+
+        return searchColumn.useBinarySearch
 
     def _FindByBisect(self, searchColumn, prefix, start, end):
         """
@@ -1124,8 +1147,6 @@ class ObjectListView(wx.ListCtrl):
             self.sortAscending = not self.sortAscending
         else:
             self.sortAscending = True
-
-        # TODO: Trigger vetoable SortEvent here
 
         self.SortBy(evt.GetColumn(), self.sortAscending)
         self._FormatAllRows()
@@ -1299,8 +1320,52 @@ class ObjectListView(wx.ListCtrl):
         self.sortColumnIndex = newColumn
         self.sortAscending = ascending
 
-        self.SortItems(self._SorterCallback)
+        # Let the world have a change to sort the items
+        evt = OLVEvent.SortEvent(self, self.sortColumnIndex, self.sortAscending, self.IsVirtual())
+        self.GetEventHandler().ProcessEvent(evt)
+        if evt.IsVetoed():
+            return
+
+        if not evt.wasHandled:
+            self._SortItemsNow()
+
         self._UpdateColumnSortIndicators(self.sortColumnIndex, oldSortColumnIndex)
+
+
+    def _SortItemsNow(self):
+        """
+        Sort the actual items in the list now, according to the current column and order
+        """
+        col = self.columns[self.sortColumnIndex]
+        def itemComparer(object1, object2):
+            value1 = col.GetValue(object1)
+            value2 = col.GetValue(object2)
+
+            if isinstance(value1, basestring):
+                return locale.strcoll(value1.lower(), value2.lower())
+            else:
+                return cmp(value1, value2)
+
+        self.SortListItemsBy(itemComparer)
+
+
+    def SortListItemsBy(self, cmpFunc, ascending=None):
+        """
+        Sort the existing list items using the given comparison function.
+
+        The comparison function must accept two model objects as parameters.
+        """
+        if ascending is None:
+            ascending = self.sortAscending
+
+        def sorter(key1, key2):
+            cmpVal = cmpFunc(self.modelObjects[key1], self.modelObjects[key2])
+            if ascending:
+                return cmpVal
+            else:
+                return -cmpVal
+
+        self.SortItems(sorter)
 
 
     def _SortObjects(self):
@@ -1309,6 +1374,13 @@ class ObjectListView(wx.ListCtrl):
 
         This does not change the information shown in the control itself.
         """
+
+        # Let the world have a change to sort the model objects
+        evt = OLVEvent.SortEvent(self, self.sortColumnIndex, self.sortAscending, True)
+        self.GetEventHandler().ProcessEvent(evt)
+        if evt.IsVetoed() or evt.wasHandled:
+            return
+
         col = self.columns[self.sortColumnIndex]
 
         def _getLowerCaseSortValue(x):
@@ -1319,30 +1391,6 @@ class ObjectListView(wx.ListCtrl):
                 return value
 
         self.modelObjects.sort(key=_getLowerCaseSortValue, reverse=(not self.sortAscending))
-
-
-    def _SorterCallback(self, key1, key2):
-        """
-        Sort callback used by SortItems().
-
-        For some reason, key1 and key2 are the item data for each item.
-        """
-        col = self.sortColumnIndex
-        item1 = self.GetValueAt(self.modelObjects[key1], col)
-        item2 = self.GetValueAt(self.modelObjects[key2], col)
-
-        if isinstance(item1, basestring):
-            cmpVal = locale.strcoll(item1.lower(), item2.lower())
-
-            # Uncomment this line if you want captialized strings to come before lowercase strings
-            #cmpVal = locale.strcoll(item1, item2)
-        else:
-            cmpVal = cmp(item1, item2)
-
-        if self.sortAscending:
-            return cmpVal
-        else:
-            return -cmpVal
 
 
     def _UpdateColumnSortIndicators(self, sortColumnIndex, oldSortColumnIndex):
@@ -1651,6 +1699,10 @@ class VirtualObjectListView(ObjectListView):
     index of the model object required and returns the model. This can be set via the
     SetObjectGetter() method, or passed into the constructor as the "getter" parameter.
 
+    By default, a VirtualObjectListView cannot sort its rows when the user click on a header.
+    If you have a back store that can sort the data represented in the virtual list, you
+    can listen for the EVT_SORT events, and then order your model objects accordingly.
+
     Due to the vagarities of virtual lists, rowFormatters must operate in a slightly
     different manner for virtual lists. Instead of being passed a ListItem, rowFormatters
     are passed a ListItemAttr instance. This supports the same formatting methods as a
@@ -1856,6 +1908,15 @@ class VirtualObjectListView(ObjectListView):
 
         return self.lastGetObject
 
+    #---Sorting-------------------------------------------------------#000000#FFFFFF
+
+    def _SortItemsNow(self):
+        """
+        Sort the items by our current settings.
+
+        VirtualObjectListView can't sort anything by themselves, so this is a no-op.
+        """
+        pass
 
 ########################################################################
 
@@ -1942,18 +2003,15 @@ class FastObjectListView(VirtualObjectListView):
 
     #---Sorting-------------------------------------------------------#000000#FFFFFF
 
-    def SortBy(self, newColumn, ascending=True):
+    def _SortItemsNow(self):
         """
-        Sort the items by the given column
-        """
-        oldSortColumn = self.sortColumnIndex
-        self.sortColumnIndex = newColumn
-        self.sortAscending = ascending
+        Sort the items by our current settings.
 
+        FastObjectListView don't sort the items, they sort the model objects themselves.
+        """
         selection = self.GetSelectedObjects()
         self._SortObjects()
         self.SelectObjects(selection)
-        self._UpdateColumnSortIndicators(self.sortColumnIndex, oldSortColumn)
         self.RefreshObjects()
 
 
@@ -1999,6 +2057,12 @@ class ColumnDefn(object):
     * isEditable
         Can the user edit cell values in this column? Default is True
 
+    * isSearchable
+        If this column is the sort column, when the user types into the ObjectListView,
+        will a match be looked for using values from this column? If this is False,
+        values from column 0 will be used.
+        Default is True.
+
     * isSpaceFilling
         Is this column a space filler? Space filling columns resize to occupy free
         space within the listview. As the listview is expanded, space filling columns
@@ -2016,10 +2080,39 @@ class ColumnDefn(object):
         An integer indicate the number of pixels below which this column will not resize.
         Default is -1, which means there is no limit.
 
-    * stringConverter
-        A string or a callable that will used to convert a cells value into a presentation string.
+    * useBinarySearch
+        If isSearchable and useBinarySearch are both True, the ObjectListView will use a
+        binary search algorithm to locate a match. If useBinarySearch is False, a simple
+        linear search will be done.
 
-        If it is a callble, it will be called with the value for the cell and must return a string.
+        The binary search can quickly search large numbers of row (10,000,000 in about 25
+        comparisons), which makes them ideal for virtual lists. However, there are two
+        constraints:
+
+            - the ObjectListView must be sorted by this column
+
+            - sorting by string representation must give the same ordering as sorting
+              by the aspect itself.
+
+        The second constraint is necessary because the user types characters, expecting
+        them to match the string representation of the data. The binary search will make
+        its decisions using the string representation, but the rows ordered
+        by aspect value. This will only work if sorting by string representation
+        would give the same ordering as sorting by the aspect value.
+
+        In general, binary searches work with strings, YYYY-MM-DD dates, and booleans.
+        They do not work with numerics or other date formats.
+
+        If either of these constrains are not true, you must set
+        useBinarySearch to False and be content with linear searches. Otherwise, the
+        searching will not work correctly.
+
+    * stringConverter
+        A string or a callable that will used to convert a cells value into a presentation
+        string.
+
+        If it is a callble, it will be called with the value for the cell and must return
+        a string.
 
         If it is a string, it will be used as a format string with the % operator, e.g.
         "self.stringConverter % value." For dates and times, the stringConverter will be
@@ -2089,7 +2182,8 @@ class ColumnDefn(object):
                  valueGetter=None, imageGetter=None, stringConverter=None, valueSetter=None, isEditable=True,
                  fixedWidth=None, minimumWidth=-1, maximumWidth=-1, isSpaceFilling=False,
                  cellEditorCreator=None, autoCompleteCellEditor=False, autoCompleteComboBoxCellEditor=False,
-                 checkStateGetter=None, checkStateSetter=None, isSearchable=True):
+                 checkStateGetter=None, checkStateSetter=None,
+                 isSearchable=True, useBinarySearch=None):
         """
         Create a new ColumnDefn using the given attributes.
 
@@ -2119,6 +2213,7 @@ class ColumnDefn(object):
         self.freeSpaceProportion = 1
         self.isEditable = isEditable
         self.isSearchable = isSearchable
+        self.useBinarySearch = useBinarySearch
 
         self.minimumWidth = minimumWidth
         self.maximumWidth = maximumWidth
