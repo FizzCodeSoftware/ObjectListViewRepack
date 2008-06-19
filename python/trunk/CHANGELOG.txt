@@ -5,6 +5,95 @@
 Change Log
 ==========
 
+2008-06-20 00:16 (#126) - Phillip
+  - Changed feature list
+  - Changed download location
+
+
+2008-06-20 00:15 (#125) - Phillip
+  - Update to version 1.0.1
+  - Added "Class Docs" section to menu
+  - Added new sections to Features and What's New
+
+
+2008-06-20 00:12 (#124) - Phillip
+  - Enable logging
+
+
+2008-06-20 00:11 (#123) - Phillip
+  - Added more checkboxes
+  - Corrected some typing errors
+
+
+2008-06-20 00:09 (#122) - Phillip
+  - Allowed for custom sorting, even on virtual lists
+  - Factored out test for binary search
+  - Added OLVColumn.useBinarySearch
+  - Added EVT_SORT and its friends
+
+
+2008-06-20 00:05 (#121) - Phillip
+  - Added tests for virtual lists
+
+
+2008-06-18 09:48 (#118) - Phillip
+  - Change download location
+  - Change feature list
+
+
+2008-06-17 20:44 (#117) - Phillip
+  - Made binary searching work when column is sorted descending
+
+
+2008-06-17 00:53 (#116) - Phillip
+  - use binary searches when searching on sorted columns
+  - use MAX_ROWS_FOR_UNSORTED_SEARCH to limit linear searches when typing
+
+
+2008-06-17 00:47 (#115) - Phillip
+  - Changed download location of source distribution
+  - Added recipe about referencing columnDefns inside a valueGetter
+  - Rearranged slightly the getting started section.
+  - Added FAQ about the indent of text when there is no icon
+
+
+2008-06-16 22:43 (#114) - Phillip
+  - Typing searches sort column complete
+
+
+2008-06-15 21:15 (#113) - Phillip
+  - Added 'sortable' parameter. VirtualObjectListView are now not sortable by default
+  - Improved management of image lists
+
+
+2008-06-15 21:13 (#112) - Phillip
+  - Include bmp files in MANIFEST.in
+  - Correct some details in setup.py
+
+
+2008-06-14 22:31 (#111) - Phillip
+  - Changed use to utf-8 encoding
+
+
+2008-06-14 22:29 (#110) - Phillip
+  - Renamed sortColumn to be sortColumnIndex to make it clear
+  - Allow returns in multiline cell editors
+  - Only use alternate backcolors in report view, not in the other views
+
+
+2008-06-08 21:30 (#109) - Phillip
+  - Clear the DC before drawing a checkbox. Needed for Linux
+
+
+2008-05-30 14:13 (#108) - Phillip
+  - Make ImageList.GetSize(0) work to empty image lists under Linux
+  - Added more tests, especially for FastObjectListView
+
+
+2008-05-29 14:22 (#107) - Phillip
+  - v1.0 Release!
+
+
 2008-05-29 14:17 (#106) - Phillip
   - Finally clean up of documentation before v1.0 release
 
