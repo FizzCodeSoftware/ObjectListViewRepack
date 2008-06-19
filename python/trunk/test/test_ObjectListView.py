@@ -5,7 +5,7 @@ import time
 
 import sys
 sys.path.append("..")
-from ObjectListView import ObjectListView, FastObjectListView, ColumnDefn
+from ObjectListView import ObjectListView, FastObjectListView, VirtualObjectListView, ColumnDefn, EVT_SORT
 
 class Person:
 
@@ -66,7 +66,7 @@ class TestObjectListView(unittest.TestCase):
         self.assertEqual(self.objectListView.GetColumnCount(), len(self.personColumns))
         self.assertEqual(self.objectListView.GetItemCount(), len(self.persons))
 
-    def testSelection(self):
+    def testSelectObject(self):
         self.objectListView.SelectObject(self.persons[0])
         self.assertEqual(self.objectListView.GetSelectedObject(), self.persons[0])
 
@@ -76,9 +76,19 @@ class TestObjectListView(unittest.TestCase):
 
     def testSelectAll(self):
         self.objectListView.SelectAll()
-        self.assertEqual(set(self.objectListView.GetSelectedObjects()), set(self.persons))
+        for i in range(0, self.objectListView.GetItemCount()):
+            self.assertTrue(self.objectListView.IsSelected(i))
 
     def testDeSelectAll(self):
+        self.objectListView.SelectAll()
+        self.objectListView.DeselectAll()
+        for i in range(0, self.objectListView.GetItemCount()):
+            self.assertFalse(self.objectListView.IsSelected(i))
+
+    def testGetSelectedObjects(self):
+        self.objectListView.SelectAll()
+        self.assertEqual(set(self.objectListView.GetSelectedObjects()), set(self.persons))
+
         self.objectListView.SelectObject(self.persons[0])
         self.assertEqual(len(self.objectListView.GetSelectedObjects()), 1)
 
@@ -96,6 +106,7 @@ class TestObjectListView(unittest.TestCase):
 
         self.objectListView.RefreshObject(person)
         self.assertEqual(self.objectListView.GetItem(rowIndex).GetText(), person.name)
+        person.name = nameInList
 
     def testSorting(self):
         self.objectListView.SortBy(0, False)
@@ -146,7 +157,7 @@ class TestObjectListView(unittest.TestCase):
     def testLackOfCheckboxes(self):
         self.objectListView.InstallCheckStateColumn(None)
 
-        firstObject = self.objectListView.modelObjects[0]
+        firstObject = self.objectListView[0]
         self.assertEqual(self.objectListView.IsChecked(firstObject), False)
 
         self.assertEqual(self.objectListView.GetCheckedObjects(), list())
@@ -157,7 +168,7 @@ class TestObjectListView(unittest.TestCase):
     def testCreateCheckStateColumn(self):
         self.objectListView.InstallCheckStateColumn(None)
 
-        firstObject = self.objectListView.modelObjects[0]
+        firstObject = self.objectListView[0]
         self.assertEqual(self.objectListView.IsChecked(firstObject), False)
 
         self.objectListView.CreateCheckStateColumn()
@@ -174,7 +185,7 @@ class TestObjectListView(unittest.TestCase):
         self.assertTrue(col.checkStateGetter != None)
         self.assertTrue(col.checkStateSetter != None)
 
-        object = self.objectListView.modelObjects[0]
+        object = self.objectListView[0]
         self.assertEqual(self.objectListView.IsChecked(object), False)
 
         self.objectListView.Check(object)
@@ -189,8 +200,8 @@ class TestObjectListView(unittest.TestCase):
         self.objectListView.AddColumnDefn(col)
         self.assertEqual(self.objectListView.checkStateColumn, col)
 
-        firstObject = self.objectListView.modelObjects[0]
-        lastObject = self.objectListView.modelObjects[-1]
+        firstObject = self.objectListView[0]
+        lastObject = self.objectListView[2]
         self.assertEqual(self.objectListView.IsChecked(firstObject), False)
         self.assertEqual(self.objectListView.IsChecked(lastObject), False)
 
@@ -201,7 +212,9 @@ class TestObjectListView(unittest.TestCase):
         self.objectListView.Check(lastObject)
         self.assertEqual(self.objectListView.IsChecked(firstObject), True)
         self.assertEqual(self.objectListView.IsChecked(lastObject), True)
-        self.assertEqual(self.objectListView.GetCheckedObjects(), [firstObject, lastObject])
+        if (not isinstance(self.objectListView, VirtualObjectListView) or
+            isinstance(self.objectListView, FastObjectListView)):
+            self.assertEqual(self.objectListView.GetCheckedObjects(), [firstObject, lastObject])
 
         self.objectListView.Uncheck(firstObject)
         self.assertEqual(self.objectListView.IsChecked(firstObject), False)
@@ -240,6 +253,7 @@ class TestObjectListView(unittest.TestCase):
         self.objectListView.SetObjects(self.persons)
         self.assertFalse(self.objectListView.stEmptyListMsg.IsShown())
 
+
 class TestNormalObjectListView(TestObjectListView):
 
     def __init__(self, *args, **kwargs):
@@ -247,6 +261,7 @@ class TestNormalObjectListView(TestObjectListView):
 
         global theObjectListView
         self.objectListView = theObjectListView
+
 
 class TestFastObjectListView(TestObjectListView):
 
@@ -266,6 +281,60 @@ class TestFastObjectListView(TestObjectListView):
             return attr.GetBackgroundColour()
 
 
+class TestVirtualObjectListView(TestObjectListView):
+
+    def __init__(self, *args, **kwargs):
+        TestObjectListView.__init__(self, *args, **kwargs)
+
+        global theVirtualObjectListView
+        self.objectListView = theVirtualObjectListView
+
+        self.objectListView.SetObjectGetter(lambda i: self.persons[i])
+        self.objectListView.Bind(EVT_SORT, self._handleSort)
+
+    def setUp(self):
+        self.objectListView.ClearAll()
+        self.objectListView.SetColumns(self.personColumns)
+        self.objectListView.SetItemCount(len(self.persons))
+
+    def getBackgroundColour(self, i):
+        # There is no direct way to get the background colour of an item in a virtual
+        # list, so we have to cheat by approximating the process of building a list item
+        attr = self.objectListView.OnGetItemAttr(i)
+        if attr is None or not attr.HasBackgroundColour():
+            return self.objectListView.GetItemBackgroundColour(i) # this returns an invalid color
+        else:
+            return attr.GetBackgroundColour()
+
+    def _handleSort(self, evt):
+        col = evt.objectListView.columns[evt.sortColumnIndex]
+
+        def _getLowerCaseSortValue(x):
+            value = col.GetValue(x)
+            if isinstance(value, basestring):
+                return value.lower()
+            else:
+                return value
+
+        self.persons.sort(key=_getLowerCaseSortValue, reverse=(not evt.sortAscending))
+        evt.objectListView.RefreshObjects()
+
+    def testSelectObject(self):
+        # Virtual lists can't select objects
+        pass
+
+    def testGetSelectedObjects(self):
+        # Virtual lists can't get selected objects -- Is this really true? Does it have to be?
+        pass
+
+    def testEmptyListMsg(self):
+        self.objectListView.SetItemCount(0)
+        self.assertTrue(self.objectListView.stEmptyListMsg.IsShown())
+
+        self.objectListView.SetItemCount(len(self.persons))
+        self.assertFalse(self.objectListView.stEmptyListMsg.IsShown())
+
+
 if __name__ == '__main__':
     import wx
 
@@ -274,13 +343,23 @@ if __name__ == '__main__':
             kwds["style"] = wx.DEFAULT_FRAME_STYLE
             wx.Frame.__init__(self, *args, **kwds)
 
-            global theObjectListView, theFastObjectListView, theFrame
+            global theObjectListView, theFastObjectListView, theVirtualObjectListView, theFrame
             theFrame = self
-            theObjectListView = ObjectListView(self, -1, style=wx.LC_REPORT|wx.SUNKEN_BORDER)
-            theFastObjectListView = FastObjectListView(self, -1, style=wx.LC_REPORT|wx.SUNKEN_BORDER)
+
+            self.panel = wx.Panel(self, -1)
+            theObjectListView = ObjectListView(self.panel, -1, style=wx.LC_REPORT|wx.SUNKEN_BORDER)
+            theFastObjectListView = FastObjectListView(self.panel, -1, style=wx.LC_REPORT|wx.SUNKEN_BORDER)
+            theVirtualObjectListView = VirtualObjectListView(self.panel, -1, style=wx.LC_REPORT|wx.SUNKEN_BORDER)
+
+            sizer_2 = wx.BoxSizer(wx.VERTICAL)
+            sizer_2.Add(theObjectListView, 1, wx.ALL|wx.EXPAND, 4)
+            sizer_2.Add(theFastObjectListView, 1, wx.ALL|wx.EXPAND, 4)
+            sizer_2.Add(theVirtualObjectListView, 1, wx.ALL|wx.EXPAND, 4)
+            self.panel.SetSizer(sizer_2)
+            self.panel.Layout()
+
             sizer_1 = wx.BoxSizer(wx.VERTICAL)
-            sizer_1.Add(theObjectListView, 1, wx.ALL|wx.EXPAND, 4)
-            sizer_1.Add(theFastObjectListView, 1, wx.ALL|wx.EXPAND, 4)
+            sizer_1.Add(self.panel, 1, wx.EXPAND)
             self.SetSizer(sizer_1)
             self.Layout()
 
