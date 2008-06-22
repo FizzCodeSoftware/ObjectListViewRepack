@@ -2295,10 +2295,15 @@ class ColumnDefn(object):
         """
         if self.imageGetter is None:
             return -1
-        elif isinstance(self.imageGetter, int):
+
+        if isinstance(self.imageGetter, int):
             return self.imageGetter
+
+        idx = self._Munge(modelObject, self.imageGetter)
+        if idx is None:
+            return -1
         else:
-            return self._Munge(modelObject, self.imageGetter) or -1
+            return idx
 
 
     def SetValue(self, modelObject, value):
