@@ -8,6 +8,13 @@
 # License:      wxWindows license
 #----------------------------------------------------------------------------
 # Change log:
+# 2008/07/08  JPP   - Fixed several Linux specific bugs/limits
+# 2008/07/03  JPP   - Allow headers to have images
+# v1.0.1
+# 2008/06/22  JPP   - Allowed for custom sorting, even on virtual lists
+#                   - Fixed bug where an imageGetter that returned 0 was treated
+#                     as if it returned -1 (i.e. no image)
+# 2008/06/17  JPP   - Use binary searches when searching on sorted columns
 # 2008/06/16  JPP   - Search by sorted column works, even on virtual lists
 # 2008/06/12  JPP   - Added sortable parameter
 #                   - Renamed sortColumn to be sortColumnIndex to make it clear
@@ -25,8 +32,6 @@
 # 2006/11/03  JPP   First version under wax
 #----------------------------------------------------------------------------
 # To do:
-# - cancellable Sort event
-# - images in the column headers
 # - selectable columns, triggered on right click on header
 # - copy selection to clipboard (text and HTML format)
 # - secondary sort column
@@ -70,6 +75,7 @@ import itertools
 import locale
 import operator
 import string
+import time
 
 import CellEditor
 import OLVEvent
@@ -154,9 +160,9 @@ class ObjectListView(wx.ListCtrl):
     NAME_UNCHECKED_IMAGE = "objectListView.uncheckedImage"
     NAME_UNDETERMINED_IMAGE = "objectListView.undeterminedImage"
 
-    """When typing into the list, a delay between keystrokes greater than this (in ms)
+    """When typing into the list, a delay between keystrokes greater than this (in seconds)
     will be interpretted as a new search and any previous search text will be cleared"""
-    SEARCH_KEYSTROKE_DELAY = 750
+    SEARCH_KEYSTROKE_DELAY = 0.75
 
     """When typing into a list and searching on an unsorted column, we don't even try to search
     if there are more than this many rows."""
@@ -264,7 +270,20 @@ class ObjectListView(wx.ListCtrl):
         If this method is called directly, you must also call RepopulateList()
         to populate the new column with data.
         """
-        self.InsertColumn(len(self.columns), defn.title, defn.GetAlignment(), defn.width)
+        info = wx.ListItem()
+        info.m_mask = wx.LIST_MASK_TEXT | wx.LIST_MASK_IMAGE | wx.LIST_MASK_FORMAT
+        if isinstance(defn.headerImage, basestring) and self.smallImageList is not None:
+            info.m_image = self.smallImageList.GetImageIndex(defn.headerImage)
+        else:
+            info.m_image = defn.headerImage
+        info.m_format = defn.GetAlignment()
+        info.m_text = defn.title
+        info.m_width = defn.width
+        self.InsertColumnInfo(len(self.columns), info)
+
+        # Under Linux, the width doesn't take effect without this call
+        self.SetColumnWidth(len(self.columns), defn.width)
+
         self.columns.append(defn)
 
         # The first checkbox column becomes the check state column for the control
@@ -280,7 +299,13 @@ class ObjectListView(wx.ListCtrl):
             bitmap = wx.EmptyBitmap(size, size)
             dc = wx.MemoryDC(bitmap)
             dc.Clear()
-            wx.RendererNative.Get().DrawCheckBox(self, dc, (0, 0, size, size), state)
+
+            # On Linux, the Renderer draws the checkbox too low
+            if wx.Platform == "__WXGTK__":
+                yOrigin = -1
+            else:
+                yOrigin = -1
+            wx.RendererNative.Get().DrawCheckBox(self, dc, (0, yOrigin, size, size), state)
             dc.SelectObject(wx.NullBitmap)
             return bitmap
 
@@ -987,21 +1012,25 @@ class ObjectListView(wx.ListCtrl):
         else:
             searchColumn = self.columns[0]
 
-        uniChar = unichr(evt.GetUnicodeKey())
+        # On Linux, GetUnicodeKey() always returns 0 -- on my 2.8.7.1 (gtk2-unicode)
+        if evt.GetUnicodeKey() == 0:
+            uniChar = chr(evt.GetKeyCode())
+        else:
+            uniChar = unichr(evt.GetUnicodeKey())
         if uniChar not in string.printable:
             return False
 
-        if (evt.GetTimestamp() - self.whenLastTypingEvent) > self.SEARCH_KEYSTROKE_DELAY:
+        # On Linux, evt.GetTimestamp() isn't reliable so use time.time() instead
+        timeNow = time.time()
+        if (timeNow - self.whenLastTypingEvent) > self.SEARCH_KEYSTROKE_DELAY:
             self.searchPrefix = uniChar
         else:
             self.searchPrefix += uniChar
-        self.whenLastTypingEvent = evt.GetTimestamp()
+        self.whenLastTypingEvent = timeNow
 
-        #import time
-        #start = time.clock()
         self.__rows = 0
         self._FindByTyping(searchColumn, self.searchPrefix)
-        #print "Considered %d rows in %2f secs" % (self.__rows, time.clock() - start)
+        #print "Considered %d rows in %2f secs" % (self.__rows, time.time() - timeNow)
 
         return True
 
@@ -1125,6 +1154,7 @@ class ObjectListView(wx.ListCtrl):
         """
         Handle when the user begins to resize a column
         """
+        self._PossibleFinishCellEdit()
         colIndex = evt.GetColumn()
         if 0 > colIndex >= len(self.columns):
             evt.Skip()
@@ -1141,6 +1171,7 @@ class ObjectListView(wx.ListCtrl):
         The user has clicked on a column title
         """
         evt.Skip()
+        self._PossibleFinishCellEdit()
 
         # Toggle the sort column on the second click
         if evt.GetColumn() == self.sortColumnIndex:
@@ -1229,8 +1260,8 @@ class ObjectListView(wx.ListCtrl):
             return
 
         # Which item did the user click?
-        (rowIndex, ignored, subItemIndex) = self.HitTestSubItem(evt.GetPosition())
-        if subItemIndex == -1:
+        (rowIndex, flags, subItemIndex) = self.HitTestSubItem(evt.GetPosition())
+        if (flags & wx.LIST_HITTEST_ONITEM) == 0 or subItemIndex == -1:
             return
 
         # A single click on column 0 doesn't start an edit
@@ -1260,6 +1291,7 @@ class ObjectListView(wx.ListCtrl):
         """
         The ListView is being resized
         """
+        self._PossibleFinishCellEdit()
         evt.Skip()
         self._ResizeSpaceFillingColumns()
         # Make sure our empty msg is reasonably positioned
@@ -1397,8 +1429,12 @@ class ObjectListView(wx.ListCtrl):
         """
         Change the column that is showing a sort indicator
         """
+        # Remove the sort indicator from the old sort column
         if oldSortColumnIndex is not None:
-            self.ClearColumnImage(oldSortColumnIndex)
+            headerImage = self.columns[oldSortColumnIndex].headerImage
+            if isinstance(headerImage, basestring) and self.smallImageList is not None:
+                headerImage = self.smallImageList.GetImageIndex(headerImage)
+            self.SetColumnImage(oldSortColumnIndex, headerImage)
 
         if sortColumnIndex is not None and self.smallImageList is not None:
             if self.sortAscending:
@@ -1469,18 +1505,6 @@ class ObjectListView(wx.ListCtrl):
             if x in objectSet:
                 self.SetItemState(self.FindItemData(-1, i),
                                   wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
-        """
-        If you wanted to punish future maintainers, you could collapse the above loop into
-        one list comprehension:
-            [self.SetItemState(self.FindItemData(-1, i),
-                               wx.LIST_STATE_SELECTED,
-                               wx.LIST_STATE_SELECTED)
-             for (i, x) in enumerate(self.modelObjects) if x in objectSet]
-        but that would just be being mean :-)
-        The list comprehension does run marginally faster (1.15 secs instead of 1.18
-        seconds when selecting 1000 modelObjects out of a list of 2000),
-        but that speed saving is not worth the loss of understandability.
-        """
 
     #----------------------------------------------------------------------------
     # Cell editing
@@ -1559,10 +1583,10 @@ class ObjectListView(wx.ListCtrl):
 
         # If the event handler hasn't already configured the editor, do it now.
         if evt.shouldConfigureEditor:
+            self.cellEditor.SetFocus()
             self.cellEditor.SetValue(evt.cellValue)
             self._ConfigureCellEditor(self.cellEditor, evt.cellBounds, rowIndex, subItemIndex)
 
-        self.cellEditor.SetFocus()
         self.cellEditor.Show()
         self.cellEditor.Raise()
 
@@ -1642,7 +1666,8 @@ class ObjectListView(wx.ListCtrl):
 
         # Some control trigger FocusLost events even when they still have focus
         focusWindow = wx.Window.FindFocus()
-        if focusWindow is not None and self.cellEditor != focusWindow:
+        #if focusWindow is not None and self.cellEditor != focusWindow:
+        if self.cellEditor != focusWindow:
             self._PossibleFinishCellEdit()
 
     def FinishCellEdit(self):
@@ -2045,6 +2070,11 @@ class ColumnDefn(object):
         the free space equally. By changing this attribute, a column can be given a larger
         proportion of the space.
 
+    * headerImage
+        The index or name of the image that will be shown against the column header.
+        Remember, a column header can only show one image at a time, so if the column
+        is the sort column, it will show the sort indicator -- not this headerImage.
+
     * imageGetter
         A string, callable or integer that is used to get a index of the image to be
         shown in a cell.
@@ -2183,7 +2213,7 @@ class ColumnDefn(object):
                  fixedWidth=None, minimumWidth=-1, maximumWidth=-1, isSpaceFilling=False,
                  cellEditorCreator=None, autoCompleteCellEditor=False, autoCompleteComboBoxCellEditor=False,
                  checkStateGetter=None, checkStateSetter=None,
-                 isSearchable=True, useBinarySearch=None):
+                 isSearchable=True, useBinarySearch=None, headerImage=-1):
         """
         Create a new ColumnDefn using the given attributes.
 
@@ -2214,6 +2244,7 @@ class ColumnDefn(object):
         self.isEditable = isEditable
         self.isSearchable = isSearchable
         self.useBinarySearch = useBinarySearch
+        self.headerImage = headerImage
 
         self.minimumWidth = minimumWidth
         self.maximumWidth = maximumWidth
