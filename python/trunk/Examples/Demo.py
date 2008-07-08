@@ -644,8 +644,8 @@ class MyFrame(wx.Frame):
         # Note: the "Album" column is space filling, so it will get larger and smaller as the window resizes
         simpleColumns = [
             ColumnDefn("Title", "left", 160, valueGetter="title", checkStateGetter="isChecked", minimumWidth=40, maximumWidth=200),
-            ColumnDefn("Artist", valueGetter="artist", minimumWidth=40, maximumWidth=200, autoCompleteCellEditor=True),
-            ColumnDefn("Album", valueGetter="album", maximumWidth=250, isSpaceFilling=True, autoCompleteCellEditor=True),
+            ColumnDefn("Artist", valueGetter="artist", minimumWidth=40, maximumWidth=200, autoCompleteCellEditor=True, headerImage="star"),
+            ColumnDefn("Album", valueGetter="album", maximumWidth=250, isSpaceFilling=True, autoCompleteCellEditor=True, headerImage=2),
             ColumnDefn("Genre", "left", 60, valueGetter="genre", autoCompleteComboBoxCellEditor=True),
             ColumnDefn("Size", "right", valueGetter="size"),
             ColumnDefn("Rating", "center", valueGetter="rating"),
@@ -684,6 +684,12 @@ class MyFrame(wx.Frame):
             else:
                 return "undecided"
 
+        def fontToStringConverter(aFont):
+            if aFont:
+                return aFont.GetFaceName()
+            else:
+                return ""
+
         # Give rows the color and font stored in the model. Old songs are drawn in Impact
         # The "Update Selection" command changes the last played date, which should remove
         # the Impact font. This is a way to test row updating.
@@ -718,8 +724,10 @@ class MyFrame(wx.Frame):
 
         # This list is similar to the Simple columns, but it uses a lot of callbacks
         columns = [
-            ColumnDefn("Title", "left", 200, valueGetter="title", imageGetter=musicImageIndex, minimumWidth=40, maximumWidth=200),
-            ColumnDefn("Artist", "left", 150, valueGetter="artist", imageGetter=artistImageGetter, minimumWidth=40, maximumWidth=200, autoCompleteCellEditor=True),
+            ColumnDefn("Title", "left", 200, valueGetter="title", imageGetter=musicImageIndex,
+                       minimumWidth=40, maximumWidth=200),
+            ColumnDefn("Artist", "left", 150, valueGetter="artist", imageGetter=artistImageGetter,
+                       minimumWidth=40, maximumWidth=200, autoCompleteCellEditor=True),
             ColumnDefn("Album", "left", 150, valueGetter="album", maximumWidth=250, isSpaceFilling=True, autoCompleteCellEditor=True),
             ColumnDefn("Genre", "left", 100, valueGetter="genre", autoCompleteComboBoxCellEditor=True),
             ColumnDefn("Size", "right", 50, valueGetter="size"),
@@ -729,7 +737,7 @@ class MyFrame(wx.Frame):
             ColumnDefn("Last Played", "left", 150, valueGetter="lastPlayed", stringConverter="%x %X", maximumWidth=150),
             ColumnDefn("Colour", "left", 60, valueGetter="trackColour", stringConverter=colourToString, minimumWidth=60),
             ColumnDefn("Font", "left", 60, valueGetter="font", valueSetter="SetFontFace", cellEditorCreator=makeFontEditor,
-                       stringConverter=lambda x: x.GetFaceName() if x is not None else ""),
+                       stringConverter=fontToStringConverter),
         ]
 
         self.olvComplex.Bind(EVT_CELL_EDIT_STARTING, handleCellEditStarting)

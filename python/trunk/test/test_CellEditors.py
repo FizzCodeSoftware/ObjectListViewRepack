@@ -144,7 +144,7 @@ if __name__ == '__main__':
 
         def runTests(self):
             unittest.main()
-#            self.Close()
+            self.Close()
 
     app = wx.PySimpleApp(0)
     wx.InitAllImageHandlers()

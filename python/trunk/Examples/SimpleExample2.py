@@ -142,7 +142,7 @@ class MyFrame(wx.Frame):
         self.myOlv.SetObjects(self.songs)
 
 if __name__ == '__main__':
-    app = wx.PySimpleApp(0)
+    app = wx.PySimpleApp(1)
     wx.InitAllImageHandlers()
     frame_1 = MyFrame(None, -1, "ObjectListView Simple Example 2")
     app.SetTopWindow(frame_1)

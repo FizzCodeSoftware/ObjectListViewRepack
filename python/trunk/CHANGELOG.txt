@@ -5,6 +5,10 @@
 Change Log
 ==========
 
+2008-06-22 22:35 (#128) - Phillip
+  - Fixed bug where an imageGetter that returned 0 was treated as if it returned -1 (i.e. no image)
+
+
 2008-06-20 00:16 (#126) - Phillip
   - Changed feature list
   - Changed download location

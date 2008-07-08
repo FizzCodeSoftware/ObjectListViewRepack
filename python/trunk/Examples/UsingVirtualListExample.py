@@ -1,4 +1,4 @@
-# -*- coding: ISO-8859-1 -*-
+# -*- coding: utf-8 -*-
 #!/usr/bin/env python
 #----------------------------------------------------------------------------
 # Name:         UsingVirtualListExample.py
@@ -64,7 +64,7 @@ class MyFrame(wx.Frame):
 
     def InitModel(self):
         start = time.clock()
-        path = "c:/temp/VirtualListExample.sqlite"
+        path = os.path.join(wx.StandardPaths.Get().GetTempDir(), "VirtualListExample.sqlite")
         if os.path.exists(path):
             os.remove(path)
 

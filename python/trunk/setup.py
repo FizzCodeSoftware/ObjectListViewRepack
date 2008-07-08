@@ -3,7 +3,7 @@ import sys
 NAME = "ObjectListView"
 VERSION = "1.0.1"
 URL = "http://objectlistview.sourceforge.net/python"
-DOWNLOAD_URL = "https://sourceforge.net/project/showfiles.php?group_id=225207&package_id=280564"
+DOWNLOAD_URL = "http://objectlistview.sourceforge.net/samples/ObjectListView-1.0.1.zip"
 LICENSE = "wxWindows"
 AUTHOR = "Phillip Piper"
 AUTHOR_EMAIL = "phillip_piper@bigfoot.com"
