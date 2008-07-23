@@ -28,7 +28,8 @@ import wx.lib.colourdb as colourdb
 import sys
 sys.path.append("..")
 
-from ObjectListView import ObjectListView, VirtualObjectListView, FastObjectListView, ColumnDefn
+
+from ObjectListView import ObjectListView, VirtualObjectListView, FastObjectListView, GroupListView, ColumnDefn
 from ObjectListView import EVT_CELL_EDIT_STARTING, EVT_CELL_EDIT_FINISHING, CellEditorRegistry
 
 import OwnerDrawnEditor
@@ -77,6 +78,7 @@ class MyFrame(wx.Frame):
         kwds["style"] = wx.DEFAULT_FRAME_STYLE
         wx.Frame.__init__(self, *args, **kwds)
         self.notebook_1 = wx.Notebook(self, -1, style=0)
+        self.notebook_1_pane_5 = wx.Panel(self.notebook_1, -1)
         self.notebook_1_pane_4 = wx.Panel(self.notebook_1, -1)
         self.notebook_1_pane_3 = wx.Panel(self.notebook_1, -1)
         self.notebook_1_pane_2 = wx.Panel(self.notebook_1, -1)
@@ -90,6 +92,9 @@ class MyFrame(wx.Frame):
         self.sizer_8_copy_staticbox = wx.StaticBox(self.notebook_1_pane_3, -1, "Select")
         self.sizer_9_copy_staticbox = wx.StaticBox(self.notebook_1_pane_4, -1, "Commands")
         self.sizer_10_copy_staticbox = wx.StaticBox(self.notebook_1_pane_4, -1, "Select")
+        self.sizer_7_staticbox = wx.StaticBox(self.notebook_1_pane_5, -1, "Group Commands")
+        self.sizer_9_copy_copy_staticbox = wx.StaticBox(self.notebook_1_pane_5, -1, "Commands")
+        self.sizer_10_copy_copy_staticbox = wx.StaticBox(self.notebook_1_pane_5, -1, "Select")
         self.sizer_4_staticbox = wx.StaticBox(self.notebook_1_pane_1, -1, "List View")
         self.frame_1_statusbar = self.CreateStatusBar(1, 0)
         self.text_ctrl_1_copy = wx.TextCtrl(self.notebook_1_pane_1, -1, "This is a minimal example of an ObjectListView. The programmer defines the columns that should be shown -- this includes the attribute that should be should be displayed in the column. Once the columns are defined, the programmer gives the control a collection of model objects. The ObjectListView then manages the displaying and sorting of the list by itself. This tab shows what is possible using only the columns definitions, without handling any callbacks. The 'Album' column is a space filling column -- it will automatically shrink or expand to fill any available space.", style=wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_LINEWRAP|wx.TE_WORDWRAP)
@@ -135,11 +140,24 @@ class MyFrame(wx.Frame):
         self.button_15_copy = wx.Button(self.notebook_1_pane_4, -1, "All")
         self.button_16_copy = wx.Button(self.notebook_1_pane_4, -1, "U2's")
         self.button_17_copy = wx.Button(self.notebook_1_pane_4, -1, "None")
+        self.text_ctrl_1_copy_2_copy = wx.TextCtrl(self.notebook_1_pane_5, -1, "A GroupListView can partition its objects into logical divisions, and then present those groups to the user. The groups are collapsible. ", style=wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_LINEWRAP|wx.TE_WORDWRAP)
+        self.olvGroup = GroupListView(self.notebook_1_pane_5, -1, style=wx.LC_REPORT|wx.SUNKEN_BORDER)
+        self.cbShowGroups = wx.CheckBox(self.notebook_1_pane_5, -1, "Show Groups")
+        self.cbLockGroup = wx.CheckBox(self.notebook_1_pane_5, -1, "Lock Group")
+        self.cbShowItemCount = wx.CheckBox(self.notebook_1_pane_5, -1, "Show Item Counts")
+        self.button_8 = wx.Button(self.notebook_1_pane_5, -1, "Expand All")
+        self.button_9 = wx.Button(self.notebook_1_pane_5, -1, "Collapse All")
+        self.button_12_copy_copy = wx.Button(self.notebook_1_pane_5, -1, "Repopulate")
+        self.button_13_copy_copy = wx.Button(self.notebook_1_pane_5, -1, "Add 1000")
+        self.button_14_copy_copy = wx.Button(self.notebook_1_pane_5, -1, "Update Selected")
+        self.button_7_copy_3_copy = wx.Button(self.notebook_1_pane_5, -1, "Clear List")
+        self.button_15_copy_copy = wx.Button(self.notebook_1_pane_5, -1, "All")
+        self.button_16_copy_copy = wx.Button(self.notebook_1_pane_5, -1, "U2's")
+        self.button_17_copy_copy = wx.Button(self.notebook_1_pane_5, -1, "None")
 
         self.__set_properties()
         self.__do_layout()
 
-        self.Bind(wx.EVT_LIST_COL_DRAGGING, self.OnColDragging, self.olvSimple)
         self.Bind(wx.EVT_RADIOBUTTON, self.OnListViewDetails, self.radio_btn_1)
         self.Bind(wx.EVT_RADIOBUTTON, self.OnListViewList, self.radio_btn_2)
         self.Bind(wx.EVT_RADIOBUTTON, self.OnListViewSmallIcon, self.radio_btn_3)
@@ -151,7 +169,6 @@ class MyFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.OnSelectAll, self.button_3)
         self.Bind(wx.EVT_BUTTON, self.OnSelectU2s, self.button_4)
         self.Bind(wx.EVT_BUTTON, self.OnSelectNone, self.button_5)
-        self.Bind(wx.EVT_LIST_COL_DRAGGING, self.OnColDragging, self.olvComplex)
         self.Bind(wx.EVT_RADIOBUTTON, self.OnListViewDetailsComplex, self.radio_btn_1_copy)
         self.Bind(wx.EVT_RADIOBUTTON, self.OnListViewListComplex, self.radio_btn_2_copy)
         self.Bind(wx.EVT_RADIOBUTTON, self.OnListViewSmallIconComplex, self.radio_btn_3_copy)
@@ -176,6 +193,18 @@ class MyFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.OnSelectAllFast, self.button_15_copy)
         self.Bind(wx.EVT_BUTTON, self.OnSelectU2sFast, self.button_16_copy)
         self.Bind(wx.EVT_BUTTON, self.OnSelectNoneFast, self.button_17_copy)
+        self.Bind(wx.EVT_CHECKBOX, self.OnShowGroupChecked, self.cbShowGroups)
+        self.Bind(wx.EVT_CHECKBOX, self.OnLockGroupChecked, self.cbLockGroup)
+        self.Bind(wx.EVT_CHECKBOX, self.OnShowItemCountChecked, self.cbShowItemCount)
+        self.Bind(wx.EVT_BUTTON, self.OnExpandAllGroups, self.button_8)
+        self.Bind(wx.EVT_BUTTON, self.OnCollapseAllGroups, self.button_9)
+        self.Bind(wx.EVT_BUTTON, self.OnRepopulateGroup, self.button_12_copy_copy)
+        self.Bind(wx.EVT_BUTTON, self.OnAdd1000Group, self.button_13_copy_copy)
+        self.Bind(wx.EVT_BUTTON, self.OnUpdateSelectedGroup, self.button_14_copy_copy)
+        self.Bind(wx.EVT_BUTTON, self.OnClearListGroup, self.button_7_copy_3_copy)
+        self.Bind(wx.EVT_BUTTON, self.OnSelectAllGroup, self.button_15_copy_copy)
+        self.Bind(wx.EVT_BUTTON, self.OnSelectU2sGroup, self.button_16_copy_copy)
+        self.Bind(wx.EVT_BUTTON, self.OnSelectNoneGroup, self.button_17_copy_copy)
         # end wxGlade
 
         self.Init()
@@ -195,11 +224,23 @@ class MyFrame(wx.Frame):
         self.radio_btn_1_copy.SetValue(1)
         self.text_ctrl_1_copy_1_copy.SetBackgroundColour(wx.Colour(252, 255, 138))
         self.text_ctrl_1_copy_2.SetBackgroundColour(wx.Colour(252, 255, 138))
+        self.text_ctrl_1_copy_2_copy.SetBackgroundColour(wx.Colour(252, 255, 138))
+        self.cbShowGroups.SetToolTipString("Show or hide groups in the control")
+        self.cbShowGroups.SetValue(1)
+        self.cbLockGroup.SetToolTipString("Lock the current groups. Sorting by a different column will change the sort order within the groups, but not the groups themselves")
+        self.cbShowItemCount.SetToolTipString("Show item counts in the group titles")
+        self.cbShowItemCount.SetValue(1)
         # end wxGlade
 
     def __do_layout(self):
         # begin wxGlade: MyFrame.__do_layout
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
+        grid_sizer_3_copy_copy = wx.FlexGridSizer(3, 1, 4, 4)
+        grid_sizer_4_copy_copy = wx.FlexGridSizer(1, 3, 4, 4)
+        sizer_10_copy_copy = wx.StaticBoxSizer(self.sizer_10_copy_copy_staticbox, wx.HORIZONTAL)
+        sizer_9_copy_copy = wx.StaticBoxSizer(self.sizer_9_copy_copy_staticbox, wx.HORIZONTAL)
+        sizer_7 = wx.StaticBoxSizer(self.sizer_7_staticbox, wx.HORIZONTAL)
+        sizer_8 = wx.BoxSizer(wx.VERTICAL)
         grid_sizer_3_copy = wx.FlexGridSizer(3, 1, 4, 4)
         grid_sizer_4_copy = wx.FlexGridSizer(1, 2, 4, 4)
         sizer_10_copy = wx.StaticBoxSizer(self.sizer_10_copy_staticbox, wx.HORIZONTAL)
@@ -287,10 +328,33 @@ class MyFrame(wx.Frame):
         self.notebook_1_pane_4.SetSizer(grid_sizer_3_copy)
         grid_sizer_3_copy.AddGrowableRow(1)
         grid_sizer_3_copy.AddGrowableCol(0)
+        grid_sizer_3_copy_copy.Add(self.text_ctrl_1_copy_2_copy, 0, wx.TOP|wx.EXPAND, 4)
+        grid_sizer_3_copy_copy.Add(self.olvGroup, 1, wx.EXPAND, 0)
+        sizer_8.Add(self.cbShowGroups, 0, wx.ALL, 2)
+        sizer_8.Add(self.cbLockGroup, 0, wx.ALL, 2)
+        sizer_8.Add(self.cbShowItemCount, 0, wx.ALL, 2)
+        sizer_7.Add(sizer_8, 1, wx.EXPAND, 0)
+        sizer_7.Add(self.button_8, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 4)
+        sizer_7.Add(self.button_9, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 4)
+        grid_sizer_4_copy_copy.Add(sizer_7, 1, wx.EXPAND, 0)
+        sizer_9_copy_copy.Add(self.button_12_copy_copy, 0, wx.ALL, 4)
+        sizer_9_copy_copy.Add(self.button_13_copy_copy, 0, wx.ALL, 4)
+        sizer_9_copy_copy.Add(self.button_14_copy_copy, 0, wx.ALL, 4)
+        sizer_9_copy_copy.Add(self.button_7_copy_3_copy, 0, wx.ALL, 4)
+        grid_sizer_4_copy_copy.Add(sizer_9_copy_copy, 1, wx.EXPAND, 0)
+        sizer_10_copy_copy.Add(self.button_15_copy_copy, 0, wx.ALL, 4)
+        sizer_10_copy_copy.Add(self.button_16_copy_copy, 0, wx.ALL, 4)
+        sizer_10_copy_copy.Add(self.button_17_copy_copy, 0, wx.ALL, 4)
+        grid_sizer_4_copy_copy.Add(sizer_10_copy_copy, 1, wx.EXPAND, 0)
+        grid_sizer_3_copy_copy.Add(grid_sizer_4_copy_copy, 1, wx.EXPAND, 0)
+        self.notebook_1_pane_5.SetSizer(grid_sizer_3_copy_copy)
+        grid_sizer_3_copy_copy.AddGrowableRow(1)
+        grid_sizer_3_copy_copy.AddGrowableCol(0)
         self.notebook_1.AddPage(self.notebook_1_pane_1, "Simple")
         self.notebook_1.AddPage(self.notebook_1_pane_2, "Complex")
         self.notebook_1.AddPage(self.notebook_1_pane_3, "Virtual")
         self.notebook_1.AddPage(self.notebook_1_pane_4, "Fast")
+        self.notebook_1.AddPage(self.notebook_1_pane_5, "Groups")
         sizer_1.Add(self.notebook_1, 1, wx.ALL|wx.EXPAND, 4)
         self.SetSizer(sizer_1)
         self.Layout()
@@ -643,7 +707,7 @@ class MyFrame(wx.Frame):
         # These columns are defined without any callbacks.
         # Note: the "Album" column is space filling, so it will get larger and smaller as the window resizes
         simpleColumns = [
-            ColumnDefn("Title", "left", 160, valueGetter="title", checkStateGetter="isChecked", minimumWidth=40, maximumWidth=200),
+            ColumnDefn("Title", "left", 160, valueGetter="title", imageGetter=musicImageIndex, minimumWidth=40, maximumWidth=200),
             ColumnDefn("Artist", valueGetter="artist", minimumWidth=40, maximumWidth=200, autoCompleteCellEditor=True, headerImage="star"),
             ColumnDefn("Album", valueGetter="album", maximumWidth=250, isSpaceFilling=True, autoCompleteCellEditor=True, headerImage=2),
             ColumnDefn("Genre", "left", 60, valueGetter="genre", autoCompleteComboBoxCellEditor=True),
@@ -656,6 +720,7 @@ class MyFrame(wx.Frame):
             ]
 
         self.olvSimple.SetColumns(simpleColumns)
+        self.olvSimple.CreateCheckStateColumn()
         self.olvSimple.SetObjects(self.dataObjects)
 
         # Allow the cell values to be edited when double-clicked
@@ -751,7 +816,7 @@ class MyFrame(wx.Frame):
         #----------------------------------------------------------------------
         # Init Virtual list
 
-        # A virtual list has to have callable installed that says which model object is
+        # A virtual list has to have a callable installed that says which model object is
         # shown at a given index
         def objectGetter(index):
             return self.dataObjects[index % len(self.dataObjects)]
@@ -789,6 +854,36 @@ class MyFrame(wx.Frame):
         self.olvFast.SetColumns(columns)
         self.olvFast.SetObjects(self._MakeAtLeast([], 100000))
         self.olvFast.cellEditMode = ObjectListView.CELLEDIT_DOUBLECLICK
+
+        #----------------------------------------------------------------------
+        # Init Group list
+
+        self.olvGroup.SetImageLists(self.olvSimple.smallImageList, self.olvSimple.normalImageList)
+        self.olvGroup._InitializeImages()
+
+        # This is the same list as used on complex, but with group related information added
+        columns = [
+            ColumnDefn("Title", "left", 200, valueGetter="title", imageGetter=musicImageIndex,
+                       minimumWidth=40, maximumWidth=200, useInitialLetterForGroupKey=True),
+            ColumnDefn("Artist", "left", 150, valueGetter="artist", imageGetter=artistImageGetter,
+                       minimumWidth=40, maximumWidth=200, autoCompleteCellEditor=True),
+            ColumnDefn("Album", "left", 150, valueGetter="album", maximumWidth=250, isSpaceFilling=True, autoCompleteCellEditor=True),
+            ColumnDefn("Genre", "left", 100, valueGetter="genre", autoCompleteComboBoxCellEditor=True),
+            ColumnDefn("Size", "right", 50, valueGetter="size"),
+            ColumnDefn("Rating", "center", 50, valueGetter="rating", imageGetter=ratingImageGetter),
+            ColumnDefn("Duration", "center", 150, valueGetter="duration", stringConverter="%S seconds and %M minutes"),
+            ColumnDefn("Date Played", "left", 150, valueGetter="dateLastPlayed", stringConverter="%x", valueSetter="SetDateLastPlayed"),
+            ColumnDefn("Last Played", "left", 150, valueGetter="lastPlayed", stringConverter="%x %X", maximumWidth=150),
+            ColumnDefn("Colour", "left", 60, valueGetter="trackColour", stringConverter=colourToString, minimumWidth=60),
+            ColumnDefn("Font", "left", 60, valueGetter="font", valueSetter="SetFontFace", cellEditorCreator=makeFontEditor,
+                       stringConverter=fontToStringConverter),
+        ]
+
+        self.olvGroup.rowFormatter = rowFormatter
+        self.olvGroup.SetColumns(columns)
+        self.olvGroup.SetObjects(self.dataObjects)
+        self.olvGroup.cellEditMode = ObjectListView.CELLEDIT_DOUBLECLICK
+
 
     def _imagePath(self, imageFile):
         return os.path.join(os.getcwd(), "images", imageFile)
@@ -989,16 +1084,54 @@ class MyFrame(wx.Frame):
     def OnClearListComplex(self, event): # wxGlade: MyFrame.<event_handler>
         self.olvComplex.SetObjects(None)
 
-    def OnColDragging(self, event): # wxGlade: MyFrame.<event_handler>
-        # When is this event generated??
-        print "Event handler `OnColDragging' not implemented"
-        event.Skip()
+
+    #----------------------------------------------------------------------
+    # Event handlers - Group tab
+
+    def OnShowGroupChecked(self, event): # wxGlade: MyFrame.<event_handler>
+        self.olvGroup.SetShowGroups(self.cbShowGroups.GetValue())
+
+    def OnLockGroupChecked(self, event): # wxGlade: MyFrame.<event_handler>
+        if self.cbLockGroup.GetValue():
+            self.olvGroup.SetAlwaysGroupByColumn(self.olvGroup.GetGroupByColumn())
+        else:
+            self.olvGroup.SetAlwaysGroupByColumn(-1)
+
+    def OnShowItemCountChecked(self, event): # wxGlade: MyFrame.<event_handler>
+        self.olvGroup.SetShowItemCounts(self.cbShowItemCount.GetValue())
+
+    def OnRepopulateGroup(self, event): # wxGlade: MyFrame.<event_handler>
+        self.DoRepopulate(self.olvGroup)
+
+    def OnAdd1000Group(self, event): # wxGlade: MyFrame.<event_handler>
+        self.DoAdd1000(self.olvGroup)
+
+    def OnUpdateSelectedGroup(self, event): # wxGlade: MyFrame.<event_handler>
+        self.DoUpdateSelected(self.olvGroup)
+
+    def OnClearListGroup(self, event): # wxGlade: MyFrame.<event_handler>
+        self.olvGroup.SetObjects(None)
+
+    def OnSelectAllGroup(self, event): # wxGlade: MyFrame.<event_handler>
+        self.DoSelectAll(self.olvGroup)
+
+    def OnSelectU2sGroup(self, event): # wxGlade: MyFrame.<event_handler>
+        self.DoSelectU2(self.olvGroup)
+
+    def OnSelectNoneGroup(self, event): # wxGlade: MyFrame.<event_handler>
+        self.DoSelectNone(self.olvGroup)
+
+    def OnExpandAllGroups(self, event): # wxGlade: MyFrame.<event_handler>
+        self.olvGroup.ExpandAll()
+
+    def OnCollapseAllGroups(self, event): # wxGlade: MyFrame.<event_handler>
+        self.olvGroup.CollapseAll()
 
 # end of class MyFrame
 
 
 if __name__ == "__main__":
-    app = wx.PySimpleApp(1)
+    app = wx.PySimpleApp(0)
     wx.InitAllImageHandlers()
     frame_1 = MyFrame(None, -1, "")
     app.SetTopWindow(frame_1)
