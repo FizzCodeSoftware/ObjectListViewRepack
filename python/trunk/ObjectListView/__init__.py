@@ -18,7 +18,7 @@ An ObjectListView provides a more convienent and powerful interface to a ListCtr
 __version__ = '1.0.1'
 __copyright__ = "Copyright (c) 2008 Phillip Piper (phillip_piper@bigfoot.com)"
 
-from ObjectListView import ObjectListView, VirtualObjectListView, ColumnDefn, FastObjectListView
+from ObjectListView import ObjectListView, VirtualObjectListView, ColumnDefn, FastObjectListView, GroupListView, ListGroup
 from OLVEvent import CellEditFinishingEvent, CellEditStartingEvent, SortEvent
 from OLVEvent import EVT_CELL_EDIT_STARTING, EVT_CELL_EDIT_FINISHING, EVT_SORT
 from CellEditor import CellEditorRegistry, MakeAutoCompleteTextBox, MakeAutoCompleteComboBox
@@ -32,8 +32,10 @@ __all__ = [
     "EVT_CELL_EDIT_STARTING",
     "EVT_SORT",
     "FastObjectListView",
+    "GroupListView",
     "MakeAutoCompleteTextBox",
     "MakeAutoCompleteComboBox",
+    "ListGroup",
     "ObjectListView",
     "SortEvent",
     "VirtualObjectListView",
