@@ -10,6 +10,7 @@ investment? This page tries to document the useful features of an ObjectListView
 features are equally useful, but its better to be aware of what's available so that you
 can use it when the need arises.
 
+
 Ease of use
 -----------
 
@@ -19,6 +20,7 @@ investment of creating column definitions, you receive a great deal of convenien
 value added functions. See :ref:`getting-started-label` for an
 introduction to the basics.
 
+
 Automatically create the ListCtrl from model objects
 ----------------------------------------------------
 
@@ -26,6 +28,7 @@ The major way in which the ObjectListView makes your life easier is by being abl
 automatically build the ListCtrl from a collection of model objects. Once the columns
 are defined, an ObjectListView is able to build the rows of the ListCtrl without any
 other help. It only takes a single method call: `SetObjects()`.
+
 
 Editing cell values
 -------------------
@@ -37,6 +40,7 @@ for that column (pass `autoCompleteCellEditor=True` to a column constructor)
 
 See :ref:`cell-editing-label` for more details.
 
+
 Automatic sorting
 -----------------
 
@@ -45,11 +49,13 @@ user clicks on a column header. This sorting understands the data type of the co
 sorting is always correct according to the data type. Sorting does not use the string
 representation.
 
+
 Supports all ListCtrl views
 ---------------------------
 
 An ObjectListView supports all views: report, list, large and small icons. All functions
 should work equally in all views: editing, check state, icons, selection.
+
 
 More control over column width
 ------------------------------
@@ -88,12 +94,14 @@ to show in the list, so that the user knows the control is supposed to be empty.
 
 See this recipe: :ref:`recipe-emptymsg`
 
+
 Checkboxes in any column
 ------------------------
 
 An ObjectListView trivially supports checkboxes on rows. In fact, it supports multiple
 checkboxes per row, if you are really keen. See this recipe for more details:
 :ref:`recipe-checkbox`.
+
 
 Alternate rows background colors
 --------------------------------
@@ -103,12 +111,14 @@ for users to read. ObjectListView supports this alternating of background colour
 It is enabled by default, and the background colours are controlled by the `evenRowsBackColor`
 and `oddRowsBackColor` attributes.
 
+
 Custom row formatting
 ---------------------
 
 An ObjectListView allows rows to be formatted with custom colours and fonts. For example,
 you could draw clients with debts in red, or big spending customers could be given a gold
 background. See here: :ref:`recipe-formatter`
+
 
 Different flavours of ObjectListView for different purposes
 -----------------------------------------------------------
@@ -119,10 +129,16 @@ model objects, and builds the control from those model objects.
 A `FastObjectListView` requires a list of model objects, but it can deal with those
 objects very quickly. Typically, it can build a list of 10,000 objects in less than 0.1 seconds.
 
+A 'GroupListView' also requires a list of model objects, but allows those model objects
+to be partitioned into groups, and then those groups presented to the user as collapsible
+collections. Partitioned is normally done using the sort column. When the user clicks on a
+different sort column, the rows are partitioned into different groups.
+
 A `VirtualObjectListView` does not require a list of model objects. Instead, it asks for
 model objects as it requires them. In this way, it can support an unlimited number of rows.
 A `VirtualObjectListView` must be given an `objectGetter` callable, which is called when
 the list needs to display a particular model object.
+
 
 Model object level operations
 -----------------------------
@@ -136,11 +152,14 @@ The VirtualObjectListView is an unfortunate exception to these features. It does
 where any given model object is located in the control (since it never deals with the
 whole list of objects), so these model level operations are not available to it.
 
+
 Searching on the sort column
 ----------------------------
 
 When a user types into a normal ListCtrl, the control tries to find the first row where
-the value in cell 0 begins with the character that the user typed.
+the value in cell 0 begins with the character that the user typed. [This feature is not
+supported by a standard ListCtrl on all platforms, but it is supported on all platforms
+by ObjectListView].
 
 ObjectListView extends this idea so that the searching can be done on the column by which
 the control is sorted (the "sort column"). If your music collection is sorted by "Album"
@@ -149,6 +168,7 @@ and the user presses "z", ObjectListView will move the selection to the first tr
 
 In many cases, this is behaviour is quite intuitive. iTunes works in this fashion on its
 string value columns (e.g. Name, Artist, Album, Genre).
+
 
 Fast searching on sorted column
 -------------------------------
