@@ -1,4 +1,4 @@
-# -*- coding: ISO-8859-1 -*-
+# -*- coding: utf-8 -*-
 #----------------------------------------------------------------------------
 # Name:         OLVEvent.py
 # Author:       Phillip Piper
@@ -8,6 +8,7 @@
 # License:      wxWindows license
 #----------------------------------------------------------------------------
 # Change log:
+# 2008/07/16  JPP   Added group-related events
 # 2008/06/19  JPP   Added EVT_SORT
 # 2008/05/26  JPP   Fixed pyLint annoyances
 # 2008/04/04  JPP   Initial version complete
@@ -19,8 +20,8 @@ The OLVEvent module holds all the events used by the ObjectListView module.
 """
 
 __author__ = "Phillip Piper"
-__date__ = "3 May 2008"
-__version__ = "1.0.1"
+__date__ = "3 August 2008"
+__version__ = "1.1"
 
 import wx
 
@@ -34,6 +35,12 @@ def _EventMaker():
 (olv_EVT_CELL_EDIT_STARTING, EVT_CELL_EDIT_STARTING) = _EventMaker()
 (olv_EVT_CELL_EDIT_FINISHING, EVT_CELL_EDIT_FINISHING) = _EventMaker()
 (olv_EVT_SORT, EVT_SORT) = _EventMaker()
+(olv_EVT_GROUP_CREATING, EVT_GROUP_CREATING) = _EventMaker()
+(olv_EVT_GROUP_SORT, EVT_GROUP_SORT) = _EventMaker()
+(olv_EVT_EXPANDING, EVT_EXPANDING) = _EventMaker()
+(olv_EVT_EXPANDED, EVT_EXPANDED) = _EventMaker()
+(olv_EVT_COLLAPSING, EVT_ECOLLAPSING) = _EventMaker()
+(olv_EVT_COLLAPSED, EVT_COLLAPSED) = _EventMaker()
 
 #======================================================================
 # Event parameter blocks
@@ -139,26 +146,29 @@ class SortEvent(VetoableEvent):
     The user wants to sort the ObjectListView.
 
     When sortModelObjects is True, the event handler should sort the model objects used by
-    the given ObjectListView. For a plain OLV and a FastObjectListView, this is the
-    "modelObjects" collection. For a VirtualObjectListView, this is whatever backing store
-    is being used.
+    the given ObjectListView. If the "modelObjects" instance variable is not None, that
+    collection of objects should be sorted, otherwise the "modelObjects" collection of the
+    ObjectListView should be sorted. For a VirtualObjectListView, "modelObjects" will
+    always be None and the programmer must sort the object in whatever backing store is
+    being used.
 
     When sortModelObjects is False, the event handler must sort the actual ListItems in
     the OLV. It does this by calling SortListItemsBy(), passing a callable that accepts
-    two model objects as parameters. sortModelObjects cannot only be False for a
-    VirtualObjectListView or a FastObjectListView.
+    two model objects as parameters. sortModelObjects must be True for a
+    VirtualObjectListView (or a FastObjectListView) since virtual lists cannot sort items.
 
     If the handler calls Veto(), no further default processing will be done.
     If the handler calls Handled(), default processing concerned with UI will be done. This
     includes updating sort indicators.
     If the handler calls neither of these, all default processing will be done.
     """
-    def __init__(self, objectListView, sortColumnIndex, sortAscending, sortModelObjects):
+    def __init__(self, objectListView, sortColumnIndex, sortAscending, sortModelObjects, modelObjects=None):
         VetoableEvent.__init__(self, olv_EVT_SORT)
         self.objectListView = objectListView
         self.sortColumnIndex = sortColumnIndex
         self.sortAscending = sortAscending
         self.sortModelObjects = sortModelObjects
+        self.modelObjects = modelObjects
         self.wasHandled = False
 
     def Handled(self, wasHandled=True):
@@ -167,3 +177,48 @@ class SortEvent(VetoableEvent):
         The OLV will handle other tasks like updating sort indicators
         """
         self.wasHandled = wasHandled
+
+
+class GroupCreationEvent(VetoableEvent):
+    """
+    The user is about to create one or more groups.
+
+    The handler can mess with the list of groups before they are created: change their
+    names, give them icons, remove them from the list to stop them being created.
+
+    If the handler calls Veto(), none of the groups will be created.
+    """
+    def __init__(self, objectListView, groups):
+        VetoableEvent.__init__(self, olv_EVT_GROUP_CREATING)
+        self.objectListView = objectListView
+        self.groups = groups
+
+
+class ExpandCollapseEvent(VetoableEvent):
+    """
+    The user wants to expand or collapse one or more groups, or has just done so.
+
+    If the handler calls Veto() for a Expanding or Collapsing event,
+    the expand/collapse action will be cancelled.
+
+    Calling Veto() has no effect on a Expanded or Collapsed event
+    """
+    def __init__(self, eventType, objectListView, groups, isExpand):
+        VetoableEvent.__init__(self, eventType)
+        self.objectListView = objectListView
+        self.groups = groups
+        self.isExpand = isExpand
+
+
+
+class SortGroupsEvent(wx.PyCommandEvent):
+    """
+    The given list of groups needs to be sorted.
+
+    The handler should rearrange the list of groups in the order desired.
+    """
+    def __init__(self, objectListView, groups, sortAscending):
+        wx.PyCommandEvent.__init__(self, olv_EVT_GROUP_SORT, -1)
+        self.objectListView = objectListView
+        self.groups = groups
+        self.sortAscending = sortAscending
