@@ -1,9 +1,9 @@
 import sys
 
 NAME = "ObjectListView"
-VERSION = "1.0.1"
+VERSION = "1.1"
 URL = "http://objectlistview.sourceforge.net/python"
-DOWNLOAD_URL = "http://objectlistview.sourceforge.net/samples/ObjectListView-1.0.1.zip"
+DOWNLOAD_URL = "http://objectlistview.sourceforge.net/samples/ObjectListView-1.1.zip"
 LICENSE = "wxWindows"
 AUTHOR = "Phillip Piper"
 AUTHOR_EMAIL = "phillip_piper@bigfoot.com"
@@ -15,8 +15,8 @@ r"""
 ObjectListView
 ==============
 
-*An ObjectListView is a wrapper around the wx.ListCtrl that makes the
-list control easier to use. It also provides some useful extra functionality.*
+An ObjectListView is a wrapper around the wx.ListCtrl that makes the
+list control easier to use. It also provides some useful extra functionality.
 
 * Automatically transforms a collection of model objects into a fully functional wx.ListCtrl.
 * Automatically sorts rows.
@@ -28,8 +28,12 @@ list control easier to use. It also provides some useful extra functionality.*
 * Supports alternate rows background colors.
 * Supports custom formatting of rows.
 * Supports searching (by typing) on any column, even on massive lists.
+* Supports custom sorting
 * The `FastObjectListView` version can build a list of 10,000 objects in less than 0.1 seconds.
 * The `VirtualObjectListView` version supports millions of rows through ListCtrl's virtual mode.
+
+It also has a 'GroupListView' which is a ListCtrl that allows the rows to be grouped into
+collapsible partitions.
 
 Dependancies
 ============

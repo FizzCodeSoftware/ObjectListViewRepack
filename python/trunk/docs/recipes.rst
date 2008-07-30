@@ -27,13 +27,15 @@ Learning to cook
 
     :ref:`recipe-partial`
 
+    :ref:`recipe-group-format`
+
 
 .. _recipe-flavour:
 
 1. What flavour of ObjectListView do I want to use?
 ---------------------------------------------------
 
-There are three flavours of ObjectListView:
+There are three flavours of ObjectListView (four if you include `GroupListView`):
 
 ObjectListView - Plain Vanilla
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -83,6 +85,16 @@ VirtualObjectListView, a FastObjectListView is your weapon of choice.
 It operates just like a normal ObjectListView -- only much faster.
 
 Did I mention the speed?
+
+
+GroupListView
+^^^^^^^^^^^^^
+
+A `GroupListView` is slightly different type of beast. You would use this creature when
+you want your users to be able to group your model objects into different "partitions" depending
+on the column they last clicked.
+
+See :ref:`using-grouplistview` for more information.
 
 
 .. _recipe-editing:
@@ -322,3 +334,27 @@ c) Subclass ColumnDefn and override GetValue()::
 
         def GetValue(self, modelObject):
             return MySuperValueGetter(modelObject, self)
+
+
+.. _recipe-group-format:
+
+11. How can I change the way group headers look?
+------------------------------------------------
+
+    *Whoever decided on the colour scheme for group headers was an artistic incompetent.
+    I want to use my own snazzy scheme. How do I do that?*
+
+The formatting of group headers is strictly limited. wx.ListCtrl's do not support any form
+of owner drawing, so anything snazzy is currently impossible. Don't even think about trying
+to do gradient fills or fancy text effects -- it's just not possible.
+
+What you can do is:
+
+- change the colour of the text, via the *groupTextColour* variable.
+
+- change the colour of background of the entire row, via the *groupBackgroundColour* variable.
+  You can't change just the group header background. It is the whole row or nothing.
+
+- change the font of the header via the *groupFont* variable. Remember that row height is fixed,
+  so if you make the font too big, the text will be truncated. The header row will *not* become
+  bigger.

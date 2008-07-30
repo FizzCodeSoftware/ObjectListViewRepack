@@ -30,6 +30,27 @@ are defined, an ObjectListView is able to build the rows of the ListCtrl without
 other help. It only takes a single method call: `SetObjects()`.
 
 
+Different flavours of ObjectListView for different purposes
+-----------------------------------------------------------
+
+An `ObjectListView` is the plain vanilla version of the control. It accepts a list of
+model objects, and builds the control from those model objects.
+
+A `FastObjectListView` requires a list of model objects, but it can deal with those
+objects very quickly. Typically, it can build a list of 10,000 objects in less than 0.1 seconds.
+
+A `GroupListView`` also requires a list of model objects, but allows those model objects
+to be partitioned into groups, and then those groups presented to the user as collapsible
+collections. Partitioned is normally done using the sort column. When the user clicks on a
+different sort column, the rows are partitioned into different groups. See
+:ref:`using-grouplistview`.
+
+A `VirtualObjectListView` does not require a list of model objects. Instead, it asks for
+model objects as it requires them. In this way, it can support an unlimited number of rows.
+A `VirtualObjectListView` must be given an `objectGetter` callable, which is called when
+the list needs to display a particular model object.
+
+
 Editing cell values
 -------------------
 
@@ -118,26 +139,6 @@ Custom row formatting
 An ObjectListView allows rows to be formatted with custom colours and fonts. For example,
 you could draw clients with debts in red, or big spending customers could be given a gold
 background. See here: :ref:`recipe-formatter`
-
-
-Different flavours of ObjectListView for different purposes
------------------------------------------------------------
-
-An `ObjectListView` is the plain vanilla version of the control. It accepts a list of
-model objects, and builds the control from those model objects.
-
-A `FastObjectListView` requires a list of model objects, but it can deal with those
-objects very quickly. Typically, it can build a list of 10,000 objects in less than 0.1 seconds.
-
-A 'GroupListView' also requires a list of model objects, but allows those model objects
-to be partitioned into groups, and then those groups presented to the user as collapsible
-collections. Partitioned is normally done using the sort column. When the user clicks on a
-different sort column, the rows are partitioned into different groups.
-
-A `VirtualObjectListView` does not require a list of model objects. Instead, it asks for
-model objects as it requires them. In this way, it can support an unlimited number of rows.
-A `VirtualObjectListView` must be given an `objectGetter` callable, which is called when
-the list needs to display a particular model object.
 
 
 Model object level operations

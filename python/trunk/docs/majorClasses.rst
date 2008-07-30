@@ -1,7 +1,10 @@
 .. -*- coding: UTF-8 -*-
 
 Major Classes Reference
-======================= 
+=======================
+
+ObjectListView
+--------------
 
 .. autoclass:: ObjectListView.ObjectListView
    :members:
@@ -10,7 +13,20 @@ Major Classes Reference
 
 ----------------------------------------------
 
+ColumnDefn
+----------
+
 .. autoclass:: ObjectListView.ColumnDefn
    :members:
 
    .. automethod:: ObjectListView.ColumnDefn.__init__
+
+----------------------------------------------
+
+GroupListView
+-------------
+
+.. autoclass:: ObjectListView.GroupListView
+   :members:
+
+   .. automethod:: ObjectListView.GroupListView.__init__

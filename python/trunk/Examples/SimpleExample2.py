@@ -2,7 +2,6 @@
 #!/usr/bin/env python
 
 import datetime
-import time
 import wx
 
 # Where can we find the ObjectListView module?

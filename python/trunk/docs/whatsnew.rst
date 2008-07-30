@@ -5,6 +5,12 @@ What's New?
 
 For the (mostly) complete change log, :ref:`see here <changelog>`.
 
+v1.1 - July 2008
+----------------
+
+* Added GroupListView
+* Column headers can now have their own images
+
 v1.0.1 - June 2008
 ------------------
 

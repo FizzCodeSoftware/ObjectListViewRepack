@@ -323,6 +323,38 @@ Putting all these bits together, we now have something that looks like this:
 Hey! That's starting to not look too bad.
 
 
+Playing with groupies
+---------------------
+
+Moving up a gear, we can build on these basic configurations to produce a `GroupListView`,
+which is a wx.ListCtrl which has collapsible groups.
+
+The code for this example is in "GroupExample.py" The first thing to notice is that the
+code for this example is almost identical to the code from example 2. There is very little
+extra needed to make a `GroupListView`.
+
+To make a GroupListView work, the control needs to know how to collect the model objects
+into different groups. This is done by getting a "group key" for each object. All objects
+with the same group key are placed in the same group.
+
+The "group key" for an object is normally whatever value the object has in the "group by"
+column. So if the group list is being grouped by the "Artist" column, the group key for a
+track will be, for example, "Coldplay" or "Nickelback". This process can, of course, be
+customised, using the *groupKeyGetter* attribute of `OLVColumn` -- but that's a story for
+another time. See :ref:`using-grouplistview` for full information.
+
+One common pattern is for objects to be grouped by the first letter of a string value, for example
+on the "Title" column, all tracks starting with "A" would be grouped together. This is so common
+that there is built-in way to do it, as it shown in the first column in the example::
+
+    ColumnDefn("Title", "left", 120, "title", imageGetter=musicImage, useInitialLetterForGroupKey=True)
+
+Putting all these bits together, we now have something that looks like this:
+
+.. image:: images/gettingstarted-example3.png
+
+Now that's cool!
+
 
 And they're off and running
 ---------------------------

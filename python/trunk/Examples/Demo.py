@@ -13,8 +13,8 @@ Simple Tab
 """
 
 __author__ = "Phillip Piper"
-__date__ = "1 March 2008"
-__version__ = "1.0"
+__date__ = "24 July 2008"
+__version__ = "1.1"
 
 from datetime import datetime, timedelta, time
 
@@ -27,7 +27,7 @@ import wx.lib.colourdb as colourdb
 
 import sys
 sys.path.append("..")
-
+#sys.path.append("c:/jpp/code/python/ObjectListView/trunk")
 
 from ObjectListView import ObjectListView, VirtualObjectListView, FastObjectListView, GroupListView, ColumnDefn
 from ObjectListView import EVT_CELL_EDIT_STARTING, EVT_CELL_EDIT_FINISHING, CellEditorRegistry

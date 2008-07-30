@@ -8,7 +8,7 @@
 # License:      wxWindows license
 #----------------------------------------------------------------------------
 # Change log:
-# 2008/07/19  JPP   - Added GroupListView (still WIP)
+# 2008/07/19  JPP   - Added GroupListView
 #                   - Broke common virtual list behaviour into AbstractVirtualListView
 # 2008/07/13  JPP   - Added CopySelectionToClipboard and CopyObjectsToClipboard
 # 2008/07/08  JPP   - Fixed several Linux specific bugs/limits
@@ -76,7 +76,6 @@ import datetime
 import itertools
 import locale
 import operator
-import os
 import string
 import time
 
@@ -259,13 +258,19 @@ class ObjectListView(wx.ListCtrl):
         # When is this event triggered?
         #self.Bind(wx.EVT_LIST_COL_DRAGGING, self._HandleColumnDragging)
 
-        self.stEmptyListMsg = wx.StaticText(self, -1, "This list is empty",
-            wx.Point(0, 0), wx.Size(0, 0), wx.ALIGN_CENTER | wx.ST_NO_AUTORESIZE)
+        # For some reason under Linux, the default wx.StaticText always appears
+        # behind the ListCtrl. The GenStaticText class appears as it should.
+        if wx.Platform == "__WXGTK__":
+            from wx.lib.stattext import GenStaticText as StaticText
+        else:
+            StaticText = wx.StaticText
+        
+        self.stEmptyListMsg = StaticText(self, -1, "This list is empty and is a long string to see what happens",
+            wx.Point(0, 0), wx.Size(0, 0), wx.ALIGN_CENTER | wx.ST_NO_AUTORESIZE | wx.FULL_REPAINT_ON_RESIZE)
         self.stEmptyListMsg.Hide()
         self.stEmptyListMsg.SetForegroundColour(wx.LIGHT_GREY)
         self.stEmptyListMsg.SetBackgroundColour(self.GetBackgroundColour())
         self.stEmptyListMsg.SetFont(wx.Font(24, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, ""))
-
         self.searchPrefix = u""
         self.whenLastTypingEvent = 0
 
@@ -600,27 +605,13 @@ class ObjectListView(wx.ListCtrl):
         try:
             win32clipboard.OpenClipboard(0)
             win32clipboard.EmptyClipboard()
-            cf_text = 1
-            win32clipboard.SetClipboardData(cf_text, txt)
-            cf_html = win32clipboard.RegisterClipboardFormat("HTML Format")
-            win32clipboard.SetClipboardData(cf_html, htmlForClipboard)
+            cfText = 1
+            win32clipboard.SetClipboardData(cfText, txt)
+            cfHtml = win32clipboard.RegisterClipboardFormat("HTML Format")
+            win32clipboard.SetClipboardData(cfHtml, htmlForClipboard)
         finally:
             win32clipboard.CloseClipboard()
 
-
-    def EncodeClipboardSource(self, html, fragmentStart, fragmentEnd, selectionStart, selectionEnd, source):
-        """
-        Join all our bits of information into a string formatted as per the HTML format specs.
-        """
-                    # How long is the prefix going to be?
-        dummyPrefix = self.MARKER_BLOCK_OUTPUT % (0, 0, 0, 0, 0, 0, source)
-        lenPrefix = len(dummyPrefix)
-
-        prefix = self.MARKER_BLOCK_OUTPUT % (lenPrefix, len(html)+lenPrefix,
-                        fragmentStart+lenPrefix, fragmentEnd+lenPrefix,
-                        selectionStart+lenPrefix, selectionEnd+lenPrefix,
-                        source)
-        return (prefix + html)
 
     def CopySelectionToClipboard(self):
         """
@@ -1259,7 +1250,7 @@ class ObjectListView(wx.ListCtrl):
             self.searchPrefix += uniChar
         self.whenLastTypingEvent = timeNow
 
-        self.__rows = 0
+        #self.__rows = 0
         self._FindByTyping(searchColumn, self.searchPrefix)
         #print "Considered %d rows in %2f secs" % (self.__rows, time.time() - timeNow)
 
@@ -1295,7 +1286,7 @@ class ObjectListView(wx.ListCtrl):
             # from the beginning to the start position. Expressing this in other languages
             # is a pain, but it's elegant in Python. I just love Python :)
             for i in itertools.chain(range(start, self.GetItemCount()), range(0, start)):
-                self.__rows += 1
+                #self.__rows += 1
                 model = self.GetObjectAt(i)
                 if model is not None:
                     strValue = searchColumn.GetStringValue(model)
@@ -1535,6 +1526,7 @@ class ObjectListView(wx.ListCtrl):
         # Make sure our empty msg is reasonably positioned
         sz = self.GetClientSize()
         self.stEmptyListMsg.SetDimensions(0, sz.GetHeight()/3, sz.GetWidth(), sz.GetHeight())
+        #self.stEmptyListMsg.Wrap(sz.GetWidth())
 
 
     def _HandleTabKey(self, isShiftDown):
@@ -1590,7 +1582,7 @@ class ObjectListView(wx.ListCtrl):
         self.sortColumnIndex = newColumnIndex
         self.sortAscending = ascending
 
-        # Let the world have a change to sort the items
+        # Let the world have a chance to sort the items
         evt = OLVEvent.SortEvent(self, self.sortColumnIndex, self.sortAscending, self.IsVirtual())
         self.GetEventHandler().ProcessEvent(evt)
         if evt.IsVetoed():
@@ -1607,7 +1599,7 @@ class ObjectListView(wx.ListCtrl):
         Sort the actual items in the list now, according to the current column and order
         """
         col = self.GetSortColumn()
-        def itemComparer(object1, object2):
+        def _itemComparer(object1, object2):
             value1 = col.GetValue(object1)
             value2 = col.GetValue(object2)
 
@@ -1616,7 +1608,7 @@ class ObjectListView(wx.ListCtrl):
             else:
                 return cmp(value1, value2)
 
-        self.SortListItemsBy(itemComparer)
+        self.SortListItemsBy(_itemComparer)
 
 
     def SortListItemsBy(self, cmpFunc, ascending=None):
@@ -1628,14 +1620,14 @@ class ObjectListView(wx.ListCtrl):
         if ascending is None:
             ascending = self.sortAscending
 
-        def sorter(key1, key2):
+        def _sorter(key1, key2):
             cmpVal = cmpFunc(self.innerList[key1], self.innerList[key2])
             if ascending:
                 return cmpVal
             else:
                 return -cmpVal
 
-        self.SortItems(sorter)
+        self.SortItems(_sorter)
 
 
     def _SortObjects(self, modelObjects=None, sortColumn=None, secondarySortColumn=None):
@@ -1650,6 +1642,10 @@ class ObjectListView(wx.ListCtrl):
             sortColumn = self.GetSortColumn()
         if secondarySortColumn == sortColumn:
             secondarySortColumn = None
+
+        # If we don't have a sort column, we can't sort -- duhh
+        if sortColumn is None:
+            return
 
         # Let the world have a change to sort the model objects
         evt = OLVEvent.SortEvent(self, self.sortColumnIndex, self.sortAscending, True)
@@ -2349,9 +2345,9 @@ class GroupListView(ObjectListView):
 
         # Setup default group characteristics
         font = self.GetFont()
-        self.groupFont = wx.FFont(font.GetPointSize(), wx.FONTFAMILY_SWISS, wx.FONTFLAG_BOLD, font.GetFaceName())
+        self.groupFont = wx.FFont(font.GetPointSize(), font.GetFamily(), wx.FONTFLAG_BOLD, font.GetFaceName())
         self.groupTextColour = wx.Colour(33, 33, 33, 255)
-        self.groupBackgroundColour = wx.Colour(173, 216, 230, 255)
+        self.groupBackgroundColour = wx.Colour(159, 185, 250, 249)
 
         self._InitializeImages()
 
@@ -2363,8 +2359,12 @@ class GroupListView(ObjectListView):
         def _makeBitmap(state, size):
             bitmap = wx.EmptyBitmap(size, size)
             dc = wx.MemoryDC(bitmap)
+            dc.SetBackground(wx.Brush(self.groupBackgroundColour))
             dc.Clear()
-            wx.RendererNative.Get().DrawTreeItemButton(self, dc, (0, 0, size, size), state)
+            (x, y) = (0, 0)
+            if wx.Platform == "__WXGTK__":
+                (x, y) = (4, 4)
+            wx.RendererNative.Get().DrawTreeItemButton(self, dc, (x, y, size, size), state)
             dc.SelectObject(wx.NullBitmap)
             return bitmap
 
@@ -2440,10 +2440,10 @@ class GroupListView(ObjectListView):
         """
         Get the column by which the rows should be always be grouped.
         """
-        if self.alwaysGroupByColumnIndex < 0:
-            return None
-        else:
+        try:
             return self.columns[self.alwaysGroupByColumnIndex]
+        except IndexError:
+            return None
 
 
     def SetAlwaysGroupByColumn(self, column):
@@ -2481,6 +2481,9 @@ class GroupListView(ObjectListView):
 
 
     def SetColumns(self, columns, repopulate=True):
+        """
+        Set the columns for this control.
+        """
         newColumns = columns[:]
         # Insert the column used for expansion and contraction (if one isn't already there)
         if self.showGroups and self.useExpansionColumn and len(newColumns) > 0:
@@ -2557,7 +2560,11 @@ class GroupListView(ObjectListView):
         if self.GetShowItemCounts():
             self._BuildGroupTitles(groups, groupingColumn)
 
-        return groups
+        # Let the world know that we are creating the given groups
+        evt = OLVEvent.GroupCreationEvent(self, groups)
+        self.GetEventHandler().ProcessEvent(evt)
+
+        return evt.groups
 
 
     def _BuildGroupTitles(self, groups, groupingColumn):
@@ -2588,12 +2595,12 @@ class GroupListView(ObjectListView):
             self.SortGroups()
 
         self.innerList = list()
-        for g in self.groups:
+        for grp in self.groups:
             if len(self.innerList):
                 self.innerList.append(None)
-            self.innerList.append(g)
-            if g.isExpanded:
-                self.innerList.extend(g.modelObjects)
+            self.innerList.append(grp)
+            if grp.isExpanded:
+                self.innerList.extend(grp.modelObjects)
 
 
     def _BuildAllRows(self):
@@ -2688,12 +2695,20 @@ class GroupListView(ObjectListView):
         if not groups:
             return
 
-        #TODO: Trigger vetoable EXPANDING event
+        # Let the world know that the given groups are about to be expanded/collapsed
+        evt = OLVEvent.ExpandingCollapsingEvent(self, groups, isExpanding)
+        self.GetEventHandler().ProcessEvent(evt)
+        if evt.IsVetoed():
+            return
 
-        for x in groups:
+        for x in evt.groups:
             x.isExpanded = isExpanding
         self._BuildInnerList()
         self.RepopulateList()
+
+        # Let the world know that the given groups have been expanded/collapsed
+        evt = OLVEvent.ExpandedCollapsedEvent(self, evt.groups, isExpanding)
+        self.GetEventHandler().ProcessEvent(evt)
 
 
     def Reveal(self, modelObject):
@@ -2879,6 +2894,20 @@ class GroupListView(ObjectListView):
         if ascending is None:
             ascending = self.sortAscending
 
+        # If the groups are locked, we sort by the sort column, otherwise by the grouping column.
+        # The primary column is always used as a secondary sort key.
+        if self.GetAlwaysGroupByColumn():
+            sortCol = self.GetSortColumn()
+        else:
+            sortCol = self.GetGroupByColumn()
+
+        # Let the world have a change to sort the items
+        evt = OLVEvent.SortGroupsEvent(self, groups, sortCol, ascending)
+        self.GetEventHandler().ProcessEvent(evt)
+        if evt.wasHandled:
+            return
+
+        # Sorting event wasn't handled, so we do the default sorting
         def _getLowerCaseKey(group):
             try:
                 return group.key.lower()
@@ -2888,12 +2917,6 @@ class GroupListView(ObjectListView):
         groups.sort(key=_getLowerCaseKey, reverse=(not ascending))
 
         # Sort the model objects within each group.
-        # If the groups are locked, we sort by the sort column, otherwise by the grouping column.
-        # The primary column is always used as a secondary sort key.
-        if self.GetAlwaysGroupByColumn():
-            sortCol = self.GetSortColumn()
-        else:
-            sortCol = self.GetGroupByColumn()
         for x in groups:
             self._SortObjects(x.modelObjects, sortCol, self.GetPrimaryColumn())
 
@@ -3047,7 +3070,7 @@ class ColumnDefn(object):
         binary search algorithm to locate a match. If useBinarySearch is False, a simple
         linear search will be done.
 
-        The binary search can quickly search large numbers of row (10,000,000 in about 25
+        The binary search can quickly search large numbers of rows (10,000,000 in about 25
         comparisons), which makes them ideal for virtual lists. However, there are two
         constraints:
 
@@ -3056,7 +3079,7 @@ class ColumnDefn(object):
             - sorting by string representation must give the same ordering as sorting
               by the aspect itself.
 
-        The second constraint is necessary because the user types characters, expecting
+        The second constraint is necessary because the user types characters expecting
         them to match the string representation of the data. The binary search will make
         its decisions using the string representation, but the rows ordered
         by aspect value. This will only work if sorting by string representation
@@ -3255,8 +3278,10 @@ class ColumnDefn(object):
         """
         Convert the given value to a string, using the given converter
         """
-        if callable(converter):
+        try:
             return converter(value)
+        except TypeError:
+            pass
 
         if converter and isinstance(value, (datetime.datetime, datetime.date, datetime.time)):
             return value.strftime(self.stringConverter)
@@ -3280,8 +3305,11 @@ class ColumnDefn(object):
             key = self.GetValue(modelObject)
         else:
             key = self._Munge(modelObject, self.groupKeyGetter)
-        if isinstance(key, basestring) and self.useInitialLetterForGroupKey:
-            return key[:1].upper()
+        if self.useInitialLetterForGroupKey:
+            try:
+                return key[:1].upper()
+            except TypeError:
+                return key
         else:
             return key
 

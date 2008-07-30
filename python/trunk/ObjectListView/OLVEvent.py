@@ -39,7 +39,7 @@ def _EventMaker():
 (olv_EVT_GROUP_SORT, EVT_GROUP_SORT) = _EventMaker()
 (olv_EVT_EXPANDING, EVT_EXPANDING) = _EventMaker()
 (olv_EVT_EXPANDED, EVT_EXPANDED) = _EventMaker()
-(olv_EVT_COLLAPSING, EVT_ECOLLAPSING) = _EventMaker()
+(olv_EVT_COLLAPSING, EVT_COLLAPSING) = _EventMaker()
 (olv_EVT_COLLAPSED, EVT_COLLAPSED) = _EventMaker()
 
 #======================================================================
@@ -66,6 +66,7 @@ class VetoableEvent(wx.PyCommandEvent):
         """
         return self.veto
 
+#----------------------------------------------------------------------------
 
 class CellEditEvent(VetoableEvent):
     """
@@ -80,6 +81,7 @@ class CellEditEvent(VetoableEvent):
         self.cellValue = cellValue
         self.editor = editor
 
+#----------------------------------------------------------------------------
 
 class CellEditStartingEvent(CellEditEvent):
     """
@@ -120,6 +122,7 @@ class CellEditStartingEvent(CellEditEvent):
         Enter/Return or when the editor loses focus. """
         self.shouldConfigureEditor = False
 
+#----------------------------------------------------------------------------
 
 class CellEditFinishingEvent(CellEditEvent):
     """
@@ -140,6 +143,7 @@ class CellEditFinishingEvent(CellEditEvent):
         """
         self.cellValue = value
 
+#----------------------------------------------------------------------------
 
 class SortEvent(VetoableEvent):
     """
@@ -178,21 +182,22 @@ class SortEvent(VetoableEvent):
         """
         self.wasHandled = wasHandled
 
+#----------------------------------------------------------------------------
 
-class GroupCreationEvent(VetoableEvent):
+class GroupCreationEvent(wx.PyCommandEvent):
     """
     The user is about to create one or more groups.
 
     The handler can mess with the list of groups before they are created: change their
-    names, give them icons, remove them from the list to stop them being created.
-
-    If the handler calls Veto(), none of the groups will be created.
+    names, give them icons, remove them from the list to stop them being created
+    (that last behaviour could be very confusing for the users).
     """
     def __init__(self, objectListView, groups):
-        VetoableEvent.__init__(self, olv_EVT_GROUP_CREATING)
+        wx.PyCommandEvent.__init__(self, olv_EVT_GROUP_CREATING, -1)
         self.objectListView = objectListView
         self.groups = groups
 
+#----------------------------------------------------------------------------
 
 class ExpandCollapseEvent(VetoableEvent):
     """
@@ -209,16 +214,38 @@ class ExpandCollapseEvent(VetoableEvent):
         self.groups = groups
         self.isExpand = isExpand
 
+def ExpandingCollapsingEvent(objectListView, groups, isExpand):
+    if isExpand:
+        return ExpandCollapseEvent(olv_EVT_EXPANDING, objectListView, groups, True)
+    else:
+        return ExpandCollapseEvent(olv_EVT_COLLAPSING, objectListView, groups, False)
 
+def ExpandedCollapsedEvent(objectListView, groups, isExpand):
+    if isExpand:
+        return ExpandCollapseEvent(olv_EVT_EXPANDED, objectListView, groups, True)
+    else:
+        return ExpandCollapseEvent(olv_EVT_COLLAPSED, objectListView, groups, False)
+
+#----------------------------------------------------------------------------
 
 class SortGroupsEvent(wx.PyCommandEvent):
     """
     The given list of groups needs to be sorted.
 
+    Both the groups themselves and the model objects within the group should be sorted.
+
     The handler should rearrange the list of groups in the order desired.
     """
-    def __init__(self, objectListView, groups, sortAscending):
+    def __init__(self, objectListView, groups, sortColumn, sortAscending):
         wx.PyCommandEvent.__init__(self, olv_EVT_GROUP_SORT, -1)
         self.objectListView = objectListView
         self.groups = groups
+        self.sortColumn = sortColumn
         self.sortAscending = sortAscending
+        self.wasHandled = False
+
+    def Handled(self, wasHandled=True):
+        """
+        Indicate that the event handler has sorted the groups.
+        """
+        self.wasHandled = wasHandled

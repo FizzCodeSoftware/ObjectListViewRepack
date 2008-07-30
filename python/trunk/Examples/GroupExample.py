@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #!/usr/bin/env python
 
+import datetime
 import wx
 
 # Where can we find the ObjectListView module?
@@ -11,6 +12,7 @@ from ObjectListView import ObjectListView, GroupListView, ColumnDefn
 
 import ExampleModel
 import ExampleImages # We store our images as python code
+
 
 class MyFrame(wx.Frame):
     def __init__(self, *args, **kwds):
@@ -85,8 +87,9 @@ class MyFrame(wx.Frame):
             ColumnDefn("Rating", "center", 100, "rating")
         ])
         #self.myOlv.CreateCheckStateColumn()
+        self.myOlv.SetSortColumn(self.myOlv.columns[2])
         self.myOlv.SetObjects(self.songs)
-        self.myOlv.cellEditMode = ObjectListView.CELLEDIT_F2ONLY
+        #self.myOlv.cellEditMode = ObjectListView.CELLEDIT_F2ONLY
 
 
 if __name__ == '__main__':

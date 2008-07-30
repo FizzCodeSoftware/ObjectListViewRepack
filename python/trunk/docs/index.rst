@@ -30,8 +30,10 @@ OK, here's the bullet point feature list:
 * Supports alternate rows background colors.
 * Supports custom formatting of rows.
 * Supports searching (by typing) on any column, even on massive lists.
+* Supports custom sorting
 * The `FastObjectListView` version can build a list of 10,000 objects in less than 0.1 seconds.
 * The `VirtualObjectListView` version supports millions of rows through ListCtrl's virtual mode.
+* The `GroupListView` version supports arranging rows into collapsible groups.
 
 OK, I'm interested. What do I do next?
 --------------------------------------
@@ -86,6 +88,7 @@ Site contents
    gettingStarted
    recipes
    Recipe - Cell Editing <cellEditing>
+   groupListView
    faq
    majorClasses
    changelog

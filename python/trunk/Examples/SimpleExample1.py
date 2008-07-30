@@ -11,21 +11,6 @@ from ObjectListView import ObjectListView, ColumnDefn
 
 import ExampleModel
 
-class Track(object):
-    """
-    Simple minded object that represents a song in a music library
-    """
-    def __init__(self, title, artist, album, sizeInBytes, lastPlayed, rating):
-        self.title = title
-        self.artist = artist
-        self.album = album
-        self.lastPlayed = datetime.datetime(*(time.strptime(lastPlayed, "%d/%m/%Y %I:%M %p")[0:6]))
-        self.sizeInBytes = sizeInBytes
-        self.rating = rating
-
-    def GetSizeInMb(self):
-        return self.sizeInBytes / (1024.0*1024.0)
-
 class MyFrame(wx.Frame):
     def __init__(self, *args, **kwds):
         wx.Frame.__init__(self, *args, **kwds)
