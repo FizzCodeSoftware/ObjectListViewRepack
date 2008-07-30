@@ -264,7 +264,7 @@ class ObjectListView(wx.ListCtrl):
             from wx.lib.stattext import GenStaticText as StaticText
         else:
             StaticText = wx.StaticText
-        
+
         self.stEmptyListMsg = StaticText(self, -1, "This list is empty and is a long string to see what happens",
             wx.Point(0, 0), wx.Size(0, 0), wx.ALIGN_CENTER | wx.ST_NO_AUTORESIZE | wx.FULL_REPAINT_ON_RESIZE)
         self.stEmptyListMsg.Hide()
@@ -1334,7 +1334,6 @@ class ObjectListView(wx.ListCtrl):
         lo = start
         hi = end
         while lo < hi:
-            self.__rows += 1
             mid = (lo + hi) // 2
             strValue = searchColumn.GetStringValue(self.GetObjectAt(mid))
             if cmpFunc(searchFor, strValue.lower()):
