@@ -398,6 +398,15 @@ class TestGroupObjectListView(TestObjectListView):
                 else:
                     self.assertEqual(self.objectListView.evenRowsBackColor, self.getBackgroundColour(i))
 
+    def getBackgroundColour(self, i):
+        # There is no direct way to get the background colour of an item in a virtual
+        # list, so we have to cheat by approximating the process of building a list item
+        attr = self.objectListView.OnGetItemAttr(i)
+        if attr is None or not attr.HasBackgroundColour():
+            return self.objectListView.GetItemBackgroundColour(i) # this returns an invalid color
+        else:
+            return attr.GetBackgroundColour()
+        
     #----------------------------------------------------------------------------
     # Test class specific functionality
 
