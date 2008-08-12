@@ -17,14 +17,17 @@
 A WordWrapRenderer encapsulates the ability to draw and measure word wrapped
 strings directly to a device context.
 
-It is meant to be good enough for general use.
-It is not suitable for typographic layout -- it does not handle kerning or ligatures.
+It is meant to be good enough for general use. It is not suitable for typographic layout
+-- it does not handle kerning or ligatures.
 
-The clever parts of the code belong to Josiah Carlson. All the bugs belong to me.
+The DC passed to these methods cannot be a GraphicContext DC. These methods use
+GetPartialTextExtents() which does not work with GCDC's (as of wx 2.8).
+
 """
 
-import textwrap
 import wx
+import bisect
+from wx.lib.wordwrap import wordwrap
 
 class WordWrapRenderer:
     """
@@ -42,18 +45,8 @@ class WordWrapRenderer:
 
         Remember to set the font on the dc before calling this method.
         """
-        wrapper = _VariableTextWrapper(width=width, break_long_words=True)
-        wrapper.dc = dc
-
-        # How many lines are needed to draw the string?
-        lineCount = 0
-        for inputLine in text.split("\n"):
-            if inputLine == "":
-                lineCount += 1
-            else:
-                lineCount += len(wrapper.wrap(inputLine))
-
-        return lineCount * WordWrapRenderer._CalculateLineHeight(dc)
+        lines = wordwrap(text, width, dc, True)
+        return (lines.count("\n")+1) * WordWrapRenderer._CalculateLineHeight(dc)
 
     @staticmethod
     def _CalculateLineHeight(dc):
@@ -64,161 +57,94 @@ class WordWrapRenderer:
     # Rendering
 
     @staticmethod
-    def DrawString(dc, text, bounds, align=wx.ALIGN_LEFT, allowClipping=True):
+    def DrawString(dc, text, bounds, align=wx.ALIGN_LEFT, valign=wx.ALIGN_TOP, allowClipping=False):
         """
         Draw the given text word-wrapped within the given bounds.
 
-        bounds must be a 4-element collection: (left, top, width, height).
+        bounds must be a wx.Rect or a 4-element collection: (left, top, width, height).
 
         If allowClipping is True, this method changes the clipping region so that no
         text is drawn outside of the given bounds.
         """
-        wrapper = _VariableTextWrapper(width=bounds[2], break_long_words=True)
-        wrapper.dc = dc
-
         if allowClipping:
             dc.SetClippingRegion(*bounds)
 
-        height = WordWrapRenderer._CalculateLineHeight(dc)
-        x, y = bounds[0:2]
-        for inputLine in text.split("\n"):
-            if inputLine == "":
-                y += height
-            else:
-                for line in wrapper.wrap(inputLine):
-                    WordWrapRenderer._DrawOneLine(dc, line, x, y, bounds[2], align)
-                    y += height
+        if align == wx.ALIGN_CENTER:
+            align = wx.ALIGN_CENTER_HORIZONTAL
+
+        if valign == wx.ALIGN_CENTER:
+            valign = wx.ALIGN_CENTER_VERTICAL
+
+        try:
+            bounds = wx.Rect(*bounds)
+        except:
+            pass
+
+        lines = wordwrap(text, bounds[2], dc, True)
+        dc.DrawLabel(lines, bounds, align|valign)
 
         if allowClipping:
             dc.DestroyClippingRegion()
 
-        #dc.SetPen(wx.BLACK_PEN)
+        #dc.SetPen(wx.RED_PEN)
         #dc.SetBrush(wx.TRANSPARENT_BRUSH)
-        #dc.DrawRectangle(bounds[0], bounds[1], bounds[2], y-bounds[1])
+        #dc.DrawRectangle(*bounds)
+
+
 
     @staticmethod
-    def _DrawOneLine(dc, line, left, top, width, alignment):
-        x = left
-        if alignment != wx.ALIGN_LEFT:
-            lineWidth = dc.GetTextExtent(line)[0]
-            if alignment == wx.ALIGN_CENTER:
-                x = left + ((width - lineWidth) / 2)
-            elif alignment == wx.ALIGN_RIGHT:
-                x = left + (width - lineWidth) - 1
-        dc.DrawText(line, x, top)
-
-
-class _VariableTextWrapper(textwrap.TextWrapper):
-    """
-    This code is adapted from a wxPython-user mailing list posting by
-    Josiah Carlson on Nov 06, 2005
-    """
-
-    def GetTextWidth(self, text):
-        return self.dc.GetTextExtent(text)[0]
-
-    def _handle_long_word(self, chunks, cur_line, cur_len, width):
-        """_handle_long_word(chunks : [string],
-                             cur_line : [string],
-                             cur_len : int, width : int)
-
-        Handle a chunk of text (most likely a word, not whitespace) that
-        is too long to fit in any line.
+    def DrawTruncatedString(dc, text, bounds, align=wx.ALIGN_LEFT, valign=wx.ALIGN_TOP, ellipse=wx.RIGHT, ellipseChars="..."):
         """
-        space_left = max(width - cur_len, 1)
+        Draw the given text truncated to the given bounds.
 
-        # If we're allowed to break long words, then do so: put as much
-        # of the next chunk onto the current line as will fit.
-        if self.break_long_words:
-            use = 0
-            x = self.GetTextWidth(chunks[0][use])
-            while x < space_left and use < len(chunks[0])-1:
-                space_left -= x
-                use += 1
-                x = self.GetTextWidth(chunks[0][use])
-            if use > 0:
-                use -= 1
-            cur_line.append(chunks[0][:use])
-            chunks[0] = chunks[0][use:]
+        bounds must be a wx.Rect or a 4-element collection: (left, top, width, height).
 
-        # Otherwise, we have to preserve the long word intact.  Only add
-        # it to the current line if there's nothing already there --
-        # that minimizes how much we violate the width constraint.
-        elif not cur_line:
-            cur_line.append(chunks.pop(0))
-
-        # If we're not allowed to break long words, and there's already
-        # text on the current line, do nothing.  Next time through the
-        # main loop of _wrap_chunks(), we'll wind up here again, but
-        # cur_len will be zero, so the next line will be entirely
-        # devoted to the long word that we can't handle right now.
-
-    def _wrap_chunks(self, chunks):
-        """_wrap_chunks(chunks : [string]) -> [string]
-
-        Wrap a sequence of text chunks and return a list of lines of
-        length 'self.width' or less.  (If 'break_long_words' is false,
-        some lines may be longer than this.)  Chunks correspond roughly
-        to words and the whitespace between them: each chunk is
-        indivisible (modulo 'break_long_words'), but a line break can
-        come between any two chunks.  Chunks should not have internal
-        whitespace; ie. a chunk is either all whitespace or a "word".
-        Whitespace chunks will be removed from the beginning and end of
-        lines, but apart from that whitespace is preserved.
+        If allowClipping is True, this method changes the clipping region so that no
+        text is drawn outside of the given bounds.
         """
-        lines = []
-        if self.width <= 0:
-            raise ValueError("invalid width %r (must be > 0)" % self.width)
+        try:
+            bounds = wx.Rect(*bounds)
+        except:
+            pass
+        lines = WordWrapRenderer._Truncate(dc, text, bounds[2], ellipse, ellipseChars)
+        dc.DrawLabel(lines, bounds, align|valign)
 
-        while chunks:
 
-            # Start the list of chunks that will make up the current line.
-            # cur_len is just the length of all the chunks in cur_line.
-            cur_line = []
-            cur_len = 0
+    @staticmethod
+    def _Truncate(dc, text, maxWidth, ellipse, ellipseChars):
+        """
+        Return a string that will fit within the given width.
+        """
+        line = text.split("\n")[0] # only consider the first line
+        if not line:
+            return ""
 
-            # Figure out which static string will prefix this line.
-            if lines:
-                indent = self.subsequent_indent
-            else:
-                indent = self.initial_indent
+        pte = dc.GetPartialTextExtents(line)
 
-            # Maximum width for this line.
-            width = self.width - self.GetTextWidth(indent)
+        # Does the whole thing fit within our given width?
+        stringWidth = pte[-1]
+        if stringWidth <= maxWidth:
+            return line
 
-            # First chunk on line is whitespace -- drop it, unless this
-            # is the very beginning of the text (ie. no lines started yet).
-            if chunks[0].strip() == '' and lines:
-                del chunks[0]
+        # We (probably) have to ellipse the text so allow for ellipse
+        maxWidthMinusEllipse = maxWidth - dc.GetTextExtent(ellipseChars)[0]
 
-            while chunks:
-                l = self.GetTextWidth(chunks[0])
+        if ellipse == wx.LEFT:
+            i = bisect.bisect(pte, stringWidth - maxWidthMinusEllipse)
+            return ellipseChars + line[i+1:]
 
-                # Can at least squeeze this chunk onto the current line.
-                if cur_len + l <= width:
-                    cur_line.append(chunks.pop(0))
-                    cur_len += l
+        if ellipse == wx.CENTER:
+            i = bisect.bisect(pte, maxWidthMinusEllipse / 2)
+            j = bisect.bisect(pte, stringWidth - maxWidthMinusEllipse / 2)
+            return line[:i] + ellipseChars + line[j+1:]
 
-                # Nope, this line is full.
-                else:
-                    break
+        if ellipse == wx.RIGHT:
+            i = bisect.bisect(pte, maxWidthMinusEllipse)
+            return line[:i] + ellipseChars
 
-            # The current line is full, and the next chunk is too big to
-            # fit on *any* line (not just this one).
-            if chunks and self.GetTextWidth(chunks[0]) > width:
-                self._handle_long_word(chunks, cur_line, cur_len, width)
-
-            # If the last chunk on this line is all whitespace, drop it.
-            if cur_line and cur_line[-1].strip() == '':
-                del cur_line[-1]
-
-            # Convert current line back to a string and store it in list
-            # of all lines (return value).
-            if cur_line:
-                lines.append(indent + ''.join(cur_line))
-
-        return lines
-
+        # No ellipsing, just truncating is the default
+        i = bisect.bisect(pte, maxWidth)
+        return line[:i]
 
 #======================================================================
 # TESTING ONLY
@@ -237,12 +163,13 @@ This is on new line by itself.
 This should have a blank line in front of it but still wrap when we reach the edge.
 
 The bottom of the red rectangle should be immediately below this."""
-            self.font = wx.FFont(12, wx.FONTFAMILY_MODERN, 0, "Arial")
             if wx.Platform == "__WXMSW__":
-                #self.font = wx.FFont(36, wx.FONTFAMILY_DEFAULT, 0, "Gill Sans")
-                self.font = wx.FFont(24, wx.FONTFAMILY_DEFAULT, 0, "Chiller")
-            if wx.Platform == "__WXGTK__":
-                self.font = wx.FFont(18, wx.FONTFAMILY_DEFAULT, 0, "FreeSerif")
+                fontName = "Gill Sans"
+            elif wx.Platform == "__WXGTK__":
+                fontName = "FreeSerif"
+            else:
+                fontName = "Helvetica"
+            self.font = wx.FFont(12, wx.FONTFAMILY_SWISS, 0, fontName)
 
         def OnPaint(self, evt):
             dc = wx.PaintDC(self)
@@ -256,7 +183,8 @@ The bottom of the red rectangle should be immediately below this."""
             dc.SetPen(wx.RED_PEN)
             rect[3] = WordWrapRenderer.CalculateHeight(dc, self.text, rect[2])
             dc.DrawRectangle(*rect)
-            WordWrapRenderer.DrawString(dc, self.text, rect, wx.ALIGN_CENTER)
+            WordWrapRenderer.DrawString(dc, self.text, rect, wx.ALIGN_LEFT)
+            #WordWrapRenderer.DrawTruncatedString(dc, self.text, rect, wx.ALIGN_CENTER_HORIZONTAL,s ellipse=wx.CENTER)
 
     class MyFrame(wx.Frame):
         def __init__(self, *args, **kwds):
