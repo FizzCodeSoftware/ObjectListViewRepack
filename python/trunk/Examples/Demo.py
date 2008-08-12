@@ -16,11 +16,11 @@ __author__ = "Phillip Piper"
 __date__ = "24 July 2008"
 __version__ = "1.1"
 
-from datetime import datetime, timedelta, time
 
+from datetime import datetime, time
 import os
-from time import clock, strptime
 import random
+from time import clock, strptime
 
 import wx
 import wx.lib.colourdb as colourdb
@@ -31,6 +31,7 @@ sys.path.append("..")
 
 from ObjectListView import ObjectListView, VirtualObjectListView, FastObjectListView, GroupListView, ColumnDefn
 from ObjectListView import EVT_CELL_EDIT_STARTING, EVT_CELL_EDIT_FINISHING, CellEditorRegistry
+from ObjectListView import ListCtrlPrinter, ReportFormat
 
 import OwnerDrawnEditor
 
@@ -74,10 +75,12 @@ class MyFrame(wx.Frame):
     "The main window for the demo app"
 
     def __init__(self, *args, **kwds):
+        self.PreInit()
         # begin wxGlade: MyFrame.__init__
         kwds["style"] = wx.DEFAULT_FRAME_STYLE
         wx.Frame.__init__(self, *args, **kwds)
         self.notebook_1 = wx.Notebook(self, -1, style=0)
+        self.notebook_1_pane_6 = wx.Panel(self.notebook_1, -1)
         self.notebook_1_pane_5 = wx.Panel(self.notebook_1, -1)
         self.notebook_1_pane_4 = wx.Panel(self.notebook_1, -1)
         self.notebook_1_pane_3 = wx.Panel(self.notebook_1, -1)
@@ -95,6 +98,11 @@ class MyFrame(wx.Frame):
         self.sizer_7_staticbox = wx.StaticBox(self.notebook_1_pane_5, -1, "Group Commands")
         self.sizer_9_copy_copy_staticbox = wx.StaticBox(self.notebook_1_pane_5, -1, "Commands")
         self.sizer_10_copy_copy_staticbox = wx.StaticBox(self.notebook_1_pane_5, -1, "Select")
+        self.sizer_18_staticbox = wx.StaticBox(self.notebook_1_pane_6, -1, "Printing Commands")
+        self.sizer_10_staticbox = wx.StaticBox(self.notebook_1_pane_6, -1, "Sources")
+        self.sizer_15_staticbox = wx.StaticBox(self.notebook_1_pane_6, -1, "Options")
+        self.sizer_17_staticbox = wx.StaticBox(self.notebook_1_pane_6, -1, "Headers")
+        self.sizer_9_staticbox = wx.StaticBox(self.notebook_1_pane_6, -1, "Watermark")
         self.sizer_4_staticbox = wx.StaticBox(self.notebook_1_pane_1, -1, "List View")
         self.frame_1_statusbar = self.CreateStatusBar(1, 0)
         self.text_ctrl_1_copy = wx.TextCtrl(self.notebook_1_pane_1, -1, "This is a minimal example of an ObjectListView. The programmer defines the columns that should be shown -- this includes the attribute that should be should be displayed in the column. Once the columns are defined, the programmer gives the control a collection of model objects. The ObjectListView then manages the displaying and sorting of the list by itself. This tab shows what is possible using only the columns definitions, without handling any callbacks. The 'Album' column is a space filling column -- it will automatically shrink or expand to fill any available space.", style=wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_LINEWRAP|wx.TE_WORDWRAP)
@@ -154,6 +162,36 @@ class MyFrame(wx.Frame):
         self.button_15_copy_copy = wx.Button(self.notebook_1_pane_5, -1, "All")
         self.button_16_copy_copy = wx.Button(self.notebook_1_pane_5, -1, "U2's")
         self.button_17_copy_copy = wx.Button(self.notebook_1_pane_5, -1, "None")
+        self.text_ctrl_1_copy_2_copy_copy = wx.TextCtrl(self.notebook_1_pane_6, -1, "A ListCtrlPrinter takes an ObjectListView (or even a plain ListCtrl) and turns it into a nice report, which can be printed and previewed. Using it is as simple as:\n    printer = ListCtrlPrinter(self.listCtrlToPrint, \"My Title\")\n    printer.PrintPreview()\n\nNOTE: The panel to the right is a wx.PreviewCanvas, which expects to live inside a print preview window, but here it is embedded in a tab control. It mostly works but sometimes throws exceptions (in particular, if you use scroll using a mouse wheel). These exceptions can be safely ignored. In a real app, this panel would be part of the preview frame and thus work properly.", style=wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_LINEWRAP|wx.TE_WORDWRAP)
+        self.button_10 = wx.Button(self.notebook_1_pane_6, -1, "Print Preview")
+        self.button_11 = wx.Button(self.notebook_1_pane_6, -1, "Page Setup")
+        self.button_12 = wx.Button(self.notebook_1_pane_6, -1, "Print")
+        self.cbSimple = wx.CheckBox(self.notebook_1_pane_6, -1, "Simple")
+        self.cbComplex = wx.CheckBox(self.notebook_1_pane_6, -1, "Complex")
+        self.cbFast = wx.CheckBox(self.notebook_1_pane_6, -1, "Fast")
+        self.cbGroups = wx.CheckBox(self.notebook_1_pane_6, -1, "Groups")
+        self.radioBoxFormatting = wx.RadioBox(self.notebook_1_pane_6, -1, "Formatting", choices=["Minimal", "Normal", "Over the top"], majorDimension=0, style=wx.RA_SPECIFY_ROWS)
+        self.cbShrinkToFit = wx.CheckBox(self.notebook_1_pane_6, -1, "Shrink columns to fit within the width of the page")
+        self.cbIncludeImages = wx.CheckBox(self.notebook_1_pane_6, -1, "Include images in the report")
+        self.cbWrapCells = wx.CheckBox(self.notebook_1_pane_6, -1, "Wrap long text within cells")
+        self.cbColumnHeaderOnEachPage = wx.CheckBox(self.notebook_1_pane_6, -1, "Repeat column headers on new pages")
+        self.cbUseListCtrlTextFormat = wx.CheckBox(self.notebook_1_pane_6, -1, "Take text formatting from list control")
+        self.tcPageHeaderLeft = wx.TextCtrl(self.notebook_1_pane_6, -1, "Playing with ListCtrl printing")
+        self.tcPageHeaderCenter = wx.TextCtrl(self.notebook_1_pane_6, -1, "")
+        self.tcPageHeaderRight = wx.TextCtrl(self.notebook_1_pane_6, -1, "")
+        self.tcPageFooterLeft = wx.TextCtrl(self.notebook_1_pane_6, -1, "%(date)s")
+        self.tcPageFooterCenter = wx.TextCtrl(self.notebook_1_pane_6, -1, "")
+        self.tcPageFooterRight = wx.TextCtrl(self.notebook_1_pane_6, -1, "%(currentPage)d of %(totalPages)d")
+        self.tcWatermark = wx.TextCtrl(self.notebook_1_pane_6, -1, "Slothful!")
+        self.watermarkFontCtrl = wx.FontPickerCtrl(self.notebook_1_pane_6, style=wx.FNTP_FONTDESC_AS_LABEL|wx.FNTP_USE_TEXTCTRL)
+        self.watermarkColorCtrl = wx.ColourPickerCtrl(self.notebook_1_pane_6, style=wx.CLRP_USE_TEXTCTRL)
+        self.cbWatermarkOnTop = wx.CheckBox(self.notebook_1_pane_6, -1, "Watermark on top")
+        self.button_13 = wx.Button(self.notebook_1_pane_6, -1, "| <<")
+        self.button_13_copy_1 = wx.Button(self.notebook_1_pane_6, -1, "<<")
+        self.button_13_copy_2 = wx.Button(self.notebook_1_pane_6, -1, ">>")
+        self.button_13_copy_2_copy = wx.Button(self.notebook_1_pane_6, -1, ">> |")
+        self.choiceZoom = wx.Choice(self.notebook_1_pane_6, -1, choices=["25%", "50%", "75%", "100%", "150%", "200%", "400%"])
+        self.previewCanvas = wx.PreviewCanvas(self.printPreview, self.notebook_1_pane_6)
 
         self.__set_properties()
         self.__do_layout()
@@ -205,6 +243,24 @@ class MyFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.OnSelectAllGroup, self.button_15_copy_copy)
         self.Bind(wx.EVT_BUTTON, self.OnSelectU2sGroup, self.button_16_copy_copy)
         self.Bind(wx.EVT_BUTTON, self.OnSelectNoneGroup, self.button_17_copy_copy)
+        self.Bind(wx.EVT_BUTTON, self.OnPrintPreview, self.button_10)
+        self.Bind(wx.EVT_BUTTON, self.OnPageSetup, self.button_11)
+        self.Bind(wx.EVT_BUTTON, self.OnPrint, self.button_12)
+        self.Bind(wx.EVT_CHECKBOX, self.OnSourceChange, self.cbSimple)
+        self.Bind(wx.EVT_CHECKBOX, self.OnSourceChange, self.cbComplex)
+        self.Bind(wx.EVT_CHECKBOX, self.OnSourceChange, self.cbFast)
+        self.Bind(wx.EVT_CHECKBOX, self.OnSourceChange, self.cbGroups)
+        self.Bind(wx.EVT_RADIOBOX, self.OnFormatting, self.radioBoxFormatting)
+        self.Bind(wx.EVT_CHECKBOX, self.OnPreviewOptionChange, self.cbShrinkToFit)
+        self.Bind(wx.EVT_CHECKBOX, self.OnPreviewOptionChange, self.cbIncludeImages)
+        self.Bind(wx.EVT_CHECKBOX, self.OnPreviewOptionChange, self.cbWrapCells)
+        self.Bind(wx.EVT_CHECKBOX, self.OnPreviewOptionChange, self.cbColumnHeaderOnEachPage)
+        self.Bind(wx.EVT_CHECKBOX, self.OnPreviewOptionChange, self.cbUseListCtrlTextFormat)
+        self.Bind(wx.EVT_BUTTON, self.OnFirstPage, self.button_13)
+        self.Bind(wx.EVT_BUTTON, self.OnPreviousPage, self.button_13_copy_1)
+        self.Bind(wx.EVT_BUTTON, self.OnNextPage, self.button_13_copy_2)
+        self.Bind(wx.EVT_BUTTON, self.OnLastPage, self.button_13_copy_2_copy)
+        self.Bind(wx.EVT_CHOICE, self.OnZoom, self.choiceZoom)
         # end wxGlade
 
         self.Init()
@@ -230,11 +286,30 @@ class MyFrame(wx.Frame):
         self.cbLockGroup.SetToolTipString("Lock the current groups. Sorting by a different column will change the sort order within the groups, but not the groups themselves")
         self.cbShowItemCount.SetToolTipString("Show item counts in the group titles")
         self.cbShowItemCount.SetValue(1)
+        self.text_ctrl_1_copy_2_copy_copy.SetBackgroundColour(wx.Colour(252, 255, 138))
+        self.cbComplex.SetValue(1)
+        self.radioBoxFormatting.SetSelection(0)
+        self.choiceZoom.SetSelection(2)
         # end wxGlade
 
     def __do_layout(self):
         # begin wxGlade: MyFrame.__do_layout
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
+        grid_sizer_1 = wx.FlexGridSizer(1, 2, 4, 4)
+        sizer_16 = wx.BoxSizer(wx.HORIZONTAL)
+        grid_sizer_3 = wx.FlexGridSizer(2, 1, 0, 0)
+        sizer_9_copy_1 = wx.FlexGridSizer(1, 6, 0, 0)
+        grid_sizer_4 = wx.FlexGridSizer(5, 1, 4, 0)
+        sizer_9 = wx.StaticBoxSizer(self.sizer_9_staticbox, wx.HORIZONTAL)
+        grid_sizer_5 = wx.FlexGridSizer(4, 2, 2, 2)
+        sizer_17 = wx.StaticBoxSizer(self.sizer_17_staticbox, wx.HORIZONTAL)
+        grid_sizer_2 = wx.FlexGridSizer(2, 2, 2, 4)
+        sizer_14 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_13 = wx.BoxSizer(wx.HORIZONTAL)
+        grid_sizer_1_copy_1 = wx.FlexGridSizer(1, 3, 0, 4)
+        sizer_15 = wx.StaticBoxSizer(self.sizer_15_staticbox, wx.VERTICAL)
+        sizer_10 = wx.StaticBoxSizer(self.sizer_10_staticbox, wx.VERTICAL)
+        sizer_18 = wx.StaticBoxSizer(self.sizer_18_staticbox, wx.HORIZONTAL)
         grid_sizer_3_copy_copy = wx.FlexGridSizer(3, 1, 4, 4)
         grid_sizer_4_copy_copy = wx.FlexGridSizer(1, 3, 4, 4)
         sizer_10_copy_copy = wx.StaticBoxSizer(self.sizer_10_copy_copy_staticbox, wx.HORIZONTAL)
@@ -350,11 +425,76 @@ class MyFrame(wx.Frame):
         self.notebook_1_pane_5.SetSizer(grid_sizer_3_copy_copy)
         grid_sizer_3_copy_copy.AddGrowableRow(1)
         grid_sizer_3_copy_copy.AddGrowableCol(0)
+        grid_sizer_4.Add(self.text_ctrl_1_copy_2_copy_copy, 0, wx.BOTTOM|wx.EXPAND, 4)
+        sizer_18.Add(self.button_10, 0, wx.ALL, 4)
+        sizer_18.Add(self.button_11, 0, wx.ALL, 4)
+        sizer_18.Add(self.button_12, 0, wx.ALL, 4)
+        grid_sizer_4.Add(sizer_18, 1, wx.EXPAND, 0)
+        sizer_10.Add(self.cbSimple, 0, wx.ALL, 4)
+        sizer_10.Add(self.cbComplex, 0, wx.ALL, 4)
+        sizer_10.Add(self.cbFast, 0, wx.ALL, 4)
+        sizer_10.Add(self.cbGroups, 0, wx.ALL, 4)
+        grid_sizer_1_copy_1.Add(sizer_10, 1, wx.EXPAND, 0)
+        grid_sizer_1_copy_1.Add(self.radioBoxFormatting, 0, wx.EXPAND, 0)
+        sizer_15.Add(self.cbShrinkToFit, 0, wx.ALL, 4)
+        sizer_15.Add(self.cbIncludeImages, 0, wx.ALL, 4)
+        sizer_15.Add(self.cbWrapCells, 0, wx.ALL, 4)
+        sizer_15.Add(self.cbColumnHeaderOnEachPage, 0, wx.ALL, 4)
+        sizer_15.Add(self.cbUseListCtrlTextFormat, 0, wx.ALL, 4)
+        grid_sizer_1_copy_1.Add(sizer_15, 1, wx.EXPAND, 0)
+        grid_sizer_4.Add(grid_sizer_1_copy_1, 1, 0, 0)
+        label_2 = wx.StaticText(self.notebook_1_pane_6, -1, "Page Header:")
+        grid_sizer_2.Add(label_2, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 4)
+        sizer_13.Add(self.tcPageHeaderLeft, 0, wx.ALL|wx.EXPAND, 4)
+        sizer_13.Add(self.tcPageHeaderCenter, 0, wx.ALL|wx.EXPAND, 4)
+        sizer_13.Add(self.tcPageHeaderRight, 0, wx.ALL|wx.EXPAND, 4)
+        grid_sizer_2.Add(sizer_13, 1, wx.EXPAND, 0)
+        label_3 = wx.StaticText(self.notebook_1_pane_6, -1, "Page Footer:")
+        grid_sizer_2.Add(label_3, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 4)
+        sizer_14.Add(self.tcPageFooterLeft, 0, wx.ALL, 4)
+        sizer_14.Add(self.tcPageFooterCenter, 0, wx.ALL, 4)
+        sizer_14.Add(self.tcPageFooterRight, 0, wx.ALL, 4)
+        grid_sizer_2.Add(sizer_14, 1, wx.EXPAND, 0)
+        grid_sizer_2.AddGrowableCol(1)
+        sizer_17.Add(grid_sizer_2, 1, wx.EXPAND, 0)
+        grid_sizer_4.Add(sizer_17, 1, wx.EXPAND, 0)
+        label_2_copy_copy = wx.StaticText(self.notebook_1_pane_6, -1, "Watermark Text:")
+        grid_sizer_5.Add(label_2_copy_copy, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 4)
+        grid_sizer_5.Add(self.tcWatermark, 0, wx.ALL|wx.EXPAND, 4)
+        label_2_copy_copy_copy = wx.StaticText(self.notebook_1_pane_6, -1, "Font:")
+        grid_sizer_5.Add(label_2_copy_copy_copy, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 4)
+        grid_sizer_5.Add(self.watermarkFontCtrl, 1, wx.ALL|wx.EXPAND, 4)
+        label_2_copy_copy_copy_1 = wx.StaticText(self.notebook_1_pane_6, -1, "Color:")
+        grid_sizer_5.Add(label_2_copy_copy_copy_1, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 4)
+        grid_sizer_5.Add(self.watermarkColorCtrl, 1, wx.ALL|wx.EXPAND, 4)
+        grid_sizer_5.Add((16, 20), 0, 0, 0)
+        grid_sizer_5.Add(self.cbWatermarkOnTop, 0, wx.ALL, 4)
+        grid_sizer_5.AddGrowableCol(1)
+        sizer_9.Add(grid_sizer_5, 1, wx.EXPAND, 0)
+        grid_sizer_4.Add(sizer_9, 1, wx.EXPAND, 0)
+        grid_sizer_1.Add(grid_sizer_4, 1, wx.EXPAND, 0)
+        sizer_9_copy_1.Add(self.button_13, 0, wx.ALL, 4)
+        sizer_9_copy_1.Add(self.button_13_copy_1, 0, wx.ALL, 4)
+        sizer_9_copy_1.Add(self.button_13_copy_2, 0, wx.ALL, 4)
+        sizer_9_copy_1.Add(self.button_13_copy_2_copy, 0, wx.ALL, 4)
+        label_4 = wx.StaticText(self.notebook_1_pane_6, -1, "Zoom:")
+        sizer_9_copy_1.Add(label_4, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 4)
+        sizer_9_copy_1.Add(self.choiceZoom, 0, wx.ALL, 4)
+        grid_sizer_3.Add(sizer_9_copy_1, 1, wx.EXPAND, 0)
+        grid_sizer_3.Add(self.previewCanvas, 1, wx.EXPAND, 0)
+        grid_sizer_3.AddGrowableRow(1)
+        grid_sizer_3.AddGrowableCol(0)
+        sizer_16.Add(grid_sizer_3, 1, wx.EXPAND, 0)
+        grid_sizer_1.Add(sizer_16, 1, wx.EXPAND, 0)
+        self.notebook_1_pane_6.SetSizer(grid_sizer_1)
+        grid_sizer_1.AddGrowableRow(0)
+        grid_sizer_1.AddGrowableCol(1)
         self.notebook_1.AddPage(self.notebook_1_pane_1, "Simple")
         self.notebook_1.AddPage(self.notebook_1_pane_2, "Complex")
         self.notebook_1.AddPage(self.notebook_1_pane_3, "Virtual")
         self.notebook_1.AddPage(self.notebook_1_pane_4, "Fast")
         self.notebook_1.AddPage(self.notebook_1_pane_5, "Groups")
+        self.notebook_1.AddPage(self.notebook_1_pane_6, "ListCtrl Printing")
         sizer_1.Add(self.notebook_1, 1, wx.ALL|wx.EXPAND, 4)
         self.SetSizer(sizer_1)
         self.Layout()
@@ -363,295 +503,301 @@ class MyFrame(wx.Frame):
     #----------------------------------------------------------------------
     # Initialize
 
+    def PreInit(self):
+        "Do these initializations before creating any widgets"
+        self.InitPrinting()
+
+
     def Init(self):
         "Initialize the application once the UI widgets have been constructed"
         self.InitModel()
         self.InitUI()
+        self.InitPrintPreview()
 
     def InitModel(self):
         "Initialize the model objects that the app will use. These would normally be stored in a db"
         self.counter = 0
         self.dataObjects = [
-            Track(title="Zoo Station", artist="U2", size=5.5, album="Achtung Baby", genre="Rock", rating=60, duration="4:37", lastPlayed="21/10/2007 5:42 PM"),
-            Track(title="Who's Gonna Ride Your Wild Horses", artist="U2", size=6.3, album="Achtung Baby", genre="Rock", rating=80, duration="5:17", lastPlayed="9/10/2007 11:32 AM"),
-            Track(title="So Cruel", artist="U2", size=6.9, album="Achtung Baby", genre="Rock", rating=60, duration="5:49", lastPlayed="9/10/2007 11:38 AM"),
-            Track(title="The Fly", artist="U2", size=5.4, album="Achtung Baby", genre="Rock", rating=60, duration="4:29", lastPlayed="9/10/2007 11:42 AM"),
-            Track(title="Tryin' To Throw Your Arms Around The World", artist="U2", size=4.7, album="Achtung Baby", genre="Rock", rating=60, duration="3:53", lastPlayed="9/10/2007 11:46 AM"),
-            Track(title="Ultraviolet (Light My Way)", artist="U2", size=6.6, album="Achtung Baby", genre="Rock", rating=60, duration="5:31", lastPlayed="9/10/2007 11:52 AM"),
-            Track(title="Acrobat", artist="U2", size=5.4, album="Achtung Baby", genre="Rock", rating=60, duration="4:30", lastPlayed="9/10/2007 11:56 AM"),
-            Track(title="Love Is Blindness", artist="U2", size=5.3, album="Achtung Baby", genre="Rock", rating=60, duration="4:26", lastPlayed="9/10/2007 12:00 PM"),
-            Track(title="Elevation", artist="U2", size=4.5, album="All That You Can't Leave Behind", genre="Rock", rating=60, duration="3:48", lastPlayed="25/01/2008 11:46 PM"),
-            Track(title="Walk On", artist="U2", size=5.8, album="All That You Can't Leave Behind", genre="Rock", rating=100, duration="4:56", lastPlayed="18/03/2008 11:39 PM"),
-            Track(title="Kite", artist="U2", size=5.2, album="All That You Can't Leave Behind", genre="Rock", rating=40, duration="4:27", lastPlayed="23/01/2008 10:36 PM"),
-            Track(title="In A Little While", artist="U2", size=4.3, album="All That You Can't Leave Behind", genre="Rock", rating=60, duration="3:39", lastPlayed="20/01/2008 7:48 PM"),
-            Track(title="Wild Honey", artist="U2", size=4.5, album="All That You Can't Leave Behind", genre="Rock", rating=40, duration="3:47", lastPlayed="13/04/2007 11:50 AM"),
-            Track(title="Peace On Earth", artist="U2", size=5.6, album="All That You Can't Leave Behind", genre="Rock", rating=40, duration="4:48", lastPlayed="22/12/2007 2:51 PM"),
-            Track(title="When I Look At The World", artist="U2", size=5.1, album="All That You Can't Leave Behind", genre="Rock", rating=40, duration="4:18", lastPlayed="22/12/2007 2:55 PM"),
-            Track(title="New York", artist="U2", size=6.4, album="All That You Can't Leave Behind", genre="Rock", rating=60, duration="5:30", lastPlayed="22/12/2007 3:01 PM"),
-            Track(title="Grace", artist="U2", size=6.5, album="All That You Can't Leave Behind", genre="Rock", rating=40, duration="5:32", lastPlayed="22/12/2007 3:06 PM"),
-            Track(title="The Ground Beneath Her Feet(Bonus Track)", artist="U2", size=4.4, album="All That You Can't Leave Behind", genre="Rock", rating=40, duration="3:44", lastPlayed="22/12/2007 3:10 PM"),
-            Track(title="Follow You Home", artist="Nickelback", size=6, album="All The Right Reasons", genre="Rock", rating=40, duration="4:20", lastPlayed="6/03/2008 10:42 PM"),
-            Track(title="Fight For All The Wrong Reason", artist="Nickelback", size=5.2, album="All The Right Reasons", genre="Rock", rating=60, duration="3:44", lastPlayed="15/03/2008 5:04 PM"),
-            Track(title="Photograph", artist="Nickelback", size=6, album="All The Right Reasons", genre="Rock", rating=60, duration="4:19", lastPlayed="15/03/2008 5:08 PM"),
-            Track(title="Animals", artist="Nickelback", size=4.3, album="All The Right Reasons", genre="Rock", rating=40, duration="3:07", lastPlayed="16/02/2008 12:12 AM"),
-            Track(title="Savin' Me", artist="Nickelback", size=5.1, album="All The Right Reasons", genre="Rock", rating=80, duration="3:39", lastPlayed="24/03/2008 10:41 AM"),
-            Track(title="Far Away", artist="Nickelback", size=5.5, album="All The Right Reasons", genre="Rock", rating=40, duration="3:58", lastPlayed="15/03/2008 5:30 PM"),
-            Track(title="Next Contestant", artist="Nickelback", size=5, album="All The Right Reasons", genre="Rock", rating=80, duration="3:35", lastPlayed="24/03/2008 9:47 AM"),
-            Track(title="Side Of A Bullet", artist="Nickelback", size=4.2, album="All The Right Reasons", genre="Rock", rating=40, duration="3:01", lastPlayed="6/03/2008 11:00 PM"),
-            Track(title="If Everyone Cared", artist="Nickelback", size=5, album="All The Right Reasons", genre="Rock", rating=60, duration="3:38", lastPlayed="6/03/2008 11:03 PM"),
-            Track(title="Someone That You're With", artist="Nickelback", size=5.6, album="All The Right Reasons", genre="Rock", rating=40, duration="4:02", lastPlayed="16/02/2008 12:34 AM"),
-            Track(title="Rockstar", artist="Nickelback", size=5.9, album="All The Right Reasons", genre="Rock", rating=60, duration="4:16", lastPlayed="16/02/2008 12:38 AM"),
-            Track(title="Lelani", artist="Hoodoo Gurus", size=5.9, album="Ampology", genre="Rock", rating=60, duration="4:55", lastPlayed="22/10/2007 8:45 PM"),
-            Track(title="Tojo", artist="Hoodoo Gurus", size=4.1, album="Ampology", genre="Rock", rating=60, duration="3:22", lastPlayed="22/10/2007 8:48 PM"),
-            Track(title="My Girl", artist="Hoodoo Gurus", size=3.3, album="Ampology", genre="Rock", rating=80, duration="2:39", lastPlayed="12/11/2007 7:57 PM"),
-            Track(title="Be My Guru", artist="Hoodoo Gurus", size=3.3, album="Ampology", genre="Rock", rating=100, duration="2:39", lastPlayed="20/03/2008 12:15 PM"),
-            Track(title="I Want You Back", artist="Hoodoo Gurus", size=3.9, album="Ampology", genre="Rock", rating=80, duration="3:12", lastPlayed="12/11/2007 7:42 PM"),
-            Track(title="I Was A Kamikaze Pilot", artist="Hoodoo Gurus", size=3.9, album="Ampology", genre="Rock", rating=60, duration="3:10", lastPlayed="22/10/2007 9:00 PM"),
-            Track(title="Bittersweet", artist="Hoodoo Gurus", size=4.7, album="Ampology", genre="Rock", rating=60, duration="3:52", lastPlayed="22/10/2007 9:04 PM"),
-            Track(title="Poison Pen", artist="Hoodoo Gurus", size=5, album="Ampology", genre="Rock", rating=60, duration="4:11", lastPlayed="22/10/2007 9:11 PM"),
-            Track(title="In The Wild", artist="Hoodoo Gurus", size=3.9, album="Ampology", genre="Rock", rating=60, duration="3:12", lastPlayed="22/10/2007 9:14 PM"),
-            Track(title="Whats My Scene?", artist="Hoodoo Gurus", size=4.6, album="Ampology", genre="Rock", rating=100, duration="3:49", lastPlayed="12/11/2007 7:51 PM"),
-            Track(title="Heart Of Darkness", artist="Hoodoo Gurus", size=3.8, album="Ampology", genre="Rock", rating=60, duration="3:04", lastPlayed="22/10/2007 9:21 PM"),
-            Track(title="Good Times", artist="Hoodoo Gurus", size=3.7, album="Ampology", genre="Rock", rating=80, duration="3:02", lastPlayed="20/03/2008 12:18 PM"),
-            Track(title="Cajun Country", artist="Hoodoo Gurus", size=4.9, album="Ampology", genre="Rock", rating=60, duration="4:06", lastPlayed="22/10/2007 9:28 PM"),
-            Track(title="Axegrinder", artist="Hoodoo Gurus", size=4.2, album="Ampology", genre="Rock", rating=60, duration="3:26", lastPlayed="22/10/2007 9:32 PM"),
-            Track(title="Another World", artist="Hoodoo Gurus", size=4, album="Ampology", genre="Rock", rating=80, duration="3:16", lastPlayed="20/03/2008 12:21 PM"),
-            Track(title="Meant To Live", artist="Switchfoot", size=4, album="The Beautiful Letdown", genre="Gospel & Religious", rating=100, duration="3:26", lastPlayed="3/03/2008 1:46 PM"),
-            Track(title="This Is Your Life", artist="Switchfoot", size=4, album="The Beautiful Letdown", genre="Gospel & Religious", rating=100, duration="4:18", lastPlayed="3/03/2008 2:11 PM"),
-            Track(title="More than fine", artist="Switchfoot", size=4.9, album="The Beautiful Letdown", genre="Gospel & Religious", rating=60, duration="4:15", lastPlayed="3/03/2008 2:16 PM"),
-            Track(title="Ammunition", artist="Switchfoot", size=4.4, album="The Beautiful Letdown", genre="Gospel & Religious", rating=40, duration="3:46", lastPlayed="3/03/2008 1:58 PM"),
-            Track(title="Dare you to move", artist="Switchfoot", size=4.9, album="The Beautiful Letdown", genre="Gospel & Religious", rating=80, duration="4:15", lastPlayed="3/03/2008 2:20 PM"),
-            Track(title="Redemption", artist="Switchfoot", size=3.6, album="The Beautiful Letdown", genre="Gospel & Religious", rating=80, duration="3:07", lastPlayed="19/03/2008 5:19 PM"),
-            Track(title="The beautiful letdown", artist="Switchfoot", size=6.2, album="The Beautiful Letdown", genre="Gospel & Religious", rating=60, duration="5:21", lastPlayed="3/03/2008 2:29 PM"),
-            Track(title="Gone", artist="Switchfoot", size=4.4, album="The Beautiful Letdown", genre="Gospel & Religious", rating=80, duration="3:46", lastPlayed="3/03/2008 2:33 PM"),
-            Track(title="On Fire", artist="Switchfoot", size=4.3, album="The Beautiful Letdown", genre="Gospel & Religious", rating=80, duration="4:39", lastPlayed="3/03/2008 2:37 PM"),
-            Track(title="Adding to the noise", artist="Switchfoot", size=3.3, album="The Beautiful Letdown", genre="Gospel & Religious", rating=60, duration="2:51", lastPlayed="19/03/2008 5:42 PM"),
-            Track(title="Twenty-four", artist="Switchfoot", size=5.7, album="The Beautiful Letdown", genre="Gospel & Religious", rating=60, duration="4:54", lastPlayed="3/03/2008 2:45 PM"),
-            Track(title="Gap That Opened", artist="Boom Crash Opera", size=4.7, album="Boom Crash Opera", genre="Rock", rating=40, duration="4:02", lastPlayed="13/01/2008 10:11 PM"),
-            Track(title="Hands Up In The Air", artist="Boom Crash Opera", size=4.5, album="Boom Crash Opera", genre="Rock", rating=80, duration="3:53", lastPlayed="24/03/2008 3:19 PM"),
-            Track(title="Love Me To Death", artist="Boom Crash Opera", size=5.2, album="Boom Crash Opera", genre="Rock", rating=40, duration="4:27", lastPlayed="13/01/2008 10:20 PM"),
-            Track(title="City Fist", artist="Boom Crash Opera", size=4.9, album="Boom Crash Opera", genre="Rock", rating=40, duration="4:11", lastPlayed="13/01/2008 10:24 PM"),
-            Track(title="Her Charity", artist="Boom Crash Opera", size=5.8, album="Boom Crash Opera", genre="Rock", rating=40, duration="5:01", lastPlayed="13/01/2008 10:29 PM"),
-            Track(title="Sleeping Time", artist="Boom Crash Opera", size=5.2, album="Boom Crash Opera", genre="Rock", rating=40, duration="4:26", lastPlayed="13/01/2008 10:33 PM"),
-            Track(title="Great Wall", artist="Boom Crash Opera", size=4.5, album="Boom Crash Opera", genre="Rock", rating=80, duration="3:51", lastPlayed="24/03/2008 3:22 PM"),
-            Track(title="Bombshell", artist="Boom Crash Opera", size=4.5, album="Boom Crash Opera", genre="Rock", rating=40, duration="3:50", lastPlayed="13/01/2008 10:41 PM"),
-            Track(title="Caught Between Two Towns", artist="Boom Crash Opera", size=4, album="Boom Crash Opera", genre="Rock", rating=40, duration="3:28", lastPlayed="13/01/2008 10:44 PM"),
-            Track(title="Too Hot To Think", artist="Boom Crash Opera", size=6.3, album="Boom Crash Opera", genre="Rock", rating=40, duration="5:26", lastPlayed="13/01/2008 10:50 PM"),
-            Track(title="Starting Today", artist="Natalie Imbruglia", size=6.8, album="Counting Down the Days", genre="Adult Alternative Pop/Rock", rating=0, duration="2:56", lastPlayed="19/03/2008 9:48 PM"),
-            Track(title="Shiver", artist="Natalie Imbruglia", size=8.6, album="Counting Down the Days", genre="Adult Alternative Pop/Rock", rating=80, duration="3:45", lastPlayed="19/03/2008 9:51 PM"),
-            Track(title="Satisfied", artist="Natalie Imbruglia", size=8.1, album="Counting Down the Days", genre="Adult Alternative Pop/Rock", rating=0, duration="3:30", lastPlayed="19/03/2008 9:55 PM"),
-            Track(title="Counting Down the Days", artist="Natalie Imbruglia", size=9.6, album="Counting Down the Days", genre="Adult Alternative Pop/Rock", rating=60, duration="4:09", lastPlayed="26/03/2008 10:33 PM"),
-            Track(title="I Won't Be Lost", artist="Natalie Imbruglia", size=9, album="Counting Down the Days", genre="Adult Alternative Pop/Rock", rating=60, duration="3:53", lastPlayed="26/03/2008 10:37 PM"),
-            Track(title="Slow Down", artist="Natalie Imbruglia", size=8.1, album="Counting Down the Days", genre="Adult Alternative Pop/Rock", rating=60, duration="3:32", lastPlayed="26/03/2008 10:41 PM"),
-            Track(title="Sanctuary", artist="Natalie Imbruglia", size=7.3, album="Counting Down the Days", genre="Adult Alternative Pop/Rock", rating=60, duration="3:09", lastPlayed="26/03/2008 10:44 PM"),
-            Track(title="Perfectly", artist="Natalie Imbruglia", size=7.8, album="Counting Down the Days", genre="Adult Alternative Pop/Rock", rating=80, duration="3:24", lastPlayed="26/03/2008 10:47 PM"),
-            Track(title="On the Run", artist="Natalie Imbruglia", size=8.4, album="Counting Down the Days", genre="Adult Alternative Pop/Rock", rating=60, duration="3:38", lastPlayed="26/03/2008 10:51 PM"),
-            Track(title="Come on Home", artist="Natalie Imbruglia", size=9.1, album="Counting Down the Days", genre="Adult Alternative Pop/Rock", rating=60, duration="3:56", lastPlayed="26/03/2008 10:55 PM"),
-            Track(title="When You're Sleeping", artist="Natalie Imbruglia", size=7.2, album="Counting Down the Days", genre="Adult Alternative Pop/Rock", rating=60, duration="3:07", lastPlayed="26/03/2008 10:58 PM"),
-            Track(title="Honeycomb Child", artist="Natalie Imbruglia", size=9.8, album="Counting Down the Days", genre="Adult Alternative Pop/Rock", rating=0, duration="4:15", lastPlayed="26/03/2008 11:02 PM"),
-            Track(title="Last Living Souls", artist="Gorillaz", size=4.5, album="Demon Days", genre="Hip-Hop", rating=80, duration="3:11", lastPlayed="12/01/2008 9:55 PM"),
-            Track(title="Kids With Guns", artist="Gorillaz", size=5.3, album="Demon Days", genre="Hip-Hop", rating=80, duration="3:46", lastPlayed="24/03/2008 12:52 PM"),
-            Track(title="O Green World", artist="Gorillaz", size=6.3, album="Demon Days", genre="Hip-Hop", rating=80, duration="4:32", lastPlayed="24/03/2008 12:45 PM"),
-            Track(title="Dirty Harry", artist="Gorillaz", size=5.2, album="Demon Days", genre="Hip-Hop", rating=80, duration="3:44", lastPlayed="24/03/2008 12:48 PM"),
-            Track(title="Feel Good Inc.", artist="Gorillaz", size=5.4, album="Demon Days", genre="Hip-Hop", rating=100, duration="3:41", lastPlayed="24/03/2008 1:07 PM"),
-            Track(title="El Manana", artist="Gorillaz", size=5.4, album="Demon Days", genre="Hip-Hop", rating=40, duration="3:50", lastPlayed="17/03/2008 5:45 PM"),
-            Track(title="Every Plant We Reach Is Dead", artist="Gorillaz", size=6.8, album="Demon Days", genre="Hip-Hop", rating=80, duration="4:53", lastPlayed="24/03/2008 12:57 PM"),
-            Track(title="November Has Come", artist="Gorillaz", size=3.8, album="Demon Days", genre="Hip-Hop", rating=80, duration="2:41", lastPlayed="24/03/2008 12:59 PM"),
-            Track(title="All Alone", artist="Gorillaz", size=4.9, album="Demon Days", genre="Hip-Hop", rating=80, duration="3:30", lastPlayed="12/01/2008 9:49 PM"),
-            Track(title="White Light", artist="Gorillaz", size=3, album="Demon Days", genre="Hip-Hop", rating=80, duration="2:09", lastPlayed="17/02/2008 3:30 PM"),
-            Track(title="DARE", artist="Gorillaz", size=5.7, album="Demon Days", genre="Hip-Hop", rating=80, duration="4:05", lastPlayed="24/03/2008 1:03 PM"),
-            Track(title="Don't Get Lost In Heaven", artist="Gorillaz", size=2.9, album="Demon Days", genre="Hip-Hop", rating=80, duration="2:01", lastPlayed="24/03/2008 12:36 PM"),
-            Track(title="Demon Days", artist="Gorillaz", size=6.3, album="Demon Days", genre="Hip-Hop", rating=80, duration="4:29", lastPlayed="24/03/2008 12:40 PM"),
-            Track(title="The Pretender", artist="Foo Fighters", size=8.3, album="Echoes, Silence, Patience & Grace", genre="Alternative", rating=60, duration="4:29", lastPlayed="24/03/2008 11:20 AM"),
-            Track(title="Let It Die", artist="Foo Fighters", size=7.6, album="Echoes, Silence, Patience & Grace", genre="Alternative", rating=40, duration="4:05", lastPlayed="24/03/2008 11:24 AM"),
-            Track(title="Erase/Replace", artist="Foo Fighters", size=7.8, album="Echoes, Silence, Patience & Grace", genre="Alternative", rating=60, duration="4:13", lastPlayed="24/03/2008 11:28 AM"),
-            Track(title="Long Road To Ruin", artist="Foo Fighters", size=7, album="Echoes, Silence, Patience & Grace", genre="Alternative", rating=60, duration="3:45", lastPlayed="24/03/2008 11:31 AM"),
-            Track(title="Come Alive", artist="Foo Fighters", size=9.6, album="Echoes, Silence, Patience & Grace", genre="Alternative", rating=60, duration="5:10", lastPlayed="24/03/2008 11:37 AM"),
-            Track(title="Stranger Things Have Happened", artist="Foo Fighters", size=9.9, album="Echoes, Silence, Patience & Grace", genre="Alternative", rating=80, duration="5:21", lastPlayed="24/03/2008 11:42 AM"),
-            Track(title="Cheer Up, Boys (Your Makeup Is Running)", artist="Foo Fighters", size=6.8, album="Echoes, Silence, Patience & Grace", genre="Alternative", rating=40, duration="3:41", lastPlayed="24/03/2008 11:45 AM"),
-            Track(title="Summer's End", artist="Foo Fighters", size=8.6, album="Echoes, Silence, Patience & Grace", genre="Alternative", rating=60, duration="4:38", lastPlayed="24/03/2008 11:50 AM"),
-            Track(title="The Ballad Of The Beaconsfield", artist="Foo Fighters", size=4.7, album="Echoes, Silence, Patience & Grace", genre="Instrumental", rating=80, duration="2:32", lastPlayed="24/03/2008 11:53 AM"),
-            Track(title="Statues", artist="Foo Fighters", size=7, album="Echoes, Silence, Patience & Grace", genre="Alternative", rating=60, duration="3:48", lastPlayed="24/03/2008 11:57 AM"),
-            Track(title="But, Honestly", artist="Foo Fighters", size=8.5, album="Echoes, Silence, Patience & Grace", genre="Alternative", rating=40, duration="4:35", lastPlayed="24/03/2008 12:01 PM"),
-            Track(title="Home", artist="Foo Fighters", size=9, album="Echoes, Silence, Patience & Grace", genre="Alternative", rating=80, duration="4:52", lastPlayed="24/03/2008 12:06 PM"),
-            Track(title="Once And For All (Demo) (Bonus Track)", artist="Foo Fighters", size=7, album="Echoes, Silence, Patience & Grace", genre="Alternative", rating=0, duration="3:48", lastPlayed="24/03/2008 12:10 PM"),
-            Track(title="Going Under", artist="Evanescence", size=4.2, album="Fallen", genre="Metal", rating=0, duration="3:35", lastPlayed="4/02/2008 6:09 PM"),
-            Track(title="Bring Me To Life", artist="Evanescence", size=4.6, album="Fallen", genre="Metal", rating=100, duration="3:57", lastPlayed="25/03/2008 12:56 AM"),
-            Track(title="Everybody's Fool", artist="Evanescence", size=3.8, album="Fallen", genre="Metal", rating=0, duration="3:16", lastPlayed="4/02/2008 6:16 PM"),
-            Track(title="Haunted", artist="Evanescence", size=3.6, album="Fallen", genre="Metal", rating=0, duration="3:07", lastPlayed="4/02/2008 6:19 PM"),
-            Track(title="Tourniquet", artist="Evanescence", size=5.4, album="Fallen", genre="Metal", rating=0, duration="4:38", lastPlayed="4/02/2008 6:24 PM"),
-            Track(title="Imaginary", artist="Evanescence", size=5, album="Fallen", genre="Metal", rating=0, duration="4:18", lastPlayed="4/02/2008 6:28 PM"),
-            Track(title="Taking Over Me", artist="Evanescence", size=4.4, album="Fallen", genre="Metal", rating=0, duration="3:50", lastPlayed="15/03/2008 4:57 PM"),
-            Track(title="Hello", artist="Evanescence", size=4.3, album="Fallen", genre="Metal", rating=0, duration="3:40", lastPlayed="4/02/2008 6:35 PM"),
-            Track(title="My Last Breath", artist="Evanescence", size=4.8, album="Fallen", genre="Metal", rating=0, duration="4:07", lastPlayed="15/03/2008 4:23 PM"),
-            Track(title="Whisper", artist="Evanescence", size=6.3, album="Fallen", genre="Metal", rating=0, duration="5:30", lastPlayed="4/02/2008 6:45 PM"),
-            Track(title="My Immortal", artist="Evanescence", size=5.3, album="Fallen", genre="Metal", rating=0, duration="4:33", lastPlayed="4/02/2008 6:50 PM"),
-            Track(title="One-Trick Pony", artist="Nelly Furtado", size=5, album="Folklore", genre="Pop", rating=80, duration="4:47", lastPlayed="15/03/2008 6:46 PM"),
-            Track(title="Powerless (Say What You Want)", artist="Nelly Furtado", size=4.2, album="Folklore", genre="Pop", rating=80, duration="3:52", lastPlayed="15/03/2008 6:50 PM"),
-            Track(title="Explode", artist="Nelly Furtado", size=4.1, album="Folklore", genre="Pop", rating=80, duration="3:44", lastPlayed="15/03/2008 6:53 PM"),
-            Track(title="Try", artist="Nelly Furtado", size=4.9, album="Folklore", genre="Pop", rating=80, duration="4:39", lastPlayed="15/03/2008 11:49 AM"),
-            Track(title="Fresh off the Boat", artist="Nelly Furtado", size=3.7, album="Folklore", genre="Pop", rating=60, duration="3:16", lastPlayed="22/02/2008 12:49 PM"),
-            Track(title=u"Força", artist="Nelly Furtado", size=4, album="Folklore", genre="Pop", rating=40, duration="3:40", lastPlayed="22/02/2008 12:53 PM"),
-            Track(title="The Grass Is Green", artist="Nelly Furtado", size=4.2, album="Folklore", genre="Pop", rating=40, duration="3:50", lastPlayed="22/02/2008 12:57 PM"),
-            Track(title="Picture Perfect", artist="Nelly Furtado", size=5.5, album="Folklore", genre="Pop", rating=40, duration="5:15", lastPlayed="19/01/2008 12:08 PM"),
-            Track(title="Saturdays", artist="Jarvis Church/Nelly Furtado", size=2.6, album="Folklore", genre="Pop", rating=40, duration="2:05", lastPlayed="7/01/2008 7:33 PM"),
-            Track(title="Build You Up", artist="Nelly Furtado", size=5.2, album="Folklore", genre="Pop", rating=40, duration="4:58", lastPlayed="22/02/2008 1:03 PM"),
-            Track(title="Island of Wonder", artist="Caetano Veloso/Nelly Furtado", size=4.2, album="Folklore", genre="Pop", rating=40, duration="3:49", lastPlayed="7/01/2008 7:42 PM"),
-            Track(title="The Boy In The Bubble", artist="Paul Simon", size=5.6, album="Graceland", genre="Alternative", rating=60, duration="3:58", lastPlayed="24/01/2008 6:02 PM"),
-            Track(title="Graceland", artist="Paul Simon", size=6.7, album="Graceland", genre="Alternative", rating=60, duration="4:48", lastPlayed="24/01/2008 6:07 PM"),
-            Track(title="I Know What I Know", artist="Paul Simon", size=4.5, album="Graceland", genre="Alternative", rating=60, duration="3:12", lastPlayed="22/01/2008 5:27 PM"),
-            Track(title="Gumboots", artist="Paul Simon", size=3.9, album="Graceland", genre="Alternative", rating=60, duration="2:43", lastPlayed="22/01/2008 5:30 PM"),
-            Track(title="Diamonds On The Soles Of Her Shoes", artist="Paul Simon", size=8.1, album="Graceland", genre="Pop", rating=80, duration="5:46", lastPlayed="20/02/2008 9:44 PM"),
-            Track(title="You Can Call Me Al", artist="Paul Simon", size=6.5, album="Graceland", genre="Alternative", rating=60, duration="4:39", lastPlayed="22/01/2008 5:40 PM"),
-            Track(title="Under African Skies", artist="Paul Simon", size=5.1, album="Graceland", genre="Alternative", rating=60, duration="3:35", lastPlayed="19/03/2008 5:27 PM"),
-            Track(title="Homeless", artist="Paul Simon", size=5.3, album="Graceland", genre="Alternative", rating=60, duration="3:47", lastPlayed="23/11/2007 7:01 PM"),
-            Track(title="Crazy Love Vol II", artist="Paul Simon", size=6, album="Graceland", genre="Alternative", rating=60, duration="4:16", lastPlayed="22/01/2008 5:44 PM"),
-            Track(title="That Was Your Mother", artist="Paul Simon", size=4.1, album="Graceland", genre="Alternative", rating=60, duration="2:53", lastPlayed="22/01/2008 5:47 PM"),
-            Track(title="All Around The World Or The Myth of Fingerprints", artist="Paul Simon", size=4.6, album="Graceland", genre="Pop", rating=60, duration="3:13", lastPlayed="19/03/2008 5:31 PM"),
-            Track(title="Vertigo", artist="U2", size=3.8, album="How To Dismantle An Atomic Bomb", genre="Rock", rating=100, duration="3:15", lastPlayed="18/12/2007 12:11 PM"),
-            Track(title="Miracle Drug", artist="U2", size=4.7, album="How To Dismantle An Atomic Bomb", genre="Rock", rating=100, duration="3:59", lastPlayed="19/03/2008 12:04 AM"),
-            Track(title="Sometimes You Can't Make It On Your Own", artist="U2", size=6, album="How To Dismantle An Atomic Bomb", genre="Rock", rating=60, duration="5:09", lastPlayed="18/12/2007 12:20 PM"),
-            Track(title="Love And Peace Or Else", artist="U2", size=5.6, album="How To Dismantle An Atomic Bomb", genre="Rock", rating=60, duration="4:51", lastPlayed="15/03/2008 4:16 PM"),
-            Track(title="City Of Blinding Lights", artist="U2", size=6.7, album="How To Dismantle An Atomic Bomb", genre="Rock", rating=80, duration="5:48", lastPlayed="19/03/2008 12:10 AM"),
-            Track(title="All Because Of You", artist="U2", size=4.3, album="How To Dismantle An Atomic Bomb", genre="Rock", rating=60, duration="3:39", lastPlayed="6/11/2007 11:02 PM"),
-            Track(title="A Man And A Woman", artist="U2", size=5.3, album="How To Dismantle An Atomic Bomb", genre="Rock", rating=100, duration="4:30", lastPlayed="19/03/2008 12:00 AM"),
-            Track(title="Crumbs From Your Table", artist="U2", size=5.9, album="How To Dismantle An Atomic Bomb", genre="Rock", rating=60, duration="5:04", lastPlayed="6/11/2007 11:12 PM"),
-            Track(title="One Step Closer", artist="U2", size=4.5, album="How To Dismantle An Atomic Bomb", genre="Rock", rating=40, duration="3:52", lastPlayed="6/11/2007 11:16 PM"),
-            Track(title="Original Of The Species", artist="U2", size=5.5, album="How To Dismantle An Atomic Bomb", genre="Rock", rating=40, duration="4:41", lastPlayed="6/11/2007 11:20 PM"),
-            Track(title="Yahweh", artist="U2", size=5.1, album="How To Dismantle An Atomic Bomb", genre="Rock", rating=80, duration="4:22", lastPlayed="18/03/2008 11:56 PM"),
-            Track(title="Grim Travellers", artist="Bruce Cockburn", size=5.6, album="Humans", genre="Folk", rating=60, duration="4:50", lastPlayed="15/03/2008 4:31 PM"),
-            Track(title="Rumours Of Glory", artist="Bruce Cockburn", size=4.3, album="Humans", genre="Folk", rating=80, duration="3:40", lastPlayed="25/03/2008 1:25 AM"),
-            Track(title="More Not More", artist="Bruce Cockburn", size=4.4, album="Humans", genre="Folk", rating=60, duration="3:46", lastPlayed="27/10/2007 7:47 PM"),
-            Track(title="You Get Bigger As You Go", artist="Bruce Cockburn", size=5.3, album="Humans", genre="Folk", rating=40, duration="4:36", lastPlayed="27/10/2007 7:51 PM"),
-            Track(title="What About The Bond", artist="Bruce Cockburn", size=5.7, album="Humans", genre="Folk", rating=40, duration="4:56", lastPlayed="27/10/2007 7:56 PM"),
-            Track(title="How I Spent My Fall Vacation", artist="Bruce Cockburn", size=5.9, album="Humans", genre="Folk", rating=60, duration="5:04", lastPlayed="27/10/2007 8:01 PM"),
-            Track(title="Guerilla Betrayed", artist="Bruce Cockburn", size=4.6, album="Humans", genre="Folk", rating=60, duration="3:58", lastPlayed="27/10/2007 8:05 PM"),
-            Track(title="Tokyo", artist="Bruce Cockburn", size=4.1, album="Humans", genre="Folk", rating=60, duration="3:29", lastPlayed="27/10/2007 8:09 PM"),
-            Track(title="Fascist Architecture", artist="Bruce Cockburn", size=3.1, album="Humans", genre="Folk", rating=60, duration="2:38", lastPlayed="15/11/2007 3:40 PM"),
-            Track(title="The Rose Above The Sky", artist="Bruce Cockburn", size=7.4, album="Humans", genre="Folk", rating=80, duration="6:22", lastPlayed="25/03/2008 1:22 AM"),
-            Track(title="Torn", artist="Natalie Imbruglia", size=5.6, album="Left Of The Middle", genre="Adult Alternative Pop/Rock", rating=100, duration="4:04", lastPlayed="26/03/2008 11:06 PM"),
-            Track(title="One More Addiction", artist="Natalie Imbruglia", size=4.9, album="Left Of The Middle", genre="Adult Alternative Pop/Rock", rating=60, duration="3:30", lastPlayed="26/03/2008 11:09 PM"),
-            Track(title="Big Mistake", artist="Natalie Imbruglia", size=6.3, album="Left Of The Middle", genre="Adult Alternative Pop/Rock", rating=80, duration="4:32", lastPlayed="26/03/2008 11:14 PM"),
-            Track(title="Leave Me Alone", artist="Natalie Imbruglia", size=6, album="Left Of The Middle", genre="Adult Alternative Pop/Rock", rating=60, duration="4:21", lastPlayed="26/03/2008 11:18 PM"),
-            Track(title="Wishing I Was There", artist="Natalie Imbruglia", size=5.3, album="Left Of The Middle", genre="Adult Alternative Pop/Rock", rating=80, duration="3:51", lastPlayed="26/03/2008 11:22 PM"),
-            Track(title="Smoke", artist="Natalie Imbruglia", size=6.4, album="Left Of The Middle", genre="Adult Alternative Pop/Rock", rating=60, duration="4:37", lastPlayed="26/03/2008 11:26 PM"),
-            Track(title="Pigeons And Crumbs", artist="Natalie Imbruglia", size=7.4, album="Left Of The Middle", genre="Adult Alternative Pop/Rock", rating=0, duration="5:20", lastPlayed="26/03/2008 11:32 PM"),
-            Track(title="Don't You Think", artist="Natalie Imbruglia", size=5.4, album="Left Of The Middle", genre="Adult Alternative Pop/Rock", rating=80, duration="3:55", lastPlayed="26/03/2008 11:36 PM"),
-            Track(title="Impressed", artist="Natalie Imbruglia", size=6.6, album="Left Of The Middle", genre="Adult Alternative Pop/Rock", rating=80, duration="4:48", lastPlayed="26/03/2008 11:40 PM"),
-            Track(title="Intuition", artist="Natalie Imbruglia", size=4.7, album="Left Of The Middle", genre="Adult Alternative Pop/Rock", rating=80, duration="3:22", lastPlayed="26/03/2008 11:44 PM"),
-            Track(title="City", artist="Natalie Imbruglia", size=6.3, album="Left Of The Middle", genre="Adult Alternative Pop/Rock", rating=0, duration="4:33", lastPlayed="26/03/2008 11:48 PM"),
-            Track(title="Left Of The Middle", artist="Natalie Imbruglia", size=5.2, album="Left Of The Middle", genre="Adult Alternative Pop/Rock", rating=60, duration="3:46", lastPlayed="26/03/2008 11:52 PM"),
-            Track(title="Life For Rent", artist="Dido", size=4.3, album="Life For Rent", genre="Pop", rating=80, duration="3:43", lastPlayed="20/02/2008 9:35 PM"),
-            Track(title="Mary's In India", artist="Dido", size=4.3, album="Life For Rent", genre="Pop", rating=80, duration="3:44", lastPlayed="20/02/2008 9:39 PM"),
-            Track(title="See You When You're 40", artist="Dido", size=6.2, album="Life For Rent", genre="Pop", rating=80, duration="5:22", lastPlayed="20/02/2008 9:15 PM"),
-            Track(title="Don't Leave Home", artist="Dido", size=4.4, album="Life For Rent", genre="Pop", rating=80, duration="3:49", lastPlayed="20/02/2008 9:31 PM"),
-            Track(title="Who Makes You Feel", artist="Dido", size=5.1, album="Life For Rent", genre="Pop", rating=80, duration="4:23", lastPlayed="20/02/2008 9:09 PM"),
-            Track(title="Sand In My Shoes", artist="Dido", size=5.8, album="Life For Rent", genre="Pop", rating=80, duration="5:02", lastPlayed="20/02/2008 9:24 PM"),
-            Track(title="Do You Have A Little Time", artist="Dido", size=4.6, album="Life For Rent", genre="Pop", rating=80, duration="3:57", lastPlayed="20/02/2008 9:19 PM"),
-            Track(title="This Land Is Mine", artist="Dido", size=4.4, album="Life For Rent", genre="Pop", rating=80, duration="3:48", lastPlayed="20/02/2008 9:27 PM"),
-            Track(title="See The Sun", artist="Dido", size=12.2, album="Life For Rent", genre="Pop", rating=60, duration="10:36", lastPlayed="22/12/2007 10:28 AM"),
-            Track(title="Lifesong", artist="Casting Crowns", size=4.9, album="Lifesong", genre="Religious", rating=80, duration="5:17", lastPlayed="24/03/2008 2:36 PM"),
-            Track(title="Praise You in This Storm", artist="Casting Crowns", size=4.6, album="Lifesong", genre="Religious", rating=100, duration="4:59", lastPlayed="24/03/2008 2:17 PM"),
-            Track(title="Does Anybody Hear Her", artist="Casting Crowns", size=4.2, album="Lifesong", genre="Religious", rating=60, duration="4:30", lastPlayed="26/12/2007 3:07 PM"),
-            Track(title="Stained Glass Masquerade", artist="Casting Crowns", size=3.6, album="Lifesong", genre="Religious", rating=60, duration="3:52", lastPlayed="26/12/2007 3:11 PM"),
-            Track(title="Love Them Like Jesus", artist="Casting Crowns", size=4.2, album="Lifesong", genre="Religious", rating=60, duration="4:32", lastPlayed="4/11/2007 3:00 PM"),
-            Track(title="Set Me Free", artist="Casting Crowns", size=4.1, album="Lifesong", genre="Religious", rating=80, duration="4:27", lastPlayed="24/03/2008 2:12 PM"),
-            Track(title="While You Were Sleeping", artist="Casting Crowns", size=4.5, album="Lifesong", genre="Religious", rating=60, duration="4:55", lastPlayed="1/01/2008 12:39 PM"),
-            Track(title="Father, Spirit, Jesus", artist="Casting Crowns", size=4.8, album="Lifesong", genre="Religious", rating=80, duration="5:11", lastPlayed="24/03/2008 2:41 PM"),
-            Track(title="In Me", artist="Casting Crowns", size=4.4, album="Lifesong", genre="Religious", rating=80, duration="4:44", lastPlayed="24/03/2008 2:31 PM"),
-            Track(title="Prodigal", artist="Casting Crowns", size=5.3, album="Lifesong", genre="Religious", rating=60, duration="5:45", lastPlayed="26/12/2007 3:36 PM"),
-            Track(title="And Now My Lifesong Sings", artist="Casting Crowns", size=3.8, album="Lifesong", genre="Religious", rating=60, duration="4:03", lastPlayed="1/01/2008 12:54 PM"),
-            Track(title="Afraid", artist="Nelly Furtado", size=3.3, album="Loose", genre="Pop", rating=80, duration="3:35", lastPlayed="15/03/2008 11:41 AM"),
-            Track(title="Maneater", artist="Nelly Furtado", size=4.1, album="Loose", genre="Pop", rating=40, duration="4:25", lastPlayed="19/01/2008 12:20 PM"),
-            Track(title="Promiscuous", artist="Nelly Furtado", size=3.7, album="Loose", genre="Pop", rating=60, duration="4:02", lastPlayed="21/01/2008 5:01 PM"),
-            Track(title="Glow", artist="Nelly Furtado", size=3.7, album="Loose", genre="Pop", rating=80, duration="4:02", lastPlayed="15/03/2008 11:45 AM"),
-            Track(title="Showtime", artist="Nelly Furtado", size=3.9, album="Loose", genre="Pop", rating=80, duration="4:15", lastPlayed="15/03/2008 6:37 PM"),
-            Track(title="No Hay Igual", artist="Nelly Furtado", size=3.3, album="Loose", genre="Pop", rating=80, duration="3:35", lastPlayed="15/03/2008 11:33 AM"),
-            Track(title="Te Busque", artist="Nelly Furtado", size=3.4, album="Loose", genre="Pop", rating=60, duration="3:38", lastPlayed="21/01/2008 5:17 PM"),
-            Track(title="Say It Right", artist="Nelly Furtado", size=3.4, album="Loose", genre="Pop", rating=60, duration="3:43", lastPlayed="21/01/2008 5:21 PM"),
-            Track(title="Do It", artist="Nelly Furtado", size=3.4, album="Loose", genre="Pop", rating=60, duration="3:41", lastPlayed="21/01/2008 5:24 PM"),
-            Track(title="In God's Hands", artist="Nelly Furtado", size=4.5, album="Loose", genre="Pop", rating=40, duration="4:54", lastPlayed="21/01/2008 5:29 PM"),
-            Track(title="Wait for You", artist="Nelly Furtado", size=4.8, album="Loose", genre="Pop", rating=40, duration="5:11", lastPlayed="21/01/2008 5:34 PM"),
-            Track(title="Somebody to Love", artist="Nelly Furtado", size=4.6, album="Loose", genre="Pop", rating=40, duration="4:56", lastPlayed="21/01/2008 5:39 PM"),
-            Track(title="All Good Things (Come to an End)", artist="Nelly Furtado", size=4.8, album="Loose", genre="Pop", rating=40, duration="5:10", lastPlayed="21/01/2008 5:44 PM"),
-            Track(title="Someone Somewhere In Summertime", artist="Simple Minds", size=6.5, album="New Gold Gream (81/82/83/84)", genre="Rock", rating=60, duration="4:38", lastPlayed="1/09/2007 9:11 AM"),
-            Track(title="Colours Fly And Catherine Wheel", artist="Simple Minds", size=5.4, album="New Gold Gream (81/82/83/84)", genre="Rock", rating=80, duration="3:50", lastPlayed="19/11/2007 8:34 PM"),
-            Track(title="Big Sleep", artist="Simple Minds", size=6.9, album="New Gold Gream (81/82/83/84)", genre="Rock", rating=40, duration="4:58", lastPlayed="1/09/2007 9:20 AM"),
-            Track(title="Somebody Up There Likes You", artist="Simple Minds", size=7, album="New Gold Gream (81/82/83/84)", genre="Rock", rating=40, duration="5:02", lastPlayed="1/09/2007 9:25 AM"),
-            Track(title="New Gold Dream (81-82-83-84)", artist="Simple Minds", size=7.9, album="New Gold Gream (81/82/83/84)", genre="Rock", rating=60, duration="5:39", lastPlayed="1/09/2007 9:30 AM"),
-            Track(title="Glittering Prize", artist="Simple Minds", size=6.4, album="New Gold Gream (81/82/83/84)", genre="Rock", rating=60, duration="4:34", lastPlayed="13/08/2007 8:24 PM"),
-            Track(title="Hunter And The Hunted", artist="Simple Minds", size=8.3, album="New Gold Gream (81/82/83/84)", genre="Rock", rating=60, duration="5:56", lastPlayed="13/08/2007 8:30 PM"),
-            Track(title="King Is White And In The Crowd", artist="Simple Minds", size=9.7, album="New Gold Gream (81/82/83/84)", genre="Rock", rating=20, duration="7:00", lastPlayed="13/08/2007 8:37 PM"),
-            Track(title="Promised you a miracle", artist="Simple Minds", size=4.7, album="New Gold Gream (81/82/83/84)", genre="Rock", rating=40, duration="4:01", lastPlayed="10/01/2008 12:01 AM"),
-            Track(title="Psycho Killer", artist="Talking Heads", size=5.2, album="Once In A Lifetime", genre="Alternative", rating=40, duration="4:22", lastPlayed="4/02/2008 5:06 PM"),
-            Track(title="Take Me To The River", artist="Talking Heads", size=6, album="Once In A Lifetime", genre="Alternative", rating=40, duration="5:03", lastPlayed="4/02/2008 5:11 PM"),
-            Track(title="Once In A Lifetime", artist="Talking Heads", size=5.2, album="Once In A Lifetime", genre="Alternative", rating=80, duration="4:20", lastPlayed="4/02/2008 5:15 PM"),
-            Track(title="Burning Down The House", artist="Talking Heads", size=4.8, album="Once In A Lifetime", genre="Alternative", rating=100, duration="4:02", lastPlayed="10/02/2008 12:19 AM"),
-            Track(title="This Must Be The Place (Naive Melody)", artist="Talking Heads", size=5.9, album="Once In A Lifetime", genre="Alternative", rating=40, duration="4:55", lastPlayed="4/02/2008 5:24 PM"),
-            Track(title="Slippery People (Live)", artist="Talking Heads", size=5.1, album="Once In A Lifetime", genre="Alternative", rating=40, duration="4:14", lastPlayed="4/02/2008 5:28 PM"),
-            Track(title="Life During Wartime (Live)", artist="Talking Heads", size=6, album="Once In A Lifetime", genre="Alternative", rating=40, duration="5:05", lastPlayed="4/02/2008 5:34 PM"),
-            Track(title="And She Was", artist="Talking Heads", size=4.4, album="Once In A Lifetime", genre="Alternative", rating=60, duration="3:39", lastPlayed="4/02/2008 5:37 PM"),
-            Track(title="Road To Nowhere", artist="Talking Heads", size=5.2, album="Once In A Lifetime", genre="Alternative", rating=80, duration="4:20", lastPlayed="4/02/2008 5:42 PM"),
-            Track(title="Wild Wild Life", artist="Talking Heads", size=4.4, album="Once In A Lifetime", genre="Alternative", rating=60, duration="3:42", lastPlayed="4/02/2008 5:45 PM"),
-            Track(title="Blind", artist="Talking Heads", size=5.9, album="Once In A Lifetime", genre="Alternative", rating=40, duration="5:00", lastPlayed="4/02/2008 5:50 PM"),
-            Track(title="(Nothing But) Flowers", artist="Talking Heads", size=6.6, album="Once In A Lifetime", genre="Alternative", rating=40, duration="5:35", lastPlayed="4/02/2008 5:56 PM"),
-            Track(title="Sax And Violins", artist="Talking Heads", size=6.3, album="Once In A Lifetime", genre="Alternative", rating=60, duration="5:18", lastPlayed="4/02/2008 6:01 PM"),
-            Track(title="Lifetime Piling Up", artist="Talking Heads", size=4.6, album="Once In A Lifetime", genre="Alternative", rating=80, duration="3:52", lastPlayed="4/02/2008 6:05 PM"),
-            Track(title="Honey", artist="Moby", size=4.8, album="Play", genre="Alternative", rating=80, duration="3:29", lastPlayed="22/02/2008 10:59 AM"),
-            Track(title="Find My Baby", artist="Moby", size=5.5, album="Play", genre="Alternative", rating=60, duration="3:59", lastPlayed="22/02/2008 11:03 AM"),
-            Track(title="Porcelain", artist="Moby", size=5.6, album="Play", genre="Alternative", rating=40, duration="4:01", lastPlayed="14/03/2008 11:34 PM"),
-            Track(title="Why Does My Heart Feel So Bad?", artist="Moby", size=6.1, album="Play", genre="Alternative", rating=80, duration="4:25", lastPlayed="22/02/2008 11:12 AM"),
-            Track(title="Southside", artist="Moby", size=5.3, album="Play", genre="Alternative", rating=80, duration="3:50", lastPlayed="3/03/2008 4:20 PM"),
-            Track(title="Rushing", artist="Moby", size=4.2, album="Play", genre="Instrumental", rating=60, duration="3:00", lastPlayed="14/03/2008 11:30 PM"),
-            Track(title="Bodyrock", artist="Moby", size=5, album="Play", genre="Alternative", rating=100, duration="3:36", lastPlayed="14/03/2008 11:27 PM"),
-            Track(title="Natural Blues", artist="Moby", size=5.9, album="Play", genre="Alternative", rating=40, duration="4:14", lastPlayed="22/02/2008 11:27 AM"),
-            Track(title="Machete", artist="Moby", size=5.1, album="Play", genre="Alternative", rating=20, duration="3:38", lastPlayed="22/02/2008 11:30 AM"),
-            Track(title="7", artist="Moby", size=1.5, album="Play", genre="Instrumental", rating=20, duration="1:02", lastPlayed="14/03/2008 11:23 PM"),
-            Track(title="Run On", artist="Moby", size=5.2, album="Play", genre="Alternative", rating=40, duration="3:45", lastPlayed="19/03/2008 5:52 PM"),
-            Track(title="Down Slow", artist="Moby", size=2.2, album="Play", genre="Instrumental", rating=40, duration="1:35", lastPlayed="14/03/2008 11:22 PM"),
-            Track(title="If Things Were Perfect", artist="Moby", size=6, album="Play", genre="Alternative", rating=60, duration="4:19", lastPlayed="22/02/2008 11:40 AM"),
-            Track(title="Everloving", artist="Moby", size=4.8, album="Play", genre="Alternative", rating=40, duration="3:26", lastPlayed="27/12/2007 11:06 AM"),
-            Track(title="Inside", artist="Moby", size=6.7, album="Play", genre="Alternative", rating=60, duration="4:49", lastPlayed="27/12/2007 11:10 AM"),
-            Track(title="Guitar Flute And String", artist="Moby", size=3, album="Play", genre="Alternative", rating=60, duration="2:09", lastPlayed="27/12/2007 11:12 AM"),
-            Track(title="The Sky Is Broken", artist="Moby", size=6, album="Play", genre="Alternative", rating=60, duration="4:19", lastPlayed="4/11/2007 2:22 PM"),
-            Track(title="My Weakness", artist="Moby", size=5, album="Play", genre="Alternative", rating=40, duration="3:38", lastPlayed="4/11/2007 2:26 PM"),
-            Track(title="Discotheque", artist="U2", size=6.1, album="Pop", genre="Rock", rating=100, duration="5:19", lastPlayed="3/03/2008 4:16 PM"),
-            Track(title="Do You Feel Loved", artist="U2", size=5.9, album="Pop", genre="Rock", rating=60, duration="5:07", lastPlayed="7/02/2008 11:04 AM"),
-            Track(title="Mofo", artist="U2", size=6.7, album="Pop", genre="Rock", rating=60, duration="5:49", lastPlayed="7/02/2008 11:10 AM"),
-            Track(title="If God Will Send His Angels", artist="U2", size=6.2, album="Pop", genre="Rock", rating=80, duration="5:23", lastPlayed="7/02/2008 11:16 AM"),
-            Track(title="Staring At The Sun", artist="U2", size=5.3, album="Pop", genre="Rock", rating=80, duration="4:37", lastPlayed="19/03/2008 12:15 AM"),
-            Track(title="Last Night On Earth", artist="U2", size=5.5, album="Pop", genre="Rock", rating=100, duration="4:46", lastPlayed="7/02/2008 11:25 AM"),
-            Track(title="Gone", artist="U2", size=5.1, album="Pop", genre="Rock", rating=60, duration="4:27", lastPlayed="7/02/2008 11:29 AM"),
-            Track(title="Miami", artist="U2", size=5.6, album="Pop", genre="Rock", rating=40, duration="4:53", lastPlayed="14/11/2007 5:53 PM"),
-            Track(title="The Playboy Mansion", artist="U2", size=5.4, album="Pop", genre="Rock", rating=40, duration="4:41", lastPlayed="14/11/2007 5:58 PM"),
-            Track(title="If You Wear That Velvet Dress", artist="U2", size=6.1, album="Pop", genre="Rock", rating=60, duration="5:15", lastPlayed="14/11/2007 6:03 PM"),
-            Track(title="Please", artist="U2", size=5.8, album="Pop", genre="Rock", rating=40, duration="5:03", lastPlayed="6/02/2008 11:28 PM"),
-            Track(title="Wake Up Dead Man", artist="U2", size=5.6, album="Pop", genre="Rock", rating=40, duration="4:53", lastPlayed="6/02/2008 11:20 PM"),
-            Track(title="The River", artist="Live", size=4.1, album="Songs From Black Mountain", genre="Gospel & Religious", rating=80, duration="2:58", lastPlayed="24/03/2008 10:55 PM"),
-            Track(title="Mystery", artist="Live", size=5.2, album="Songs From Black Mountain", genre="Gospel & Religious", rating=80, duration="3:45", lastPlayed="24/03/2008 10:59 PM"),
-            Track(title="Get Ready", artist="Live", size=4.9, album="Songs From Black Mountain", genre="Gospel & Religious", rating=60, duration="3:32", lastPlayed="23/03/2008 1:02 PM"),
-            Track(title="Show", artist="Live", size=4.7, album="Songs From Black Mountain", genre="Gospel & Religious", rating=80, duration="3:25", lastPlayed="24/03/2008 11:03 PM"),
-            Track(title="Wings", artist="Live", size=5.3, album="Songs From Black Mountain", genre="Gospel & Religious", rating=0, duration="3:51", lastPlayed="23/03/2008 1:09 PM"),
-            Track(title="Sofia", artist="Live", size=5.4, album="Songs From Black Mountain", genre="Gospel & Religious", rating=0, duration="3:54", lastPlayed="23/03/2008 1:13 PM"),
-            Track(title="Love Shines (A Song For My Daughters About God)", artist="Live", size=4.6, album="Songs From Black Mountain", genre="Gospel & Religious", rating=0, duration="3:21", lastPlayed="23/03/2008 1:16 PM"),
-            Track(title="Where Do We Go From Here", artist="Live", size=5.2, album="Songs From Black Mountain", genre="Gospel & Religious", rating=0, duration="3:46", lastPlayed="23/03/2008 1:20 PM"),
-            Track(title="Home", artist="Live", size=4.7, album="Songs From Black Mountain", genre="Gospel & Religious", rating=0, duration="3:23", lastPlayed="23/03/2008 1:23 PM"),
-            Track(title="All I Need", artist="Live", size=4.5, album="Songs From Black Mountain", genre="Gospel & Religious", rating=0, duration="3:14", lastPlayed="23/03/2008 1:26 PM"),
-            Track(title="You Are Not Alone", artist="Live", size=5.2, album="Songs From Black Mountain", genre="Gospel & Religious", rating=0, duration="3:44", lastPlayed="19/02/2008 12:05 PM"),
-            Track(title="Night Of Nights", artist="Live", size=4.9, album="Songs From Black Mountain", genre="Gospel & Religious", rating=0, duration="3:33", lastPlayed="19/02/2008 12:08 PM"),
-            Track(title="All For Believing", artist="Missy Higgins", size=4.2, album="The Sound Of White", genre="Folk", rating=80, duration="3:30", lastPlayed="30/01/2008 4:21 PM"),
-            Track(title="Don't Ever", artist="Missy Higgins", size=3.5, album="The Sound Of White", genre="Folk", rating=40, duration="2:54", lastPlayed="30/01/2008 4:24 PM"),
-            Track(title="Scar", artist="Missy Higgins", size=4.3, album="The Sound Of White", genre="Folk", rating=80, duration="3:36", lastPlayed="30/01/2008 4:28 PM"),
-            Track(title="Ten Days", artist="Missy Higgins", size=4.5, album="The Sound Of White", genre="Folk", rating=80, duration="3:48", lastPlayed="30/01/2008 5:10 PM"),
-            Track(title="Nightminds", artist="Missy Higgins", size=4, album="The Sound Of White", genre="Folk", rating=60, duration="3:21", lastPlayed="30/01/2008 5:13 PM"),
-            Track(title="Casualty", artist="Missy Higgins", size=5, album="The Sound Of White", genre="Folk", rating=60, duration="4:15", lastPlayed="15/03/2008 4:43 PM"),
-            Track(title="Any Day Now", artist="Missy Higgins", size=4.6, album="The Sound Of White", genre="Folk", rating=60, duration="3:54", lastPlayed="30/12/2007 2:35 PM"),
-            Track(title="Katie", artist="Missy Higgins", size=4.3, album="The Sound Of White", genre="Folk", rating=60, duration="3:37", lastPlayed="30/12/2007 2:38 PM"),
-            Track(title="The River", artist="Missy Higgins", size=5.3, album="The Sound Of White", genre="Folk", rating=60, duration="4:30", lastPlayed="16/11/2007 9:06 PM"),
-            Track(title="The Special Two", artist="Missy Higgins", size=5.2, album="The Sound Of White", genre="Folk", rating=100, duration="4:25", lastPlayed="30/01/2008 5:18 PM"),
-            Track(title="This Is How It Goes", artist="Missy Higgins", size=4.2, album="The Sound Of White", genre="Folk", rating=60, duration="3:35", lastPlayed="30/01/2008 5:22 PM"),
-            Track(title="The Sound Of White", artist="Missy Higgins", size=5.7, album="The Sound Of White", genre="Folk", rating=80, duration="4:52", lastPlayed="30/01/2008 5:27 PM"),
-            Track(title="They Weren't There", artist="Missy Higgins", size=4.9, album="The Sound Of White", genre="Folk", rating=60, duration="4:08", lastPlayed="30/12/2007 2:56 PM"),
+            Track(title="Zoo Station", artist="U2", size=5.5, album="Achtung Baby", genre="Rock", rating=60, duration="4:37", lastPlayed="21/10/2007 5:42"),
+            Track(title="Who's Gonna Ride Your Wild Horses", artist="U2", size=6.3, album="Achtung Baby", genre="Rock", rating=80, duration="5:17", lastPlayed="9/10/2007 11:32"),
+            Track(title="So Cruel", artist="U2", size=6.9, album="Achtung Baby", genre="Rock", rating=60, duration="5:49", lastPlayed="9/10/2007 11:38"),
+            Track(title="The Fly", artist="U2", size=5.4, album="Achtung Baby", genre="Rock", rating=60, duration="4:29", lastPlayed="9/10/2007 11:42"),
+            Track(title="Tryin' To Throw Your Arms Around The World", artist="U2", size=4.7, album="Achtung Baby", genre="Rock", rating=60, duration="3:53", lastPlayed="9/10/2007 11:46"),
+            Track(title="Ultraviolet (Light My Way)", artist="U2", size=6.6, album="Achtung Baby", genre="Rock", rating=60, duration="5:31", lastPlayed="9/10/2007 11:52"),
+            Track(title="Acrobat", artist="U2", size=5.4, album="Achtung Baby", genre="Rock", rating=60, duration="4:30", lastPlayed="9/10/2007 11:56"),
+            Track(title="Love Is Blindness", artist="U2", size=5.3, album="Achtung Baby", genre="Rock", rating=60, duration="4:26", lastPlayed="9/10/2007 12:00"),
+            Track(title="Elevation", artist="U2", size=4.5, album="All That You Can't Leave Behind", genre="Rock", rating=60, duration="3:48", lastPlayed="25/01/2008 11:46"),
+            Track(title="Walk On", artist="U2", size=5.8, album="All That You Can't Leave Behind", genre="Rock", rating=100, duration="4:56", lastPlayed="18/03/2008 11:39"),
+            Track(title="Kite", artist="U2", size=5.2, album="All That You Can't Leave Behind", genre="Rock", rating=40, duration="4:27", lastPlayed="23/01/2008 10:36"),
+            Track(title="In A Little While", artist="U2", size=4.3, album="All That You Can't Leave Behind", genre="Rock", rating=60, duration="3:39", lastPlayed="20/01/2008 7:48"),
+            Track(title="Wild Honey", artist="U2", size=4.5, album="All That You Can't Leave Behind", genre="Rock", rating=40, duration="3:47", lastPlayed="13/04/2007 11:50"),
+            Track(title="Peace On Earth", artist="U2", size=5.6, album="All That You Can't Leave Behind", genre="Rock", rating=40, duration="4:48", lastPlayed="22/12/2007 2:51"),
+            Track(title="When I Look At The World", artist="U2", size=5.1, album="All That You Can't Leave Behind", genre="Rock", rating=40, duration="4:18", lastPlayed="22/12/2007 2:55"),
+            Track(title="New York", artist="U2", size=6.4, album="All That You Can't Leave Behind", genre="Rock", rating=60, duration="5:30", lastPlayed="22/12/2007 3:01"),
+            Track(title="Grace", artist="U2", size=6.5, album="All That You Can't Leave Behind", genre="Rock", rating=40, duration="5:32", lastPlayed="22/12/2007 3:06"),
+            Track(title="The Ground Beneath Her Feet(Bonus Track)", artist="U2", size=4.4, album="All That You Can't Leave Behind", genre="Rock", rating=40, duration="3:44", lastPlayed="22/12/2007 3:10"),
+            Track(title="Follow You Home", artist="Nickelback", size=6, album="All The Right Reasons", genre="Rock", rating=40, duration="4:20", lastPlayed="6/03/2008 10:42"),
+            Track(title="Fight For All The Wrong Reason", artist="Nickelback", size=5.2, album="All The Right Reasons", genre="Rock", rating=60, duration="3:44", lastPlayed="15/03/2008 5:04"),
+            Track(title="Photograph", artist="Nickelback", size=6, album="All The Right Reasons", genre="Rock", rating=60, duration="4:19", lastPlayed="15/03/2008 5:08"),
+            Track(title="Animals", artist="Nickelback", size=4.3, album="All The Right Reasons", genre="Rock", rating=40, duration="3:07", lastPlayed="16/02/2008 12:12"),
+            Track(title="Savin' Me", artist="Nickelback", size=5.1, album="All The Right Reasons", genre="Rock", rating=80, duration="3:39", lastPlayed="24/03/2008 10:41"),
+            Track(title="Far Away", artist="Nickelback", size=5.5, album="All The Right Reasons", genre="Rock", rating=40, duration="3:58", lastPlayed="15/03/2008 5:30"),
+            Track(title="Next Contestant", artist="Nickelback", size=5, album="All The Right Reasons", genre="Rock", rating=80, duration="3:35", lastPlayed="24/03/2008 9:47"),
+            Track(title="Side Of A Bullet", artist="Nickelback", size=4.2, album="All The Right Reasons", genre="Rock", rating=40, duration="3:01", lastPlayed="6/03/2008 11:00"),
+            Track(title="If Everyone Cared", artist="Nickelback", size=5, album="All The Right Reasons", genre="Rock", rating=60, duration="3:38", lastPlayed="6/03/2008 11:03"),
+            Track(title="Someone That You're With", artist="Nickelback", size=5.6, album="All The Right Reasons", genre="Rock", rating=40, duration="4:02", lastPlayed="16/02/2008 12:34"),
+            Track(title="Rockstar", artist="Nickelback", size=5.9, album="All The Right Reasons", genre="Rock", rating=60, duration="4:16", lastPlayed="16/02/2008 12:38"),
+            Track(title="Lelani", artist="Hoodoo Gurus", size=5.9, album="Ampology", genre="Rock", rating=60, duration="4:55", lastPlayed="22/10/2007 8:45"),
+            Track(title="Tojo", artist="Hoodoo Gurus", size=4.1, album="Ampology", genre="Rock", rating=60, duration="3:22", lastPlayed="22/10/2007 8:48"),
+            Track(title="My Girl", artist="Hoodoo Gurus", size=3.3, album="Ampology", genre="Rock", rating=80, duration="2:39", lastPlayed="12/11/2007 7:57"),
+            Track(title="Be My Guru", artist="Hoodoo Gurus", size=3.3, album="Ampology", genre="Rock", rating=100, duration="2:39", lastPlayed="20/03/2008 12:15"),
+            Track(title="I Want You Back", artist="Hoodoo Gurus", size=3.9, album="Ampology", genre="Rock", rating=80, duration="3:12", lastPlayed="12/11/2007 7:42"),
+            Track(title="I Was A Kamikaze Pilot", artist="Hoodoo Gurus", size=3.9, album="Ampology", genre="Rock", rating=60, duration="3:10", lastPlayed="22/10/2007 9:00"),
+            Track(title="Bittersweet", artist="Hoodoo Gurus", size=4.7, album="Ampology", genre="Rock", rating=60, duration="3:52", lastPlayed="22/10/2007 9:04"),
+            Track(title="Poison Pen", artist="Hoodoo Gurus", size=5, album="Ampology", genre="Rock", rating=60, duration="4:11", lastPlayed="22/10/2007 9:11"),
+            Track(title="In The Wild", artist="Hoodoo Gurus", size=3.9, album="Ampology", genre="Rock", rating=60, duration="3:12", lastPlayed="22/10/2007 9:14"),
+            Track(title="Whats My Scene?", artist="Hoodoo Gurus", size=4.6, album="Ampology", genre="Rock", rating=100, duration="3:49", lastPlayed="12/11/2007 7:51"),
+            Track(title="Heart Of Darkness", artist="Hoodoo Gurus", size=3.8, album="Ampology", genre="Rock", rating=60, duration="3:04", lastPlayed="22/10/2007 9:21"),
+            Track(title="Good Times", artist="Hoodoo Gurus", size=3.7, album="Ampology", genre="Rock", rating=80, duration="3:02", lastPlayed="20/03/2008 12:18"),
+            Track(title="Cajun Country", artist="Hoodoo Gurus", size=4.9, album="Ampology", genre="Rock", rating=60, duration="4:06", lastPlayed="22/10/2007 9:28"),
+            Track(title="Axegrinder", artist="Hoodoo Gurus", size=4.2, album="Ampology", genre="Rock", rating=60, duration="3:26", lastPlayed="22/10/2007 9:32"),
+            Track(title="Another World", artist="Hoodoo Gurus", size=4, album="Ampology", genre="Rock", rating=80, duration="3:16", lastPlayed="20/03/2008 12:21"),
+            Track(title="Meant To Live", artist="Switchfoot", size=4, album="The Beautiful Letdown", genre="Gospel & Religious", rating=100, duration="3:26", lastPlayed="3/03/2008 1:46"),
+            Track(title="This Is Your Life", artist="Switchfoot", size=4, album="The Beautiful Letdown", genre="Gospel & Religious", rating=100, duration="4:18", lastPlayed="3/03/2008 2:11"),
+            Track(title="More than fine", artist="Switchfoot", size=4.9, album="The Beautiful Letdown", genre="Gospel & Religious", rating=60, duration="4:15", lastPlayed="3/03/2008 2:16"),
+            Track(title="Ammunition", artist="Switchfoot", size=4.4, album="The Beautiful Letdown", genre="Gospel & Religious", rating=40, duration="3:46", lastPlayed="3/03/2008 1:58"),
+            Track(title="Dare you to move", artist="Switchfoot", size=4.9, album="The Beautiful Letdown", genre="Gospel & Religious", rating=80, duration="4:15", lastPlayed="3/03/2008 2:20"),
+            Track(title="Redemption", artist="Switchfoot", size=3.6, album="The Beautiful Letdown", genre="Gospel & Religious", rating=80, duration="3:07", lastPlayed="19/03/2008 5:19"),
+            Track(title="The beautiful letdown", artist="Switchfoot", size=6.2, album="The Beautiful Letdown", genre="Gospel & Religious", rating=60, duration="5:21", lastPlayed="3/03/2008 2:29"),
+            Track(title="Gone", artist="Switchfoot", size=4.4, album="The Beautiful Letdown", genre="Gospel & Religious", rating=80, duration="3:46", lastPlayed="3/03/2008 2:33"),
+            Track(title="On Fire", artist="Switchfoot", size=4.3, album="The Beautiful Letdown", genre="Gospel & Religious", rating=80, duration="4:39", lastPlayed="3/03/2008 2:37"),
+            Track(title="Adding to the noise", artist="Switchfoot", size=3.3, album="The Beautiful Letdown", genre="Gospel & Religious", rating=60, duration="2:51", lastPlayed="19/03/2008 5:42"),
+            Track(title="Twenty-four", artist="Switchfoot", size=5.7, album="The Beautiful Letdown", genre="Gospel & Religious", rating=60, duration="4:54", lastPlayed="3/03/2008 2:45"),
+            Track(title="Gap That Opened", artist="Boom Crash Opera", size=4.7, album="Boom Crash Opera", genre="Rock", rating=40, duration="4:02", lastPlayed="13/01/2008 10:11"),
+            Track(title="Hands Up In The Air", artist="Boom Crash Opera", size=4.5, album="Boom Crash Opera", genre="Rock", rating=80, duration="3:53", lastPlayed="24/03/2008 3:19"),
+            Track(title="Love Me To Death", artist="Boom Crash Opera", size=5.2, album="Boom Crash Opera", genre="Rock", rating=40, duration="4:27", lastPlayed="13/01/2008 10:20"),
+            Track(title="City Fist", artist="Boom Crash Opera", size=4.9, album="Boom Crash Opera", genre="Rock", rating=40, duration="4:11", lastPlayed="13/01/2008 10:24"),
+            Track(title="Her Charity", artist="Boom Crash Opera", size=5.8, album="Boom Crash Opera", genre="Rock", rating=40, duration="5:01", lastPlayed="13/01/2008 10:29"),
+            Track(title="Sleeping Time", artist="Boom Crash Opera", size=5.2, album="Boom Crash Opera", genre="Rock", rating=40, duration="4:26", lastPlayed="13/01/2008 10:33"),
+            Track(title="Great Wall", artist="Boom Crash Opera", size=4.5, album="Boom Crash Opera", genre="Rock", rating=80, duration="3:51", lastPlayed="24/03/2008 3:22"),
+            Track(title="Bombshell", artist="Boom Crash Opera", size=4.5, album="Boom Crash Opera", genre="Rock", rating=40, duration="3:50", lastPlayed="13/01/2008 10:41"),
+            Track(title="Caught Between Two Towns", artist="Boom Crash Opera", size=4, album="Boom Crash Opera", genre="Rock", rating=40, duration="3:28", lastPlayed="13/01/2008 10:44"),
+            Track(title="Too Hot To Think", artist="Boom Crash Opera", size=6.3, album="Boom Crash Opera", genre="Rock", rating=40, duration="5:26", lastPlayed="13/01/2008 10:50"),
+            Track(title="Starting Today", artist="Natalie Imbruglia", size=6.8, album="Counting Down the Days", genre="Adult Alternative Pop/Rock", rating=0, duration="2:56", lastPlayed="19/03/2008 9:48"),
+            Track(title="Shiver", artist="Natalie Imbruglia", size=8.6, album="Counting Down the Days", genre="Adult Alternative Pop/Rock", rating=80, duration="3:45", lastPlayed="19/03/2008 9:51"),
+            Track(title="Satisfied", artist="Natalie Imbruglia", size=8.1, album="Counting Down the Days", genre="Adult Alternative Pop/Rock", rating=0, duration="3:30", lastPlayed="19/03/2008 9:55"),
+            Track(title="Counting Down the Days", artist="Natalie Imbruglia", size=9.6, album="Counting Down the Days", genre="Adult Alternative Pop/Rock", rating=60, duration="4:09", lastPlayed="26/03/2008 10:33"),
+            Track(title="I Won't Be Lost", artist="Natalie Imbruglia", size=9, album="Counting Down the Days", genre="Adult Alternative Pop/Rock", rating=60, duration="3:53", lastPlayed="26/03/2008 10:37"),
+            Track(title="Slow Down", artist="Natalie Imbruglia", size=8.1, album="Counting Down the Days", genre="Adult Alternative Pop/Rock", rating=60, duration="3:32", lastPlayed="26/03/2008 10:41"),
+            Track(title="Sanctuary", artist="Natalie Imbruglia", size=7.3, album="Counting Down the Days", genre="Adult Alternative Pop/Rock", rating=60, duration="3:09", lastPlayed="26/03/2008 10:44"),
+            Track(title="Perfectly", artist="Natalie Imbruglia", size=7.8, album="Counting Down the Days", genre="Adult Alternative Pop/Rock", rating=80, duration="3:24", lastPlayed="26/03/2008 10:47"),
+            Track(title="On the Run", artist="Natalie Imbruglia", size=8.4, album="Counting Down the Days", genre="Adult Alternative Pop/Rock", rating=60, duration="3:38", lastPlayed="26/03/2008 10:51"),
+            Track(title="Come on Home", artist="Natalie Imbruglia", size=9.1, album="Counting Down the Days", genre="Adult Alternative Pop/Rock", rating=60, duration="3:56", lastPlayed="26/03/2008 10:55"),
+            Track(title="When You're Sleeping", artist="Natalie Imbruglia", size=7.2, album="Counting Down the Days", genre="Adult Alternative Pop/Rock", rating=60, duration="3:07", lastPlayed="26/03/2008 10:58"),
+            Track(title="Honeycomb Child", artist="Natalie Imbruglia", size=9.8, album="Counting Down the Days", genre="Adult Alternative Pop/Rock", rating=0, duration="4:15", lastPlayed="26/03/2008 11:02"),
+            Track(title="Last Living Souls", artist="Gorillaz", size=4.5, album="Demon Days", genre="Hip-Hop", rating=80, duration="3:11", lastPlayed="12/01/2008 9:55"),
+            Track(title="Kids With Guns", artist="Gorillaz", size=5.3, album="Demon Days", genre="Hip-Hop", rating=80, duration="3:46", lastPlayed="24/03/2008 12:52"),
+            Track(title="O Green World", artist="Gorillaz", size=6.3, album="Demon Days", genre="Hip-Hop", rating=80, duration="4:32", lastPlayed="24/03/2008 12:45"),
+            Track(title="Dirty Harry", artist="Gorillaz", size=5.2, album="Demon Days", genre="Hip-Hop", rating=80, duration="3:44", lastPlayed="24/03/2008 12:48"),
+            Track(title="Feel Good Inc.", artist="Gorillaz", size=5.4, album="Demon Days", genre="Hip-Hop", rating=100, duration="3:41", lastPlayed="24/03/2008 1:07"),
+            Track(title="El Manana", artist="Gorillaz", size=5.4, album="Demon Days", genre="Hip-Hop", rating=40, duration="3:50", lastPlayed="17/03/2008 5:45"),
+            Track(title="Every Plant We Reach Is Dead", artist="Gorillaz", size=6.8, album="Demon Days", genre="Hip-Hop", rating=80, duration="4:53", lastPlayed="24/03/2008 12:57"),
+            Track(title="November Has Come", artist="Gorillaz", size=3.8, album="Demon Days", genre="Hip-Hop", rating=80, duration="2:41", lastPlayed="24/03/2008 12:59"),
+            Track(title="All Alone", artist="Gorillaz", size=4.9, album="Demon Days", genre="Hip-Hop", rating=80, duration="3:30", lastPlayed="12/01/2008 9:49"),
+            Track(title="White Light", artist="Gorillaz", size=3, album="Demon Days", genre="Hip-Hop", rating=80, duration="2:09", lastPlayed="17/02/2008 3:30"),
+            Track(title="DARE", artist="Gorillaz", size=5.7, album="Demon Days", genre="Hip-Hop", rating=80, duration="4:05", lastPlayed="24/03/2008 1:03"),
+            Track(title="Don't Get Lost In Heaven", artist="Gorillaz", size=2.9, album="Demon Days", genre="Hip-Hop", rating=80, duration="2:01", lastPlayed="24/03/2008 12:36"),
+            Track(title="Demon Days", artist="Gorillaz", size=6.3, album="Demon Days", genre="Hip-Hop", rating=80, duration="4:29", lastPlayed="24/03/2008 12:40"),
+            Track(title="The Pretender", artist="Foo Fighters", size=8.3, album="Echoes, Silence, Patience & Grace", genre="Alternative", rating=60, duration="4:29", lastPlayed="24/03/2008 11:20"),
+            Track(title="Let It Die", artist="Foo Fighters", size=7.6, album="Echoes, Silence, Patience & Grace", genre="Alternative", rating=40, duration="4:05", lastPlayed="24/03/2008 11:24"),
+            Track(title="Erase/Replace", artist="Foo Fighters", size=7.8, album="Echoes, Silence, Patience & Grace", genre="Alternative", rating=60, duration="4:13", lastPlayed="24/03/2008 11:28"),
+            Track(title="Long Road To Ruin", artist="Foo Fighters", size=7, album="Echoes, Silence, Patience & Grace", genre="Alternative", rating=60, duration="3:45", lastPlayed="24/03/2008 11:31"),
+            Track(title="Come Alive", artist="Foo Fighters", size=9.6, album="Echoes, Silence, Patience & Grace", genre="Alternative", rating=60, duration="5:10", lastPlayed="24/03/2008 11:37"),
+            Track(title="Stranger Things Have Happened", artist="Foo Fighters", size=9.9, album="Echoes, Silence, Patience & Grace", genre="Alternative", rating=80, duration="5:21", lastPlayed="24/03/2008 11:42"),
+            Track(title="Cheer Up, Boys (Your Makeup Is Running)", artist="Foo Fighters", size=6.8, album="Echoes, Silence, Patience & Grace", genre="Alternative", rating=40, duration="3:41", lastPlayed="24/03/2008 11:45"),
+            Track(title="Summer's End", artist="Foo Fighters", size=8.6, album="Echoes, Silence, Patience & Grace", genre="Alternative", rating=60, duration="4:38", lastPlayed="24/03/2008 11:50"),
+            Track(title="The Ballad Of The Beaconsfield", artist="Foo Fighters", size=4.7, album="Echoes, Silence, Patience & Grace", genre="Instrumental", rating=80, duration="2:32", lastPlayed="24/03/2008 11:53"),
+            Track(title="Statues", artist="Foo Fighters", size=7, album="Echoes, Silence, Patience & Grace", genre="Alternative", rating=60, duration="3:48", lastPlayed="24/03/2008 11:57"),
+            Track(title="But, Honestly", artist="Foo Fighters", size=8.5, album="Echoes, Silence, Patience & Grace", genre="Alternative", rating=40, duration="4:35", lastPlayed="24/03/2008 12:01"),
+            Track(title="Home", artist="Foo Fighters", size=9, album="Echoes, Silence, Patience & Grace", genre="Alternative", rating=80, duration="4:52", lastPlayed="24/03/2008 12:06"),
+            Track(title="Once And For All (Demo) (Bonus Track)", artist="Foo Fighters", size=7, album="Echoes, Silence, Patience & Grace", genre="Alternative", rating=0, duration="3:48", lastPlayed="24/03/2008 12:10"),
+            Track(title="Going Under", artist="Evanescence", size=4.2, album="Fallen", genre="Metal", rating=0, duration="3:35", lastPlayed="4/02/2008 6:09"),
+            Track(title="Bring Me To Life", artist="Evanescence", size=4.6, album="Fallen", genre="Metal", rating=100, duration="3:57", lastPlayed="25/03/2008 12:56"),
+            Track(title="Everybody's Fool", artist="Evanescence", size=3.8, album="Fallen", genre="Metal", rating=0, duration="3:16", lastPlayed="4/02/2008 6:16"),
+            Track(title="Haunted", artist="Evanescence", size=3.6, album="Fallen", genre="Metal", rating=0, duration="3:07", lastPlayed="4/02/2008 6:19"),
+            Track(title="Tourniquet", artist="Evanescence", size=5.4, album="Fallen", genre="Metal", rating=0, duration="4:38", lastPlayed="4/02/2008 6:24"),
+            Track(title="Imaginary", artist="Evanescence", size=5, album="Fallen", genre="Metal", rating=0, duration="4:18", lastPlayed="4/02/2008 6:28"),
+            Track(title="Taking Over Me", artist="Evanescence", size=4.4, album="Fallen", genre="Metal", rating=0, duration="3:50", lastPlayed="15/03/2008 4:57"),
+            Track(title="Hello", artist="Evanescence", size=4.3, album="Fallen", genre="Metal", rating=0, duration="3:40", lastPlayed="4/02/2008 6:35"),
+            Track(title="My Last Breath", artist="Evanescence", size=4.8, album="Fallen", genre="Metal", rating=0, duration="4:07", lastPlayed="15/03/2008 4:23"),
+            Track(title="Whisper", artist="Evanescence", size=6.3, album="Fallen", genre="Metal", rating=0, duration="5:30", lastPlayed="4/02/2008 6:45"),
+            Track(title="My Immortal", artist="Evanescence", size=5.3, album="Fallen", genre="Metal", rating=0, duration="4:33", lastPlayed="4/02/2008 6:50"),
+            Track(title="One-Trick Pony", artist="Nelly Furtado", size=5, album="Folklore", genre="Pop", rating=80, duration="4:47", lastPlayed="15/03/2008 6:46"),
+            Track(title="Powerless (Say What You Want)", artist="Nelly Furtado", size=4.2, album="Folklore", genre="Pop", rating=80, duration="3:52", lastPlayed="15/03/2008 6:50"),
+            Track(title="Explode", artist="Nelly Furtado", size=4.1, album="Folklore", genre="Pop", rating=80, duration="3:44", lastPlayed="15/03/2008 6:53"),
+            Track(title="Try", artist="Nelly Furtado", size=4.9, album="Folklore", genre="Pop", rating=80, duration="4:39", lastPlayed="15/03/2008 11:49"),
+            Track(title="Fresh off the Boat", artist="Nelly Furtado", size=3.7, album="Folklore", genre="Pop", rating=60, duration="3:16", lastPlayed="22/02/2008 12:49"),
+            Track(title=u"Força", artist="Nelly Furtado", size=4, album="Folklore", genre="Pop", rating=40, duration="3:40", lastPlayed="22/02/2008 12:53"),
+            Track(title="The Grass Is Green", artist="Nelly Furtado", size=4.2, album="Folklore", genre="Pop", rating=40, duration="3:50", lastPlayed="22/02/2008 12:57"),
+            Track(title="Picture Perfect", artist="Nelly Furtado", size=5.5, album="Folklore", genre="Pop", rating=40, duration="5:15", lastPlayed="19/01/2008 12:08"),
+            Track(title="Saturdays", artist="Jarvis Church/Nelly Furtado", size=2.6, album="Folklore", genre="Pop", rating=40, duration="2:05", lastPlayed="7/01/2008 7:33"),
+            Track(title="Build You Up", artist="Nelly Furtado", size=5.2, album="Folklore", genre="Pop", rating=40, duration="4:58", lastPlayed="22/02/2008 1:03"),
+            Track(title="Island of Wonder", artist="Caetano Veloso/Nelly Furtado", size=4.2, album="Folklore", genre="Pop", rating=40, duration="3:49", lastPlayed="7/01/2008 7:42"),
+            Track(title="The Boy In The Bubble", artist="Paul Simon", size=5.6, album="Graceland", genre="Alternative", rating=60, duration="3:58", lastPlayed="24/01/2008 6:02"),
+            Track(title="Graceland", artist="Paul Simon", size=6.7, album="Graceland", genre="Alternative", rating=60, duration="4:48", lastPlayed="24/01/2008 6:07"),
+            Track(title="I Know What I Know", artist="Paul Simon", size=4.5, album="Graceland", genre="Alternative", rating=60, duration="3:12", lastPlayed="22/01/2008 5:27"),
+            Track(title="Gumboots", artist="Paul Simon", size=3.9, album="Graceland", genre="Alternative", rating=60, duration="2:43", lastPlayed="22/01/2008 5:30"),
+            Track(title="Diamonds On The Soles Of Her Shoes", artist="Paul Simon", size=8.1, album="Graceland", genre="Pop", rating=80, duration="5:46", lastPlayed="20/02/2008 9:44"),
+            Track(title="You Can Call Me Al", artist="Paul Simon", size=6.5, album="Graceland", genre="Alternative", rating=60, duration="4:39", lastPlayed="22/01/2008 5:40"),
+            Track(title="Under African Skies", artist="Paul Simon", size=5.1, album="Graceland", genre="Alternative", rating=60, duration="3:35", lastPlayed="19/03/2008 5:27"),
+            Track(title="Homeless", artist="Paul Simon", size=5.3, album="Graceland", genre="Alternative", rating=60, duration="3:47", lastPlayed="23/11/2007 7:01"),
+            Track(title="Crazy Love Vol II", artist="Paul Simon", size=6, album="Graceland", genre="Alternative", rating=60, duration="4:16", lastPlayed="22/01/2008 5:44"),
+            Track(title="That Was Your Mother", artist="Paul Simon", size=4.1, album="Graceland", genre="Alternative", rating=60, duration="2:53", lastPlayed="22/01/2008 5:47"),
+            Track(title="All Around The World Or The Myth of Fingerprints", artist="Paul Simon", size=4.6, album="Graceland", genre="Pop", rating=60, duration="3:13", lastPlayed="19/03/2008 5:31"),
+            Track(title="Vertigo", artist="U2", size=3.8, album="How To Dismantle An Atomic Bomb", genre="Rock", rating=100, duration="3:15", lastPlayed="18/12/2007 12:11"),
+            Track(title="Miracle Drug", artist="U2", size=4.7, album="How To Dismantle An Atomic Bomb", genre="Rock", rating=100, duration="3:59", lastPlayed="19/03/2008 12:04"),
+            Track(title="Sometimes You Can't Make It On Your Own", artist="U2", size=6, album="How To Dismantle An Atomic Bomb", genre="Rock", rating=60, duration="5:09", lastPlayed="18/12/2007 12:20"),
+            Track(title="Love And Peace Or Else", artist="U2", size=5.6, album="How To Dismantle An Atomic Bomb", genre="Rock", rating=60, duration="4:51", lastPlayed="15/03/2008 4:16"),
+            Track(title="City Of Blinding Lights", artist="U2", size=6.7, album="How To Dismantle An Atomic Bomb", genre="Rock", rating=80, duration="5:48", lastPlayed="19/03/2008 12:10"),
+            Track(title="All Because Of You", artist="U2", size=4.3, album="How To Dismantle An Atomic Bomb", genre="Rock", rating=60, duration="3:39", lastPlayed="6/11/2007 11:02"),
+            Track(title="A Man And A Woman", artist="U2", size=5.3, album="How To Dismantle An Atomic Bomb", genre="Rock", rating=100, duration="4:30", lastPlayed="19/03/2008 12:00"),
+            Track(title="Crumbs From Your Table", artist="U2", size=5.9, album="How To Dismantle An Atomic Bomb", genre="Rock", rating=60, duration="5:04", lastPlayed="6/11/2007 11:12"),
+            Track(title="One Step Closer", artist="U2", size=4.5, album="How To Dismantle An Atomic Bomb", genre="Rock", rating=40, duration="3:52", lastPlayed="6/11/2007 11:16"),
+            Track(title="Original Of The Species", artist="U2", size=5.5, album="How To Dismantle An Atomic Bomb", genre="Rock", rating=40, duration="4:41", lastPlayed="6/11/2007 11:20"),
+            Track(title="Yahweh", artist="U2", size=5.1, album="How To Dismantle An Atomic Bomb", genre="Rock", rating=80, duration="4:22", lastPlayed="18/03/2008 11:56"),
+            Track(title="Grim Travellers", artist="Bruce Cockburn", size=5.6, album="Humans", genre="Folk", rating=60, duration="4:50", lastPlayed="15/03/2008 4:31"),
+            Track(title="Rumours Of Glory", artist="Bruce Cockburn", size=4.3, album="Humans", genre="Folk", rating=80, duration="3:40", lastPlayed="25/03/2008 1:25"),
+            Track(title="More Not More", artist="Bruce Cockburn", size=4.4, album="Humans", genre="Folk", rating=60, duration="3:46", lastPlayed="27/10/2007 7:47"),
+            Track(title="You Get Bigger As You Go", artist="Bruce Cockburn", size=5.3, album="Humans", genre="Folk", rating=40, duration="4:36", lastPlayed="27/10/2007 7:51"),
+            Track(title="What About The Bond", artist="Bruce Cockburn", size=5.7, album="Humans", genre="Folk", rating=40, duration="4:56", lastPlayed="27/10/2007 7:56"),
+            Track(title="How I Spent My Fall Vacation", artist="Bruce Cockburn", size=5.9, album="Humans", genre="Folk", rating=60, duration="5:04", lastPlayed="27/10/2007 8:01"),
+            Track(title="Guerilla Betrayed", artist="Bruce Cockburn", size=4.6, album="Humans", genre="Folk", rating=60, duration="3:58", lastPlayed="27/10/2007 8:05"),
+            Track(title="Tokyo", artist="Bruce Cockburn", size=4.1, album="Humans", genre="Folk", rating=60, duration="3:29", lastPlayed="27/10/2007 8:09"),
+            Track(title="Fascist Architecture", artist="Bruce Cockburn", size=3.1, album="Humans", genre="Folk", rating=60, duration="2:38", lastPlayed="15/11/2007 3:40"),
+            Track(title="The Rose Above The Sky", artist="Bruce Cockburn", size=7.4, album="Humans", genre="Folk", rating=80, duration="6:22", lastPlayed="25/03/2008 1:22"),
+            Track(title="Torn", artist="Natalie Imbruglia", size=5.6, album="Left Of The Middle", genre="Adult Alternative Pop/Rock", rating=100, duration="4:04", lastPlayed="26/03/2008 11:06"),
+            Track(title="One More Addiction", artist="Natalie Imbruglia", size=4.9, album="Left Of The Middle", genre="Adult Alternative Pop/Rock", rating=60, duration="3:30", lastPlayed="26/03/2008 11:09"),
+            Track(title="Big Mistake", artist="Natalie Imbruglia", size=6.3, album="Left Of The Middle", genre="Adult Alternative Pop/Rock", rating=80, duration="4:32", lastPlayed="26/03/2008 11:14"),
+            Track(title="Leave Me Alone", artist="Natalie Imbruglia", size=6, album="Left Of The Middle", genre="Adult Alternative Pop/Rock", rating=60, duration="4:21", lastPlayed="26/03/2008 11:18"),
+            Track(title="Wishing I Was There", artist="Natalie Imbruglia", size=5.3, album="Left Of The Middle", genre="Adult Alternative Pop/Rock", rating=80, duration="3:51", lastPlayed="26/03/2008 11:22"),
+            Track(title="Smoke", artist="Natalie Imbruglia", size=6.4, album="Left Of The Middle", genre="Adult Alternative Pop/Rock", rating=60, duration="4:37", lastPlayed="26/03/2008 11:26"),
+            Track(title="Pigeons And Crumbs", artist="Natalie Imbruglia", size=7.4, album="Left Of The Middle", genre="Adult Alternative Pop/Rock", rating=0, duration="5:20", lastPlayed="26/03/2008 11:32"),
+            Track(title="Don't You Think", artist="Natalie Imbruglia", size=5.4, album="Left Of The Middle", genre="Adult Alternative Pop/Rock", rating=80, duration="3:55", lastPlayed="26/03/2008 11:36"),
+            Track(title="Impressed", artist="Natalie Imbruglia", size=6.6, album="Left Of The Middle", genre="Adult Alternative Pop/Rock", rating=80, duration="4:48", lastPlayed="26/03/2008 11:40"),
+            Track(title="Intuition", artist="Natalie Imbruglia", size=4.7, album="Left Of The Middle", genre="Adult Alternative Pop/Rock", rating=80, duration="3:22", lastPlayed="26/03/2008 11:44"),
+            Track(title="City", artist="Natalie Imbruglia", size=6.3, album="Left Of The Middle", genre="Adult Alternative Pop/Rock", rating=0, duration="4:33", lastPlayed="26/03/2008 11:48"),
+            Track(title="Left Of The Middle", artist="Natalie Imbruglia", size=5.2, album="Left Of The Middle", genre="Adult Alternative Pop/Rock", rating=60, duration="3:46", lastPlayed="26/03/2008 11:52"),
+            Track(title="Life For Rent", artist="Dido", size=4.3, album="Life For Rent", genre="Pop", rating=80, duration="3:43", lastPlayed="20/02/2008 9:35"),
+            Track(title="Mary's In India", artist="Dido", size=4.3, album="Life For Rent", genre="Pop", rating=80, duration="3:44", lastPlayed="20/02/2008 9:39"),
+            Track(title="See You When You're 40", artist="Dido", size=6.2, album="Life For Rent", genre="Pop", rating=80, duration="5:22", lastPlayed="20/02/2008 9:15"),
+            Track(title="Don't Leave Home", artist="Dido", size=4.4, album="Life For Rent", genre="Pop", rating=80, duration="3:49", lastPlayed="20/02/2008 9:31"),
+            Track(title="Who Makes You Feel", artist="Dido", size=5.1, album="Life For Rent", genre="Pop", rating=80, duration="4:23", lastPlayed="20/02/2008 9:09"),
+            Track(title="Sand In My Shoes", artist="Dido", size=5.8, album="Life For Rent", genre="Pop", rating=80, duration="5:02", lastPlayed="20/02/2008 9:24"),
+            Track(title="Do You Have A Little Time", artist="Dido", size=4.6, album="Life For Rent", genre="Pop", rating=80, duration="3:57", lastPlayed="20/02/2008 9:19"),
+            Track(title="This Land Is Mine", artist="Dido", size=4.4, album="Life For Rent", genre="Pop", rating=80, duration="3:48", lastPlayed="20/02/2008 9:27"),
+            Track(title="See The Sun", artist="Dido", size=12.2, album="Life For Rent", genre="Pop", rating=60, duration="10:36", lastPlayed="22/12/2007 10:28"),
+            Track(title="Lifesong", artist="Casting Crowns", size=4.9, album="Lifesong", genre="Religious", rating=80, duration="5:17", lastPlayed="24/03/2008 2:36"),
+            Track(title="Praise You in This Storm", artist="Casting Crowns", size=4.6, album="Lifesong", genre="Religious", rating=100, duration="4:59", lastPlayed="24/03/2008 2:17"),
+            Track(title="Does Anybody Hear Her", artist="Casting Crowns", size=4.2, album="Lifesong", genre="Religious", rating=60, duration="4:30", lastPlayed="26/12/2007 3:07"),
+            Track(title="Stained Glass Masquerade", artist="Casting Crowns", size=3.6, album="Lifesong", genre="Religious", rating=60, duration="3:52", lastPlayed="26/12/2007 3:11"),
+            Track(title="Love Them Like Jesus", artist="Casting Crowns", size=4.2, album="Lifesong", genre="Religious", rating=60, duration="4:32", lastPlayed="4/11/2007 3:00"),
+            Track(title="Set Me Free", artist="Casting Crowns", size=4.1, album="Lifesong", genre="Religious", rating=80, duration="4:27", lastPlayed="24/03/2008 2:12"),
+            Track(title="While You Were Sleeping", artist="Casting Crowns", size=4.5, album="Lifesong", genre="Religious", rating=60, duration="4:55", lastPlayed="1/01/2008 12:39"),
+            Track(title="Father, Spirit, Jesus", artist="Casting Crowns", size=4.8, album="Lifesong", genre="Religious", rating=80, duration="5:11", lastPlayed="24/03/2008 2:41"),
+            Track(title="In Me", artist="Casting Crowns", size=4.4, album="Lifesong", genre="Religious", rating=80, duration="4:44", lastPlayed="24/03/2008 2:31"),
+            Track(title="Prodigal", artist="Casting Crowns", size=5.3, album="Lifesong", genre="Religious", rating=60, duration="5:45", lastPlayed="26/12/2007 3:36"),
+            Track(title="And Now My Lifesong Sings", artist="Casting Crowns", size=3.8, album="Lifesong", genre="Religious", rating=60, duration="4:03", lastPlayed="1/01/2008 12:54"),
+            Track(title="Afraid", artist="Nelly Furtado", size=3.3, album="Loose", genre="Pop", rating=80, duration="3:35", lastPlayed="15/03/2008 11:41"),
+            Track(title="Maneater", artist="Nelly Furtado", size=4.1, album="Loose", genre="Pop", rating=40, duration="4:25", lastPlayed="19/01/2008 12:20"),
+            Track(title="Promiscuous", artist="Nelly Furtado", size=3.7, album="Loose", genre="Pop", rating=60, duration="4:02", lastPlayed="21/01/2008 5:01"),
+            Track(title="Glow", artist="Nelly Furtado", size=3.7, album="Loose", genre="Pop", rating=80, duration="4:02", lastPlayed="15/03/2008 11:45"),
+            Track(title="Showtime", artist="Nelly Furtado", size=3.9, album="Loose", genre="Pop", rating=80, duration="4:15", lastPlayed="15/03/2008 6:37"),
+            Track(title="No Hay Igual", artist="Nelly Furtado", size=3.3, album="Loose", genre="Pop", rating=80, duration="3:35", lastPlayed="15/03/2008 11:33"),
+            Track(title="Te Busque", artist="Nelly Furtado", size=3.4, album="Loose", genre="Pop", rating=60, duration="3:38", lastPlayed="21/01/2008 5:17"),
+            Track(title="Say It Right", artist="Nelly Furtado", size=3.4, album="Loose", genre="Pop", rating=60, duration="3:43", lastPlayed="21/01/2008 5:21"),
+            Track(title="Do It", artist="Nelly Furtado", size=3.4, album="Loose", genre="Pop", rating=60, duration="3:41", lastPlayed="21/01/2008 5:24"),
+            Track(title="In God's Hands", artist="Nelly Furtado", size=4.5, album="Loose", genre="Pop", rating=40, duration="4:54", lastPlayed="21/01/2008 5:29"),
+            Track(title="Wait for You", artist="Nelly Furtado", size=4.8, album="Loose", genre="Pop", rating=40, duration="5:11", lastPlayed="21/01/2008 5:34"),
+            Track(title="Somebody to Love", artist="Nelly Furtado", size=4.6, album="Loose", genre="Pop", rating=40, duration="4:56", lastPlayed="21/01/2008 5:39"),
+            Track(title="All Good Things (Come to an End)", artist="Nelly Furtado", size=4.8, album="Loose", genre="Pop", rating=40, duration="5:10", lastPlayed="21/01/2008 5:44"),
+            Track(title="Someone Somewhere In Summertime", artist="Simple Minds", size=6.5, album="New Gold Gream (81/82/83/84)", genre="Rock", rating=60, duration="4:38", lastPlayed="1/09/2007 9:11"),
+            Track(title="Colours Fly And Catherine Wheel", artist="Simple Minds", size=5.4, album="New Gold Gream (81/82/83/84)", genre="Rock", rating=80, duration="3:50", lastPlayed="19/11/2007 8:34"),
+            Track(title="Big Sleep", artist="Simple Minds", size=6.9, album="New Gold Gream (81/82/83/84)", genre="Rock", rating=40, duration="4:58", lastPlayed="1/09/2007 9:20"),
+            Track(title="Somebody Up There Likes You", artist="Simple Minds", size=7, album="New Gold Gream (81/82/83/84)", genre="Rock", rating=40, duration="5:02", lastPlayed="1/09/2007 9:25"),
+            Track(title="New Gold Dream (81-82-83-84)", artist="Simple Minds", size=7.9, album="New Gold Gream (81/82/83/84)", genre="Rock", rating=60, duration="5:39", lastPlayed="1/09/2007 9:30"),
+            Track(title="Glittering Prize", artist="Simple Minds", size=6.4, album="New Gold Gream (81/82/83/84)", genre="Rock", rating=60, duration="4:34", lastPlayed="13/08/2007 8:24"),
+            Track(title="Hunter And The Hunted", artist="Simple Minds", size=8.3, album="New Gold Gream (81/82/83/84)", genre="Rock", rating=60, duration="5:56", lastPlayed="13/08/2007 8:30"),
+            Track(title="King Is White And In The Crowd", artist="Simple Minds", size=9.7, album="New Gold Gream (81/82/83/84)", genre="Rock", rating=20, duration="7:00", lastPlayed="13/08/2007 8:37"),
+            Track(title="Promised you a miracle", artist="Simple Minds", size=4.7, album="New Gold Gream (81/82/83/84)", genre="Rock", rating=40, duration="4:01", lastPlayed="10/01/2008 12:01"),
+            Track(title="Psycho Killer", artist="Talking Heads", size=5.2, album="Once In A Lifetime", genre="Alternative", rating=40, duration="4:22", lastPlayed="4/02/2008 5:06"),
+            Track(title="Take Me To The River", artist="Talking Heads", size=6, album="Once In A Lifetime", genre="Alternative", rating=40, duration="5:03", lastPlayed="4/02/2008 5:11"),
+            Track(title="Once In A Lifetime", artist="Talking Heads", size=5.2, album="Once In A Lifetime", genre="Alternative", rating=80, duration="4:20", lastPlayed="4/02/2008 5:15"),
+            Track(title="Burning Down The House", artist="Talking Heads", size=4.8, album="Once In A Lifetime", genre="Alternative", rating=100, duration="4:02", lastPlayed="10/02/2008 12:19"),
+            Track(title="This Must Be The Place (Naive Melody)", artist="Talking Heads", size=5.9, album="Once In A Lifetime", genre="Alternative", rating=40, duration="4:55", lastPlayed="4/02/2008 5:24"),
+            Track(title="Slippery People (Live)", artist="Talking Heads", size=5.1, album="Once In A Lifetime", genre="Alternative", rating=40, duration="4:14", lastPlayed="4/02/2008 5:28"),
+            Track(title="Life During Wartime (Live)", artist="Talking Heads", size=6, album="Once In A Lifetime", genre="Alternative", rating=40, duration="5:05", lastPlayed="4/02/2008 5:34"),
+            Track(title="And She Was", artist="Talking Heads", size=4.4, album="Once In A Lifetime", genre="Alternative", rating=60, duration="3:39", lastPlayed="4/02/2008 5:37"),
+            Track(title="Road To Nowhere", artist="Talking Heads", size=5.2, album="Once In A Lifetime", genre="Alternative", rating=80, duration="4:20", lastPlayed="4/02/2008 5:42"),
+            Track(title="Wild Wild Life", artist="Talking Heads", size=4.4, album="Once In A Lifetime", genre="Alternative", rating=60, duration="3:42", lastPlayed="4/02/2008 5:45"),
+            Track(title="Blind", artist="Talking Heads", size=5.9, album="Once In A Lifetime", genre="Alternative", rating=40, duration="5:00", lastPlayed="4/02/2008 5:50"),
+            Track(title="Nothing But Flowers", artist="Talking Heads", size=6.6, album="Once In A Lifetime", genre="Alternative", rating=40, duration="5:35", lastPlayed="4/02/2008 5:56"),
+            Track(title="Sax And Violins", artist="Talking Heads", size=6.3, album="Once In A Lifetime", genre="Alternative", rating=60, duration="5:18", lastPlayed="4/02/2008 6:01"),
+            Track(title="Lifetime Piling Up", artist="Talking Heads", size=4.6, album="Once In A Lifetime", genre="Alternative", rating=80, duration="3:52", lastPlayed="4/02/2008 6:05"),
+            Track(title="Honey", artist="Moby", size=4.8, album="Play", genre="Alternative", rating=80, duration="3:29", lastPlayed="22/02/2008 10:59"),
+            Track(title="Find My Baby", artist="Moby", size=5.5, album="Play", genre="Alternative", rating=60, duration="3:59", lastPlayed="22/02/2008 11:03"),
+            Track(title="Porcelain", artist="Moby", size=5.6, album="Play", genre="Alternative", rating=40, duration="4:01", lastPlayed="14/03/2008 11:34"),
+            Track(title="Why Does My Heart Feel So Bad?", artist="Moby", size=6.1, album="Play", genre="Alternative", rating=80, duration="4:25", lastPlayed="22/02/2008 11:12"),
+            Track(title="Southside", artist="Moby", size=5.3, album="Play", genre="Alternative", rating=80, duration="3:50", lastPlayed="3/03/2008 4:20"),
+            Track(title="Rushing", artist="Moby", size=4.2, album="Play", genre="Instrumental", rating=60, duration="3:00", lastPlayed="14/03/2008 11:30"),
+            Track(title="Bodyrock", artist="Moby", size=5, album="Play", genre="Alternative", rating=100, duration="3:36", lastPlayed="14/03/2008 11:27"),
+            Track(title="Natural Blues", artist="Moby", size=5.9, album="Play", genre="Alternative", rating=40, duration="4:14", lastPlayed="22/02/2008 11:27"),
+            Track(title="Machete", artist="Moby", size=5.1, album="Play", genre="Alternative", rating=20, duration="3:38", lastPlayed="22/02/2008 11:30"),
+            Track(title="7", artist="Moby", size=1.5, album="Play", genre="Instrumental", rating=20, duration="1:02", lastPlayed="14/03/2008 11:23"),
+            Track(title="Run On", artist="Moby", size=5.2, album="Play", genre="Alternative", rating=40, duration="3:45", lastPlayed="19/03/2008 5:52"),
+            Track(title="Down Slow", artist="Moby", size=2.2, album="Play", genre="Instrumental", rating=40, duration="1:35", lastPlayed="14/03/2008 11:22"),
+            Track(title="If Things Were Perfect", artist="Moby", size=6, album="Play", genre="Alternative", rating=60, duration="4:19", lastPlayed="22/02/2008 11:40"),
+            Track(title="Everloving", artist="Moby", size=4.8, album="Play", genre="Alternative", rating=40, duration="3:26", lastPlayed="27/12/2007 11:06"),
+            Track(title="Inside", artist="Moby", size=6.7, album="Play", genre="Alternative", rating=60, duration="4:49", lastPlayed="27/12/2007 11:10"),
+            Track(title="Guitar Flute And String", artist="Moby", size=3, album="Play", genre="Alternative", rating=60, duration="2:09", lastPlayed="27/12/2007 11:12"),
+            Track(title="The Sky Is Broken", artist="Moby", size=6, album="Play", genre="Alternative", rating=60, duration="4:19", lastPlayed="4/11/2007 2:22"),
+            Track(title="My Weakness", artist="Moby", size=5, album="Play", genre="Alternative", rating=40, duration="3:38", lastPlayed="4/11/2007 2:26"),
+            Track(title="Discotheque", artist="U2", size=6.1, album="Pop", genre="Rock", rating=100, duration="5:19", lastPlayed="3/03/2008 4:16"),
+            Track(title="Do You Feel Loved", artist="U2", size=5.9, album="Pop", genre="Rock", rating=60, duration="5:07", lastPlayed="7/02/2008 11:04"),
+            Track(title="Mofo", artist="U2", size=6.7, album="Pop", genre="Rock", rating=60, duration="5:49", lastPlayed="7/02/2008 11:10"),
+            Track(title="If God Will Send His Angels", artist="U2", size=6.2, album="Pop", genre="Rock", rating=80, duration="5:23", lastPlayed="7/02/2008 11:16"),
+            Track(title="Staring At The Sun", artist="U2", size=5.3, album="Pop", genre="Rock", rating=80, duration="4:37", lastPlayed="19/03/2008 12:15"),
+            Track(title="Last Night On Earth", artist="U2", size=5.5, album="Pop", genre="Rock", rating=100, duration="4:46", lastPlayed="7/02/2008 11:25"),
+            Track(title="Gone", artist="U2", size=5.1, album="Pop", genre="Rock", rating=60, duration="4:27", lastPlayed="7/02/2008 11:29"),
+            Track(title="Miami", artist="U2", size=5.6, album="Pop", genre="Rock", rating=40, duration="4:53", lastPlayed="14/11/2007 5:53"),
+            Track(title="The Playboy Mansion", artist="U2", size=5.4, album="Pop", genre="Rock", rating=40, duration="4:41", lastPlayed="14/11/2007 5:58"),
+            Track(title="If You Wear That Velvet Dress", artist="U2", size=6.1, album="Pop", genre="Rock", rating=60, duration="5:15", lastPlayed="14/11/2007 6:03"),
+            Track(title="Please", artist="U2", size=5.8, album="Pop", genre="Rock", rating=40, duration="5:03", lastPlayed="6/02/2008 11:28"),
+            Track(title="Wake Up Dead Man", artist="U2", size=5.6, album="Pop", genre="Rock", rating=40, duration="4:53", lastPlayed="6/02/2008 11:20"),
+            Track(title="The River", artist="Live", size=4.1, album="Songs From Black Mountain", genre="Gospel & Religious", rating=80, duration="2:58", lastPlayed="24/03/2008 10:55"),
+            Track(title="Mystery", artist="Live", size=5.2, album="Songs From Black Mountain", genre="Gospel & Religious", rating=80, duration="3:45", lastPlayed="24/03/2008 10:59"),
+            Track(title="Get Ready", artist="Live", size=4.9, album="Songs From Black Mountain", genre="Gospel & Religious", rating=60, duration="3:32", lastPlayed="23/03/2008 1:02"),
+            Track(title="Show", artist="Live", size=4.7, album="Songs From Black Mountain", genre="Gospel & Religious", rating=80, duration="3:25", lastPlayed="24/03/2008 11:03"),
+            Track(title="Wings", artist="Live", size=5.3, album="Songs From Black Mountain", genre="Gospel & Religious", rating=0, duration="3:51", lastPlayed="23/03/2008 1:09"),
+            Track(title="Sofia", artist="Live", size=5.4, album="Songs From Black Mountain", genre="Gospel & Religious", rating=0, duration="3:54", lastPlayed="23/03/2008 1:13"),
+            Track(title="Love Shines (A Song For My Daughters About God)", artist="Live", size=4.6, album="Songs From Black Mountain", genre="Gospel & Religious", rating=0, duration="3:21", lastPlayed="23/03/2008 1:16"),
+            Track(title="Where Do We Go From Here", artist="Live", size=5.2, album="Songs From Black Mountain", genre="Gospel & Religious", rating=0, duration="3:46", lastPlayed="23/03/2008 1:20"),
+            Track(title="Home", artist="Live", size=4.7, album="Songs From Black Mountain", genre="Gospel & Religious", rating=0, duration="3:23", lastPlayed="23/03/2008 1:23"),
+            Track(title="All I Need", artist="Live", size=4.5, album="Songs From Black Mountain", genre="Gospel & Religious", rating=0, duration="3:14", lastPlayed="23/03/2008 1:26"),
+            Track(title="You Are Not Alone", artist="Live", size=5.2, album="Songs From Black Mountain", genre="Gospel & Religious", rating=0, duration="3:44", lastPlayed="19/02/2008 12:05"),
+            Track(title="Night Of Nights", artist="Live", size=4.9, album="Songs From Black Mountain", genre="Gospel & Religious", rating=0, duration="3:33", lastPlayed="19/02/2008 12:08"),
+            Track(title="All For Believing", artist="Missy Higgins", size=4.2, album="The Sound Of White", genre="Folk", rating=80, duration="3:30", lastPlayed="30/01/2008 4:21"),
+            Track(title="Don't Ever", artist="Missy Higgins", size=3.5, album="The Sound Of White", genre="Folk", rating=40, duration="2:54", lastPlayed="30/01/2008 4:24"),
+            Track(title="Scar", artist="Missy Higgins", size=4.3, album="The Sound Of White", genre="Folk", rating=80, duration="3:36", lastPlayed="30/01/2008 4:28"),
+            Track(title="Ten Days", artist="Missy Higgins", size=4.5, album="The Sound Of White", genre="Folk", rating=80, duration="3:48", lastPlayed="30/01/2008 5:10"),
+            Track(title="Nightminds", artist="Missy Higgins", size=4, album="The Sound Of White", genre="Folk", rating=60, duration="3:21", lastPlayed="30/01/2008 5:13"),
+            Track(title="Casualty", artist="Missy Higgins", size=5, album="The Sound Of White", genre="Folk", rating=60, duration="4:15", lastPlayed="15/03/2008 4:43"),
+            Track(title="Any Day Now", artist="Missy Higgins", size=4.6, album="The Sound Of White", genre="Folk", rating=60, duration="3:54", lastPlayed="30/12/2007 2:35"),
+            Track(title="Katie", artist="Missy Higgins", size=4.3, album="The Sound Of White", genre="Folk", rating=60, duration="3:37", lastPlayed="30/12/2007 2:38"),
+            Track(title="The River", artist="Missy Higgins", size=5.3, album="The Sound Of White", genre="Folk", rating=60, duration="4:30", lastPlayed="16/11/2007 9:06"),
+            Track(title="The Special Two", artist="Missy Higgins", size=5.2, album="The Sound Of White", genre="Folk", rating=100, duration="4:25", lastPlayed="30/01/2008 5:18"),
+            Track(title="This Is How It Goes", artist="Missy Higgins", size=4.2, album="The Sound Of White", genre="Folk", rating=60, duration="3:35", lastPlayed="30/01/2008 5:22"),
+            Track(title="The Sound Of White", artist="Missy Higgins", size=5.7, album="The Sound Of White", genre="Folk", rating=80, duration="4:52", lastPlayed="30/01/2008 5:27"),
+            Track(title="They Weren't There", artist="Missy Higgins", size=4.9, album="The Sound Of White", genre="Folk", rating=60, duration="4:08", lastPlayed="30/12/2007 2:56"),
         ]
         fe = wx.FontEnumerator()
         fe.EnumerateFacenames()
@@ -661,7 +807,7 @@ class MyFrame(wx.Frame):
             # Convert the 'duration' and 'lastPlayed' attributes into a time() and a datetime() respectively
             minsAndSeconds = x.duration.split(":")
             x.duration = time(minute=int(minsAndSeconds[0]), second=int(minsAndSeconds[1]))
-            x.lastPlayed = datetime(*(strptime(x.lastPlayed, "%d/%m/%Y %I:%M %p")[0:6]))
+            x.lastPlayed = datetime(*(strptime(x.lastPlayed, "%d/%m/%Y %H:%M")[0:6]))
 
             # Give some tracks a dark colour that can be used for the text
             x.trackColour = random.choice(colours)
@@ -884,6 +1030,21 @@ class MyFrame(wx.Frame):
         self.olvGroup.SetObjects(self.dataObjects)
         self.olvGroup.cellEditMode = ObjectListView.CELLEDIT_DOUBLECLICK
 
+    def InitPrinting(self):
+        """
+        Initialize the printing portion of the demo
+        """
+        self.listCtrlPrinter = ListCtrlPrinter()
+        self.printPreview = self.listCtrlPrinter.printout.GetPrintPreview()
+
+    def InitPrintPreview(self):
+        """
+        Initialize the print preview portion of the demo
+        """
+        self.watermarkFontCtrl.SelectedFont = self.listCtrlPrinter.engine.reportFormat.Watermark.Font
+        self.watermarkColorCtrl.Colour = self.listCtrlPrinter.engine.reportFormat.Watermark.TextColor
+        self.ConfigurePrinting()
+        self.printPreview.SetCanvas(self.previewCanvas)
 
     def _imagePath(self, imageFile):
         return os.path.join(os.getcwd(), "images", imageFile)
@@ -946,26 +1107,28 @@ class MyFrame(wx.Frame):
 
     def _timeCall(self, func, msg):
         t = clock()
-
         simpleTiming = True
         if simpleTiming:
             func()
         else:
-            self.frame_1_statusbar.SetStatusText("Starting profile", 0)
-
-            import __builtin__, cProfile, pstats
-            __builtin__.__dict__["myFunctionToProfile"] = func
-            cProfile.run("myFunctionToProfile()", "app.prof")
-
-            stats = pstats.Stats("app.prof")
-            stats.strip_dirs()
-            stats.sort_stats('time', 'calls')
-            print msg % ((clock()-t)*1000)
-            stats.print_stats(30)
-            os.remove("app.prof")
-
+            self._profileCall(func, msg)
         statusMsg = msg % ((clock()-t)*1000)
         self.frame_1_statusbar.SetStatusText(statusMsg, 0)
+
+    def _profileCall(self, func, msg):
+        self.frame_1_statusbar.SetStatusText("Starting profile", 0)
+        t = clock()
+
+        import __builtin__, cProfile, pstats
+        __builtin__.__dict__["myFunctionToProfile"] = func
+        cProfile.run("myFunctionToProfile()", "app.prof")
+
+        stats = pstats.Stats("app.prof")
+        stats.strip_dirs()
+        stats.sort_stats('time', 'calls')
+        print msg % ((clock()-t)*1000)
+        stats.print_stats(30)
+        os.remove("app.prof")
 
     #----------------------------------------------------------------------
     # Event handlers - Simple tab
@@ -1127,11 +1290,95 @@ class MyFrame(wx.Frame):
     def OnCollapseAllGroups(self, event): # wxGlade: MyFrame.<event_handler>
         self.olvGroup.CollapseAll()
 
+    #----------------------------------------------------------------------------
+    #  ListCtrl printing tab events
+
+    def OnPrintPreview(self, event): # wxGlade: MyFrame.<event_handler>
+        self.ConfigurePrinting()
+        self.listCtrlPrinter.PrintPreview()
+
+    def OnPageSetup(self, event): # wxGlade: MyFrame.<event_handler>
+        self.listCtrlPrinter.PageSetup()
+        self.RefreshPreview()
+
+    def OnPrint(self, event): # wxGlade: MyFrame.<event_handler>
+        self.ConfigurePrinting()
+        self.listCtrlPrinter.Print()
+
+    def ConfigurePrinting(self):
+        """
+        Copy all the configuration information from the tab to the printing object
+        """
+        prt = self.listCtrlPrinter
+        prt.Clear()
+        if self.cbSimple.IsChecked():
+            prt.AddListCtrl(self.olvSimple, "Simple ObjectListView")
+        if self.cbComplex.IsChecked():
+            prt.AddListCtrl(self.olvComplex, "Complex ObjectListView")
+        if self.cbFast.IsChecked():
+            prt.AddListCtrl(self.olvFast, "Fast ObjectListView")
+        if self.cbGroups.IsChecked():
+            prt.AddListCtrl(self.olvGroup, "Group List View")
+
+        prt.Watermark(self.tcWatermark.GetValue())
+        prt.PageHeader(self.tcPageHeaderLeft.GetValue(), self.tcPageHeaderCenter.GetValue(), self.tcPageHeaderRight.GetValue())
+        prt.PageFooter(self.tcPageFooterLeft.GetValue(), self.tcPageFooterCenter.GetValue(), self.tcPageFooterRight.GetValue())
+
+        if self.radioBoxFormatting.GetSelection() == 0:
+            prt.ReportFormat = ReportFormat.Minimal()
+        if self.radioBoxFormatting.GetSelection() == 1:
+            prt.ReportFormat = ReportFormat.Normal()
+        if self.radioBoxFormatting.GetSelection() == 2:
+            prt.ReportFormat = ReportFormat.TooMuch()
+
+        prt.ReportFormat.IsShrinkToFit = self.cbShrinkToFit.IsChecked()
+        prt.ReportFormat.IncludeImages = self.cbIncludeImages.IsChecked()
+        prt.ReportFormat.CanCellsWrap = self.cbWrapCells.IsChecked()
+        prt.ReportFormat.IsColumnHeadingsOnEachPage = self.cbColumnHeaderOnEachPage.IsChecked()
+        prt.ReportFormat.UseListCtrlTextFormat = self.cbUseListCtrlTextFormat.IsChecked()
+        prt.ReportFormat.Watermark.Font = self.watermarkFontCtrl.SelectedFont
+        prt.ReportFormat.Watermark.TextColor = self.watermarkColorCtrl.Colour
+        prt.ReportFormat.Watermark.Over = self.cbWatermarkOnTop.IsChecked()
+
+    def OnFirstPage(self, event): # wxGlade: MyFrame.<event_handler>
+        self.printPreview.SetCurrentPage(self.printPreview.GetMinPage())
+
+    def OnPreviousPage(self, event): # wxGlade: MyFrame.<event_handler>
+        if self.printPreview.GetCurrentPage() > self.printPreview.GetMinPage():
+            self.printPreview.SetCurrentPage(self.printPreview.GetCurrentPage() - 1)
+
+    def OnNextPage(self, event): # wxGlade: MyFrame.<event_handler>
+        if self.printPreview.GetCurrentPage() < self.printPreview.GetMaxPage():
+            self.printPreview.SetCurrentPage(self.printPreview.GetCurrentPage() + 1)
+
+    def OnLastPage(self, event): # wxGlade: MyFrame.<event_handler>
+        self.printPreview.SetCurrentPage(self.printPreview.GetMaxPage())
+
+    def OnZoom(self, event): # wxGlade: MyFrame.<event_handler>
+        zooms = [25, 50, 75, 100, 150, 200, 400]
+        self.printPreview.SetZoom(zooms[self.choiceZoom.GetSelection()])
+
+    def OnSourceChange(self, event): # wxGlade: MyFrame.<event_handler>
+        self.ConfigurePrinting()
+        self.RefreshPreview()
+
+    def OnFormatting(self, event): # wxGlade: MyFrame.<event_handler>
+        self.ConfigurePrinting()
+        self.RefreshPreview()
+
+    def OnPreviewOptionChange(self, event): # wxGlade: MyFrame.<event_handler>
+        self.ConfigurePrinting()
+        self.RefreshPreview()
+
+    def RefreshPreview(self):
+        self.printPreview.RenderPage(min(self.printPreview.GetCurrentPage(), self.printPreview.GetMaxPage()))
+        self.previewCanvas.Refresh()
+
 # end of class MyFrame
 
 
 if __name__ == "__main__":
-    app = wx.PySimpleApp(0)
+    app = wx.PySimpleApp()
     wx.InitAllImageHandlers()
     frame_1 = MyFrame(None, -1, "")
     app.SetTopWindow(frame_1)
