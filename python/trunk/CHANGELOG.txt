@@ -5,6 +5,138 @@
 Change Log
 ==========
 
+2008-08-13 00:09 (#199) - ObjectListView/ObjectListView.py, ObjectListView/__init__.py, ObjectListView/OLVPrinter.py, ObjectListView/ListCtrlPrinter.py
+  - Allow text to be vertically aligned in cells
+  - Improved some docs
+  - Renamed OLVPrinter to be ListCtrlPrinter
+
+
+2008-08-13 00:07 (#198) - Examples/Demo.wxg, Examples/Demo.py
+  - Changed OLVPrinter to be ListCtrlPrinter
+
+
+2008-08-13 00:06 (#197) - docs/images/listctrlprinter-example1.png, docs/images/grouplist-example1.png, docs/listCtrlPrinter.rst, docs/.templates/layout.html, docs/faq.rst, docs/index.rst, docs/.static/listCtrlPrinter-icon.png, docs/.static/majorClasses-icon.png
+  - Began documenting ListCtrlPrinter
+
+
+2008-08-12 19:40 (#195) - ObjectListView/OLVPrinter.py
+  - Added TooMuch() formatting
+  - Create instance variables normally in ReportFormat -- rather than using setattr()
+  - Simplified scaling of rows
+  - Changed some method names to better reflect their more generic role
+  - Changed variable to refer to a listview rather than an objectlistview
+
+
+2008-08-08 11:36 (#194) - Examples/Demo.wxg, Examples/Demo.py
+  - Completely reworked ListCtrl printing tab
+
+
+2008-08-08 11:35 (#193) - test/test_ObjectListView.py
+  - Make adjustments for GroupListView now being virtual
+
+
+2008-08-08 11:34 (#192) - ObjectListView/OLVPrinter.py
+  - Added ImageDecoration
+  - Removed report title and footer
+  - Corrected (and optimized) counting pages and skipping pages
+
+
+2008-08-06 20:44 (#191) - ObjectListView/OLVPrinter.py
+  - Row height is now calculate for the whole row, not just the current slice
+  - Separated water format from the watermark text
+  - Allow blocks to decide not to print themselves
+  - Use a dummy DC when counting total pages
+
+
+2008-08-06 10:14 (#190) - Examples/Demo.wxg, Examples/Demo.py
+  - Rearranged Printing panel
+  - Inline print preview has water mark
+
+
+2008-08-05 22:43 (#189) - ObjectListView/ObjectListView.py
+  - GroupListView is now implemented as a virtual list
+  - Moved putBlankLineBetweenGroups into GroupListView (and out of ObjectListView)
+
+
+2008-08-05 22:40 (#188) - ObjectListView/__init__.py
+  - Added ListGroup into classes exported from the module
+
+
+2008-08-05 22:39 (#187) - Examples/Demo.wxg, Examples/Demo.py
+  - ListCtrl print previewing now works more or less completely
+
+
+2008-08-04 16:43 (#186) - Examples/Demo.wxg, Examples/Demo.py
+  - Added List printing example tab (not yet complete)
+
+
+2008-08-04 16:43 (#185) - ObjectListView/OLVPrinter.py
+  - Header and footers are now ThreeCellBlock
+  - Added substitutions on text strings
+  - Print garbage pages to a MemoryDC
+  - Added IncludeImages and UseListCtrlTextFormat into ReportFormat
+  - Added ReportFormat.Minimal()
+  - Column headers can now be repeated on each page
+
+
+2008-08-04 16:37 (#184) - ObjectListView/__init__.py
+  - Added list printing stuff
+
+
+2008-08-02 10:26 (#183) - ObjectListView/OLVPrinter.py
+  - Now includes images
+  - Cells can now be truncated
+  - Decorations can now be either over or under their block
+
+
+2008-08-02 10:24 (#182) - ObjectListView/ObjectListView.py
+  - Added putBlankLineBetweenGroups to GroupListView
+  - Handle None as aspect values
+
+
+2008-08-02 10:23 (#181) - ObjectListView/WordWrapRenderer.py
+  - Changed to use wx.lib.wordwrap
+  - Added DrawTruncatedString()
+
+
+2008-08-02 10:22 (#180) - Examples/GroupExample.py, Examples/ExampleModel.py, Examples/Demo.py
+  - Remove locale dependence from date parsing
+
+
+2008-07-31 23:50 (#179) - ObjectListView/OLVPrinter.py
+  - Watermarks now work
+
+
+2008-07-31 21:38 (#178) - ObjectListView/OLVPrinter.py
+  - AlwaysCenterColumnHeader and IsShrinkToFit now work
+
+
+2008-07-31 11:51 (#177) - ObjectListView/OLVPrinter.py
+  - Margins, scaling and printer boundries all now work
+
+
+2008-07-31 10:49 (#176) - test/test_OLVPrinter.py
+  - Added TextBlock tests
+
+
+2008-07-31 10:48 (#175) - ObjectListView/OLVPrinter.py
+  - Made work with plain ListCtrls
+  - Cell decorations and grids now work
+  - Added gradient lines and backgrounds
+
+
+2008-07-30 17:06 (#174) - ObjectListView/ObjectListView.py
+  - Removed reference to testing variable '__rows'
+
+
+2008-07-30 17:05 (#173) - docs/groupListView.rst, docs/index.rst, docs/gettingStarted.rst
+  - COrrected some small mistakes in docs
+
+
+2008-07-30 11:46 (#172) - CHANGELOG.txt, docs/changelog.rst, setup.py
+  - V1.1 release
+
+
 2008-07-28 22:10 (#170) - ObjectListView/OLVPrinter.py
   - Move grid drawing into CellBlock. Removed GridDecoration
   - Added Bucket and use them instead of dictionaries

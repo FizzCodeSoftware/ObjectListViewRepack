@@ -58,8 +58,8 @@ Remember that ObjectListView is just a wrapper around wx.ListCtrl. It can make t
 a little easier to use, and can add some helper functions, but it can't change the basic
 behaviour of the control.
 
-Two things I would really like to add are collapsible groups and owner drawing. But these
-things are not supported by a ListCtrl. Until they are, ObjectListView cannot have them either.
+One thing I would really like to add is owner drawing. But this is not supported by a
+ListCtrl, so ObjectListView cannot have it either.
 
 
 Why is the text of the first column indented by about 20 pixels?
@@ -76,4 +76,3 @@ showing sort indicators in the column headers uses the small image list.
 So, if you really want to get rid of this indent, make an ObjectListView which isn't
 sortable (pass "sortable=False" to the constructor) and don't add any images to the
 control. The indent will disappear -- but the list will not be sortable.
-

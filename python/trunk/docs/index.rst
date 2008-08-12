@@ -33,7 +33,10 @@ OK, here's the bullet point feature list:
 * Supports custom sorting
 * The `FastObjectListView` version can build a list of 10,000 objects in less than 0.1 seconds.
 * The `VirtualObjectListView` version supports millions of rows through ListCtrl's virtual mode.
-* The `GroupListView` version supports arranging rows into collapsible groups.
+* The :ref:`GroupListView <using-grouplistview>` version supports arranging rows into collapsible groups.
+* Effortlessly produce professional-looking reports using a :ref:`ListCtrlPrinter <using-listctrlprinter>`.
+
+Seriously, after using an ObjectListView, you will never go back to using a plain wx.ListCtrl.
 
 OK, I'm interested. What do I do next?
 --------------------------------------
@@ -89,6 +92,7 @@ Site contents
    recipes
    Recipe - Cell Editing <cellEditing>
    groupListView
+   listCtrlPrinter
    faq
    majorClasses
    changelog

@@ -170,7 +170,7 @@ using the string format operation, more or less like this: ``"%s" % aspectValue`
 
 You can use a different format string (instead of the default "%s") by setting
 the `stringConverter` attribute on the column definition. If the
-`stringConverter` attribute isn't ``None``, its value will be used as the format
+`stringConverter` attribute is a ``string``, its value will be used as the format
 string instead of "%s".
 
 So for our "Size In MBs" column, we are only interested in one decimal places, so

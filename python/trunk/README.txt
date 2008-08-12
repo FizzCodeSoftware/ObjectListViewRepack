@@ -30,15 +30,20 @@ OK, here's the bullet point feature list:
 * Supports alternate rows background colors.
 * Supports custom formatting of rows.
 * Supports searching (by typing) on any column, even on massive lists.
+* Supports custom sorting
 * The `FastObjectListView` version can build a list of 10,000 objects in less than 0.1 seconds.
 * The `VirtualObjectListView` version supports millions of rows through ListCtrl's virtual mode.
+* The `GroupListView` version supports arranging rows into collapsible groups.
+* Effortlessly produce professional-looking reports using a ListCtrlPrinter.
+
+Seriously, after using an ObjectListView, you will never go back to using a plain wx.ListCtrl.
 
 
 OK, I'm interested. What do I do next?
 --------------------------------------
 
 You can download the `ObjectListView source package from here
-<https://sourceforge.net/project/showfiles.php?group_id=225207&package_id=280564>`_. 
+<https://sourceforge.net/project/showfiles.php?group_id=225207&package_id=280564>`_.
 
 You can also look at the documentation and other information available at the
 website: http://objectlistview.sourceforge.net/python.
