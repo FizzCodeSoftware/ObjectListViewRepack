@@ -8,6 +8,8 @@
 # License:      wxWindows license
 #----------------------------------------------------------------------------
 # Change log:
+# 2008/08/05  JPP   - GroupListView is now implemented as a virtual list. Much faster!
+# v1.1
 # 2008/07/19  JPP   - Added GroupListView
 #                   - Broke common virtual list behaviour into AbstractVirtualListView
 # 2008/07/13  JPP   - Added CopySelectionToClipboard and CopyObjectsToClipboard
@@ -58,6 +60,7 @@ The major features of an `ObjectListView` are:
     * Supports searching (by typing) on the sorted column -- even on virtual lists.
     * The `FastObjectListView` version can build a list of 10,000 objects in less than 0.1 seconds.
     * The `VirtualObjectListView` version supports millions of rows through ListCtrl's virtual mode.
+    * The `GroupListView` version partitions it's rows into collapsible groups.
 
 An `ObjectListView` works in a declarative manner: the programmer configures how it should
 work, then gives it the list of objects to display. The primary configuration is in the
@@ -69,7 +72,7 @@ back into the model. See `ColumnDefn` for more information.
 
 __author__ = "Phillip Piper"
 __date__ = "18 June 2008"
-__version__ = "1.0.1"
+__version__ = "1.1"
 
 import wx
 import datetime
@@ -1602,9 +1605,9 @@ class ObjectListView(wx.ListCtrl):
             value1 = col.GetValue(object1)
             value2 = col.GetValue(object2)
 
-            if isinstance(value1, basestring):
+            try:
                 return locale.strcoll(value1.lower(), value2.lower())
-            else:
+            except:
                 return cmp(value1, value2)
 
         self.SortListItemsBy(_itemComparer)
@@ -2042,7 +2045,7 @@ class AbstractVirtualObjectListView(ObjectListView):
         """
         wx.ListCtrl.SetItemCount(self, count)
         self.stEmptyListMsg.Show(count == 0)
-        self.Refresh()
+        #self.Refresh()
         self.lastGetObjectIndex = -1
 
 
@@ -2268,7 +2271,6 @@ class FastObjectListView(AbstractVirtualObjectListView):
         # Auto-resize once all the data has been added
         self.AutoSizeColumns()
 
-
     #----------------------------------------------------------------------------
     #  Accessing
 
@@ -2297,7 +2299,7 @@ class FastObjectListView(AbstractVirtualObjectListView):
 
 #######################################################################
 
-class GroupListView(ObjectListView):
+class GroupListView(FastObjectListView):
     """
     An ObjectListView that allows model objects to be organised into collapsable groups.
 
@@ -2312,6 +2314,13 @@ class GroupListView(ObjectListView):
 
         self.AddNamedImages(ObjectListView.NAME_EXPANDED_IMAGE, myOtherImage1)
         self.AddNamedImages(ObjectListView.NAME_COLLAPSED_IMAGE, myOtherImage2)
+
+    Public variables:
+
+    * putBlankLineBetweenGroups
+        When this is True (the default), the list will be built so there is a blank
+        line between groups.
+
     """
 
     #----------------------------------------------------------------------------
@@ -2337,10 +2346,11 @@ class GroupListView(ObjectListView):
         """
         self.groups = list()
         self.showGroups = True
+        self.putBlankLineBetweenGroups = True
         self.alwaysGroupByColumnIndex = -1
         self.useExpansionColumn = kwargs.pop("useExpansionColumn", True)
         self.showItemCounts = kwargs.pop("showItemCounts", True)
-        ObjectListView.__init__(self, *args, **kwargs)
+        FastObjectListView.__init__(self, *args, **kwargs)
 
         # Setup default group characteristics
         font = self.GetFont()
@@ -2361,6 +2371,7 @@ class GroupListView(ObjectListView):
             dc.SetBackground(wx.Brush(self.groupBackgroundColour))
             dc.Clear()
             (x, y) = (0, 0)
+            # The image under Linux is smaller and needs to be offset somewhat to look reasonable
             if wx.Platform == "__WXGTK__":
                 (x, y) = (4, 4)
             wx.RendererNative.Get().DrawTreeItemButton(self, dc, (x, y, size, size), state)
@@ -2476,7 +2487,7 @@ class GroupListView(ObjectListView):
         # the check state column has to come after that
         if self.useExpansionColumn and columnIndex == 0:
             columnIndex = 1
-        ObjectListView.CreateCheckStateColumn(self, columnIndex)
+        FastObjectListView.CreateCheckStateColumn(self, columnIndex)
 
 
     def SetColumns(self, columns, repopulate=True):
@@ -2489,7 +2500,7 @@ class GroupListView(ObjectListView):
             if not isinstance(newColumns[0], ColumnDefn) or not newColumns[0].isInternal:
                 newColumns.insert(0, ColumnDefn("", fixedWidth=24, isEditable=False))
                 newColumns[0].isInternal = True
-        ObjectListView.SetColumns(self, newColumns, repopulate)
+        FastObjectListView.SetColumns(self, newColumns, repopulate)
 
 
     def SetGroups(self, groups):
@@ -2512,7 +2523,7 @@ class GroupListView(ObjectListView):
             self.groups = None
         else:
             self.groups = list()
-        ObjectListView.SetObjects(self, modelObjects, preserveSelection)
+        FastObjectListView.SetObjects(self, modelObjects, preserveSelection)
 
 
     #----------------------------------------------------------------------------
@@ -2595,53 +2606,99 @@ class GroupListView(ObjectListView):
 
         self.innerList = list()
         for grp in self.groups:
-            if len(self.innerList):
+            if len(self.innerList) and self.putBlankLineBetweenGroups:
                 self.innerList.append(None)
             self.innerList.append(grp)
             if grp.isExpanded:
                 self.innerList.extend(grp.modelObjects)
 
+    #----------------------------------------------------------------------------
+    # Virtual list callbacks.
+    # These are called a lot! Keep them efficient
 
-    def _BuildAllRows(self):
+    def OnGetItemText(self, itemIdx, colIdx):
         """
-        The control has been emptied of all rows. Rebuild them.
+        Return the text that should be shown at the given cell
         """
-        primaryColumnIndex = self.GetPrimaryColumnIndex()
-        item = wx.ListItem()
-        item.SetColumn(0)
-        colZero = self.columns[0]
-        for (i, x) in enumerate(self.innerList):
-            item.Clear()
-            item.SetId(i)
-            item.SetData(i)
-            if x is None:
-                item.SetImage(-1)
-                self.InsertItem(item)
-            elif isinstance(x, ListGroup):
-                if x.isExpanded:
+        modelObject = self.innerList[itemIdx]
+
+        if modelObject is None:
+            return ""
+
+        if isinstance(modelObject, ListGroup):
+            if self.GetPrimaryColumnIndex() == colIdx:
+                return modelObject.title
+            else:
+                return ""
+
+        return self.GetStringValueAt(modelObject, colIdx)
+
+
+    def OnGetItemImage(self, itemIdx):
+        """
+        Return the image index that should be shown on the primary column of the given item
+        """
+        # I don't think this method is ever called. Maybe in non-details views.
+        modelObject = self.innerList[itemIdx]
+
+        if modelObject is None:
+            return -1
+
+        if isinstance(modelObject, ListGroup):
+            if modelObject.isExpanded:
+                imageKey = ObjectListView.NAME_EXPANDED_IMAGE
+            else:
+                imageKey = ObjectListView.NAME_COLLAPSED_IMAGE
+            return self.smallImageList.GetImageIndex(imageKey)
+
+        return self.GetImageAt(modelObject, 0)
+
+
+    def OnGetItemColumnImage(self, itemIdx, colIdx):
+        """
+        Return the image index at should be shown at the given cell
+        """
+        modelObject = self.innerList[itemIdx]
+
+        if modelObject is None:
+            return -1
+
+        if isinstance(modelObject, ListGroup):
+            if colIdx == 0:
+                if modelObject.isExpanded:
                     imageKey = ObjectListView.NAME_EXPANDED_IMAGE
                 else:
                     imageKey = ObjectListView.NAME_COLLAPSED_IMAGE
-                item.SetImage(self.smallImageList.GetImageIndex(imageKey))
-                if self.groupFont is not None:
-                    item.SetFont(self.groupFont)
-                if self.groupTextColour is not None:
-                    item.SetTextColour(self.groupTextColour)
-                if self.groupBackgroundColour is not None:
-                    item.SetBackgroundColour(self.groupBackgroundColour)
-                self.InsertItem(item)
-
-                self.SetStringItem(i, primaryColumnIndex, x.title)
+                return self.smallImageList.GetImageIndex(imageKey)
             else:
-                item.SetText(colZero.GetStringValue(x))
-                item.SetImage(self.GetImageAt(x, 0))
-                self._FormatOneItem(item, i, x)
-                self.InsertItem(item)
+                return -1
 
-                # Insert all the subitems
-                for iCol in range(1, len(self.columns)):
-                    self.SetStringItem(i, iCol, self.GetStringValueAt(x, iCol),
-                                       self.GetImageAt(x, iCol))
+        return self.GetImageAt(modelObject, colIdx)
+
+
+    def OnGetItemAttr(self, itemIdx):
+        """
+        Return the display attributes that should be used for the given row
+        """
+        self.listItemAttr = wx.ListItemAttr()
+
+        modelObject = self.innerList[itemIdx]
+
+        if modelObject is None:
+            return self.listItemAttr
+
+        if isinstance(modelObject, ListGroup):
+            # We have to keep a reference to the ListItemAttr or the garbage collector
+            # will clear it up immeditately, before the ListCtrl has time to process it.
+            if self.groupFont is not None:
+                self.listItemAttr.SetFont(self.groupFont)
+            if self.groupTextColour is not None:
+                self.listItemAttr.SetTextColour(self.groupTextColour)
+            if self.groupBackgroundColour is not None:
+                self.listItemAttr.SetBackgroundColour(self.groupBackgroundColour)
+            return self.listItemAttr
+
+        return FastObjectListView.OnGetItemAttr(self, itemIdx)
 
     #----------------------------------------------------------------------------
     # Commands
@@ -2700,10 +2757,15 @@ class GroupListView(ObjectListView):
         if evt.IsVetoed():
             return
 
+        # Expand/contract the groups, then put those changes into effect
         for x in evt.groups:
             x.isExpanded = isExpanding
         self._BuildInnerList()
-        self.RepopulateList()
+        self.SetItemCount(len(self.innerList))
+
+        # Refresh eveything from the first group down
+        i = min([self.innerList.index(x) for x in evt.groups])
+        self.RefreshItems(i, len(self.innerList)-1)
 
         # Let the world know that the given groups have been expanded/collapsed
         evt = OLVEvent.ExpandedCollapsedEvent(self, evt.groups, isExpanding)
@@ -2828,17 +2890,6 @@ class GroupListView(ObjectListView):
         return [[column.GetStringValue(x) for column in cols] for x in objects]
 
 
-    def _MapModelIndexToListIndex(self, modelIndex):
-        """
-        Return the index in the list where the given model index lives
-        """
-
-        # In a GroupListView, the model index is the same as the list index
-        if self.showGroups:
-            return modelIndex
-        else:
-            return ObjectListView._MapModelIndexToListIndex(self, modelIndex)
-
     #----------------------------------------------------------------------------
     # Event handlers
 
@@ -2852,7 +2903,7 @@ class GroupListView(ObjectListView):
                 self.ExpandAll(self.GetSelectedGroups())
                 return
 
-        ObjectListView._HandleChar(self, evt)
+        FastObjectListView._HandleChar(self, evt)
 
 
     def _HandleColumnClick(self, evt):
@@ -2864,7 +2915,7 @@ class GroupListView(ObjectListView):
         if evt.GetColumn() != self.sortColumnIndex:
             self.groups = None
 
-        ObjectListView._HandleColumnClick(self, evt)
+        FastObjectListView._HandleColumnClick(self, evt)
 
 
     def _HandleLeftDownOnImage(self, rowIndex, subItemIndex):
@@ -2877,7 +2928,7 @@ class GroupListView(ObjectListView):
         if subItemIndex == 0 and isinstance(listObject, ListGroup):
             self.ToggleExpansion(listObject)
         else:
-            ObjectListView._HandleLeftDownOnImage(self, rowIndex, subItemIndex)
+            FastObjectListView._HandleLeftDownOnImage(self, rowIndex, subItemIndex)
 
 
     #---Sorting-------------------------------------------------------#000000#FFFFFF
@@ -2928,7 +2979,7 @@ class GroupListView(ObjectListView):
         and then rebuild the list.
         """
         if not self.showGroups:
-            return ObjectListView._SortItemsNow(self)
+            return FastObjectListView._SortItemsNow(self)
 
         if self.groups is None:
             self.groups = self._BuildGroups()
@@ -2936,11 +2987,11 @@ class GroupListView(ObjectListView):
         self._SetGroups(self.groups)
 
 
-    def _FormatAllRows(self):
-        """
-        GroupListViews don't need this method.
-        """
-        pass
+    #def _FormatAllRows(self):
+    #    """
+    #    GroupListViews don't need this method.
+    #    """
+    #    pass
 
 
 
@@ -3211,7 +3262,7 @@ class ColumnDefn(object):
         self.useInitialLetterForGroupKey = useInitialLetterForGroupKey
         self.groupTitleSingleItem = groupTitleSingleItem or "%(title)s (%(count)d item)"
         self.groupTitlePluralItems = groupTitlePluralItems or "%(title)s (%(count)d items)"
-        self.isInternal = False # was this column created internally by GroupListView?
+        self.isInternal = False # was this column created internally by ObjectListView?
 
         self.minimumWidth = minimumWidth
         self.maximumWidth = maximumWidth
