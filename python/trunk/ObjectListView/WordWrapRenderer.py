@@ -46,12 +46,9 @@ class WordWrapRenderer:
         Remember to set the font on the dc before calling this method.
         """
         lines = wordwrap(text, width, dc, True)
-        return (lines.count("\n")+1) * WordWrapRenderer._CalculateLineHeight(dc)
-
-    @staticmethod
-    def _CalculateLineHeight(dc):
         (width, height, descent, externalLeading) = dc.GetFullTextExtent("Wy")
-        return height + externalLeading
+        return (lines.count("\n")+1) * (height + externalLeading)
+
 
     #----------------------------------------------------------------------------
     # Rendering
@@ -66,8 +63,8 @@ class WordWrapRenderer:
         If allowClipping is True, this method changes the clipping region so that no
         text is drawn outside of the given bounds.
         """
-        if allowClipping:
-            dc.SetClippingRegion(*bounds)
+        if not text:
+            return
 
         if align == wx.ALIGN_CENTER:
             align = wx.ALIGN_CENTER_HORIZONTAL
@@ -75,21 +72,24 @@ class WordWrapRenderer:
         if valign == wx.ALIGN_CENTER:
             valign = wx.ALIGN_CENTER_VERTICAL
 
+        # DrawLabel only accepts a wx.Rect
         try:
             bounds = wx.Rect(*bounds)
         except:
             pass
 
+        if allowClipping:
+            clipper = wx.DCClipper(dc, bounds)
+
+        # There is a bug in the wordwrap routine where a string that needs truncated and
+        # that ends with a single space causes the method to throw an error (wx 2.8).
+        # Our simple, but not always accurate, is to remove a single trailing space.
+        # This won't catch single trailing space imbedded in a multiline string.
+        if text[-1:] == " " and text[-2:-1] != " ":
+            text = text[:-1]
+
         lines = wordwrap(text, bounds[2], dc, True)
         dc.DrawLabel(lines, bounds, align|valign)
-
-        if allowClipping:
-            dc.DestroyClippingRegion()
-
-        #dc.SetPen(wx.RED_PEN)
-        #dc.SetBrush(wx.TRANSPARENT_BRUSH)
-        #dc.DrawRectangle(*bounds)
-
 
 
     @staticmethod
@@ -102,6 +102,9 @@ class WordWrapRenderer:
         If allowClipping is True, this method changes the clipping region so that no
         text is drawn outside of the given bounds.
         """
+        if not text:
+            return
+
         try:
             bounds = wx.Rect(*bounds)
         except:
@@ -157,26 +160,18 @@ if __name__ == '__main__':
             wx.Panel.__init__(self, parent, -1, style=wx.FULL_REPAINT_ON_RESIZE)
             self.Bind(wx.EVT_PAINT, self.OnPaint)
 
-            self.text = """This is the text to be drawn. It needs to be long to see if wrapping works. Thisisareallylongwordtoseewhathappens to long words.
+            self.text = """This is Thisisareallylongwordtoseewhathappens the text to be drawn. It needs to be long to see if wrapping works.  to long words.
 This is on new line by itself.
 
 This should have a blank line in front of it but still wrap when we reach the edge.
 
 The bottom of the red rectangle should be immediately below this."""
-            if wx.Platform == "__WXMSW__":
-                fontName = "Gill Sans"
-            elif wx.Platform == "__WXGTK__":
-                fontName = "FreeSerif"
-            else:
-                fontName = "Helvetica"
-            self.font = wx.FFont(12, wx.FONTFAMILY_SWISS, 0, fontName)
+            self.font = wx.Font(12, wx.SWISS, wx.NORMAL, wx.NORMAL, faceName="Gill Sans")
 
         def OnPaint(self, evt):
             dc = wx.PaintDC(self)
-
             inset = (20, 20, 20, 20)
-            bounds = list(self.GetRect())
-            rect = [bounds[0]+inset[0], bounds[1]+inset[1], bounds[2]-(inset[0]+inset[2]), bounds[3]-(inset[1]+inset[3])]
+            rect = [inset[0], inset[1], self.GetSize().width-(inset[0]+inset[2]), self.GetSize().height-(inset[1]+inset[3])]
 
             # Calculate exactly how high the wrapped is going to be and put a frame around it.
             dc.SetFont(self.font)
@@ -185,6 +180,19 @@ The bottom of the red rectangle should be immediately below this."""
             dc.DrawRectangle(*rect)
             WordWrapRenderer.DrawString(dc, self.text, rect, wx.ALIGN_LEFT)
             #WordWrapRenderer.DrawTruncatedString(dc, self.text, rect, wx.ALIGN_CENTER_HORIZONTAL,s ellipse=wx.CENTER)
+
+            #bmp = wx.EmptyBitmap(rect[0]+rect[2], rect[1]+rect[3])
+            #mdc = wx.MemoryDC(bmp)
+            #mdc.SetBackground(wx.Brush("white"))
+            #mdc.Clear()
+            #mdc.SetFont(self.font)
+            #mdc.SetPen(wx.RED_PEN)
+            #rect[3] = WordWrapRenderer.CalculateHeight(mdc, self.text, rect[2])
+            #mdc.DrawRectangle(*rect)
+            #WordWrapRenderer.DrawString(mdc, self.text, rect, wx.ALIGN_LEFT)
+            #del mdc
+            #dc = wx.ScreenDC()
+            #dc.DrawBitmap(bmp, 20, 20)
 
     class MyFrame(wx.Frame):
         def __init__(self, *args, **kwds):
