@@ -1731,7 +1731,7 @@ class ObjectListView(wx.ListCtrl):
         #        i = self.GetNextItem(i, wx.LIST_NEXT_ALL, wx.LIST_STATE_SELECTED)
 
 
-    def SelectObject(self, modelObject, deselectOthers=True):
+    def SelectObject(self, modelObject, deselectOthers=True, ensureVisible=False):
         """
         Select the given modelObject. If deselectOthers is True, all other rows will be deselected
         """
@@ -1743,7 +1743,11 @@ class ObjectListView(wx.ListCtrl):
         if deselectOthers:
             self.DeselectAll()
 
-        self.SetItemState(self._MapModelIndexToListIndex(i), wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
+        realIndex = self._MapModelIndexToListIndex(i)
+        self.SetItemState(realIndex, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
+
+        if ensureVisible:
+            self.EnsureVisible(realIndex)
 
 
     def SelectObjects(self, modelObjects, deselectOthers=True):
