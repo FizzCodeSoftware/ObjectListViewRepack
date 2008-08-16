@@ -105,6 +105,12 @@ class WordWrapRenderer:
         if not text:
             return
 
+        if align == wx.ALIGN_CENTER:
+            align = wx.ALIGN_CENTER_HORIZONTAL
+
+        if valign == wx.ALIGN_CENTER:
+            valign = wx.ALIGN_CENTER_VERTICAL
+
         try:
             bounds = wx.Rect(*bounds)
         except:
