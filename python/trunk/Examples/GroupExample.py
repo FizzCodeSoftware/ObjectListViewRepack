@@ -8,7 +8,7 @@ import wx
 import sys
 sys.path.append("..")
 
-from ObjectListView import ObjectListView, GroupListView, ColumnDefn
+from ObjectListView import GroupListView, ColumnDefn
 
 import ExampleModel
 import ExampleImages # We store our images as python code
