@@ -45,6 +45,12 @@ class WordWrapRenderer:
 
         Remember to set the font on the dc before calling this method.
         """
+        # There is a bug in the wordwrap routine where a string that needs truncated and
+        # that ends with a single space causes the method to throw an error (wx 2.8).
+        # Our simple, but not always accurate, is to remove trailing spaces.
+        # This won't catch single trailing space imbedded in a multiline string.
+        text = text.rstrip(' ')
+
         lines = wordwrap(text, width, dc, True)
         (width, height, descent, externalLeading) = dc.GetFullTextExtent("Wy")
         return (lines.count("\n")+1) * (height + externalLeading)
@@ -83,10 +89,9 @@ class WordWrapRenderer:
 
         # There is a bug in the wordwrap routine where a string that needs truncated and
         # that ends with a single space causes the method to throw an error (wx 2.8).
-        # Our simple, but not always accurate, is to remove a single trailing space.
+        # Our simple, but not always accurate, is to remove trailing spaces.
         # This won't catch single trailing space imbedded in a multiline string.
-        if text[-1:] == " " and text[-2:-1] != " ":
-            text = text[:-1]
+        text = text.rstrip(' ')
 
         lines = wordwrap(text, bounds[2], dc, True)
         dc.DrawLabel(lines, bounds, align|valign)
