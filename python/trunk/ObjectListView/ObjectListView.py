@@ -1758,7 +1758,12 @@ class ObjectListView(wx.ListCtrl):
             self.DeselectAll()
 
         # Select each modelObject that is in 'modelObjects'
-        objectSet = set(modelObjects)
+        try:
+            objectSet = set(modelObjects)
+        except TypeError:
+            # Some objects cannot be hashed and so can be added to a set. Lists are like that.
+            # We just use a less efficient method of finding them
+            objectSet = list(modelObjects)
 
         if not objectSet:
             return
@@ -1862,6 +1867,11 @@ class ObjectListView(wx.ListCtrl):
             self.cellEditor.SetValue(evt.cellValue)
             self._ConfigureCellEditor(self.cellEditor, evt.cellBounds, rowIndex, subItemIndex)
 
+        # Let the world know the cell editing has started
+        evt = OLVEvent.CellEditStartedEvent(self, rowIndex, subItemIndex, modelObject,
+                                             cellValue, cellBounds, defaultEditor)
+        self.GetEventHandler().ProcessEvent(evt)
+
         self.cellEditor.Show()
         self.cellEditor.Raise()
 
@@ -1964,6 +1974,9 @@ class ObjectListView(wx.ListCtrl):
             self.columns[subItemIndex].SetValue(rowModel, evt.cellValue)
             self.RefreshIndex(rowIndex, rowModel)
 
+        evt = OLVEvent.CellEditFinishedEvent(self, rowIndex, subItemIndex, rowModel, False)
+        self.GetEventHandler().ProcessEvent(evt)
+
         self._CleanupCellEdit()
 
 
@@ -1979,6 +1992,10 @@ class ObjectListView(wx.ListCtrl):
                                               self.cellEditor,
                                               True)
         self.GetEventHandler().ProcessEvent(evt)
+
+        evt = OLVEvent.CellEditFinishedEvent(self, rowIndex, subItemIndex, rowModel, True)
+        self.GetEventHandler().ProcessEvent(evt)
+
         self._CleanupCellEdit()
 
 
@@ -1987,8 +2004,9 @@ class ObjectListView(wx.ListCtrl):
         Cleanup after finishing a cell edit operation
         """
         self.SelectObjects(self.selectionBeforeCellEdit)
-        self.cellEditor.Hide()
-        self.cellEditor = None
+        if self.cellEditor:
+            self.cellEditor.Hide()
+            self.cellEditor = None
         self.cellBeingEdited = None
         self.SetFocus()
 

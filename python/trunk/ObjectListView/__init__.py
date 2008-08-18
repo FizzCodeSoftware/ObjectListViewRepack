@@ -21,19 +21,23 @@ __version__ = '1.2'
 __copyright__ = "Copyright (c) 2008 Phillip Piper (phillip_piper@bigfoot.com)"
 
 from ObjectListView import ObjectListView, VirtualObjectListView, ColumnDefn, FastObjectListView, GroupListView, ListGroup
-from OLVEvent import CellEditFinishingEvent, CellEditStartingEvent, SortEvent
-from OLVEvent import EVT_CELL_EDIT_STARTING, EVT_CELL_EDIT_FINISHING, EVT_SORT
+from OLVEvent import CellEditFinishedEvent, CellEditFinishingEvent, CellEditStartedEvent, CellEditStartingEvent, SortEvent
+from OLVEvent import EVT_CELL_EDIT_STARTING, EVT_CELL_EDIT_STARTED, EVT_CELL_EDIT_FINISHING, EVT_CELL_EDIT_FINISHED, EVT_SORT
 from OLVEvent import EVT_COLLAPSING, EVT_COLLAPSED, EVT_EXPANDING, EVT_EXPANDED, EVT_GROUP_CREATING, EVT_GROUP_SORT
 from CellEditor import CellEditorRegistry, MakeAutoCompleteTextBox, MakeAutoCompleteComboBox
 from ListCtrlPrinter import ListCtrlPrinter, ReportFormat, BlockFormat, LineDecoration, RectangleDecoration, ImageDecoration
 
 __all__ = [
     "BlockFormat",
+    "CellEditFinishedEvent",
     "CellEditFinishingEvent",
     "CellEditorRegistry",
+    "CellEditStartedEvent",
     "CellEditStartingEvent",
     "ColumnDefn",
+    "EVT_CELL_EDIT_FINISHED",
     "EVT_CELL_EDIT_FINISHING",
+    "EVT_CELL_EDIT_STARTED",
     "EVT_CELL_EDIT_STARTING",
     "EVT_COLLAPSED",
     "EVT_COLLAPSING",
