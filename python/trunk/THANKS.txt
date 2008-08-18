@@ -2,6 +2,7 @@
 Thanks
 ======
 
-* Thanks for Robin Dunn for the magnificent wxPython.
+* Robin Dunn for the magnificent wxPython
+* Werner Bruhin for many good suggestions
 * Sphinx team for a documentation tool massively better than epydoc
 * rokey for a great icon set (http://www.rokey.net)
