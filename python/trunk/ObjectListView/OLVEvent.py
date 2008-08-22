@@ -8,6 +8,7 @@
 # License:      wxWindows license
 #----------------------------------------------------------------------------
 # Change log:
+# 2008/08/18  JPP   Added CELL_EDIT_STARTED and CELL_EDIT_FINISHED events
 # 2008/07/16  JPP   Added group-related events
 # 2008/06/19  JPP   Added EVT_SORT
 # 2008/05/26  JPP   Fixed pyLint annoyances
