@@ -1332,20 +1332,20 @@ class MyFrame(wx.Frame):
         if self.cbGroups.IsChecked():
             prt.AddListCtrl(self.olvGroup, "Group List View")
 
-        prt.Watermark(self.tcWatermark.GetValue())
-        prt.PageHeader(self.tcPageHeaderLeft.GetValue(), self.tcPageHeaderCenter.GetValue(), self.tcPageHeaderRight.GetValue())
-        prt.PageFooter(self.tcPageFooterLeft.GetValue(), self.tcPageFooterCenter.GetValue(), self.tcPageFooterRight.GetValue())
+        prt.Watermark = self.tcWatermark.GetValue()
+        prt.PageHeader = (self.tcPageHeaderLeft.GetValue(), self.tcPageHeaderCenter.GetValue(), self.tcPageHeaderRight.GetValue())
+        prt.PageFooter = (self.tcPageFooterLeft.GetValue(), self.tcPageFooterCenter.GetValue(), self.tcPageFooterRight.GetValue())
 
         if self.radioBoxFormatting.GetSelection() == 0:
             prt.ReportFormat = ReportFormat.Minimal()
-        if self.radioBoxFormatting.GetSelection() == 1:
+        elif self.radioBoxFormatting.GetSelection() == 1:
             prt.ReportFormat = ReportFormat.Normal()
-        if self.radioBoxFormatting.GetSelection() == 2:
+        elif self.radioBoxFormatting.GetSelection() == 2:
             prt.ReportFormat = ReportFormat.TooMuch()
 
         prt.ReportFormat.IsShrinkToFit = self.cbShrinkToFit.IsChecked()
         prt.ReportFormat.IncludeImages = self.cbIncludeImages.IsChecked()
-        prt.ReportFormat.CanCellsWrap = self.cbWrapCells.IsChecked()
+        prt.ReportFormat.Row.CanWrap = self.cbWrapCells.IsChecked()
         prt.ReportFormat.IsColumnHeadingsOnEachPage = self.cbColumnHeaderOnEachPage.IsChecked()
         prt.ReportFormat.UseListCtrlTextFormat = self.cbUseListCtrlTextFormat.IsChecked()
         prt.ReportFormat.Watermark.Font = self.watermarkFontCtrl.SelectedFont
