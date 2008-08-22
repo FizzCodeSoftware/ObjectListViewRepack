@@ -8,6 +8,9 @@
 # License:      wxWindows license
 #----------------------------------------------------------------------------
 # Change log:
+# 2008/08/18  JPP   - Handle model objects that cannot be hashed
+#                   - Added CELL_EDIT_STARTED and CELL_EDIT_FINISHED events
+# 2008/08/16  JPP   - Added ensureVisible parameter to SelectObject()
 # 2008/08/05  JPP   - GroupListView is now implemented as a virtual list. Much faster!
 # v1.1
 # 2008/07/19  JPP   - Added GroupListView
