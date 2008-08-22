@@ -13,21 +13,15 @@
 #----------------------------------------------------------------------------
 # To do:
 # - persistence of ReportFormat
-# - move AlwaysCenterColumnHeader to ColumnHeader format object
-# - move CanCellsWrap to cell-related BlockFormat (which will allow headers to wrap, but rows to truncate)
 # - allow cell contents to be vertically aligned
 # - in light of several of the "to dos", consider having CellBlockFormat object
 # - write a data abstraction layer between the printer and the ListCtrl.
 #   This layer could understand ObjectListViews and be more efficient.
 # - consider if this could be made to work with a wx.Grid (needs data abstraction layer)
-# - Use RunningBlockPusher/Popper to manage running blocks
 
 # Known issues:
 # - the 'space' setting on decorations is not intuitive
 
-# Fixed:
-# 2008/08/14
-# - if cell padding is different between column header and cells, they do not align
 
 """
 An ``ListCtrlPrinter`` takes an ``ObjectListView`` or ``wx.ListCtrl`` and turns it into a
@@ -39,24 +33,61 @@ usage should be as simple as::
    printer = ListCtrlPrinter(self.myOlv, "My Report Title")
    printer.PrintPreview()
 
+This will produce a report with reasonable formatting. The formatting of a report is
+controlled completely by the ReportFormat object of the ListCtrlPrinter. To change the appearance
+of the report, you change the settings in this object.
+
+A report consists of various sections (called "blocks") and each of these blocks has a
+matching BlockFormat object in the ReportFormat. So, to modify the format of the
+page header, you change the ReportFormat.PageHeader object.
+
+A ReportFormat object has the following properties which control the appearance of the matching
+sections of the report:
+
+* PageHeader
+* ListHeader
+* ColumnHeader
+* GroupTitle
+* Row
+* ListFooter
+* PageFooter
+* Page
+
+These properties return BlockFormat objects, which have the following properties:
+
+* AlwaysCenter
+* CanWrap
+* Font
+* Padding
+* TextAlignment
+* TextColor
+
+* CellPadding
+* GridPen
+
 Implementation
 ==============
 
-A ``ListCtrlPrinter`` is a `Facade` over two classes:
+A ``ListCtrlPrinter`` is a *Facade* over two classes:
     - ``ListCtrlPrintout``, which handles the interface to the wx printing subsystem
     - ``ReportEngine``, which does the actual work of creating the report
 
-The ``ListCtrlPrintout`` has a number of callbacks which the ``ListCtrlPrinter`` simply
-forwards to the ``ReportEngine``.
+The ``ListCtrlPrintout`` handles all the details of the wx printing subsystem. In
+particular, it configures the printing DC so that its origin and scale are correct. This
+enables the ``ReportEngine`` to simply render the report without knowing the
+characteristics of the underlying printer DPI, unprintable region, or the scale of a print
+preview. When The ``ListCtrlPrintout`` encounters some action that is cannot perform (like
+actually rendering a page) it calls back into ``ListCtrlPrinter`` (which simply forwards
+to the ``ReportEngine``).
 
 The ``ReportEngine`` uses a block structure approach to reports. Each element of
 a report is a "block", which stacks vertically with other blocks.
 
 When a block is printed, it can either render itself into a given DC or it can replace
 itself in the report structure with one or more other blocks. A ``TextBlock`` renders
-itself by drawing into the DC. In contrast, the block that prints a ListCtrl replaces
-itself with a ListHeaderBlock, a ColumnHeaderBlock, ListRowsBlock and finally a
-ListFooterBlock.
+itself by drawing into the DC. In contrast, the block that prints a ``ListCtrl`` replaces
+itself with a ``ListHeaderBlock``, a ``ColumnHeaderBlock``, ``ListRowsBlock`` and finally a
+``ListFooterBlock``.
 
 The blocks describe the structure of the report. The formatting of a report is
 controlled by ``BlockFormat`` objects. The ``ReportFormat`` contains a ``BlockFormat``
@@ -91,7 +122,47 @@ class ListCtrlPrinter(object):
             self.AddListCtrl(listCtrl, title)
 
     #----------------------------------------------------------------------------
-    # Formatting and Configuration
+    # Accessing
+
+    def GetPageFooter(self):
+        """
+        Return a 3-tuple of the texts that will be shown in left, center, and right cells
+        of the page footer
+        """
+        return self.engine.pageFooter
+
+    def SetPageFooter(self, leftText="", centerText="", rightText=""):
+        """
+        Set the texts that will be shown in various cells of the page footer.
+
+        leftText can be a string or a 3-tuple of strings.
+        """
+        if isinstance(leftText, (tuple, list)):
+            self.engine.pageFooter = leftText
+        else:
+            self.engine.pageFooter = (leftText, centerText, rightText)
+
+    def GetPageHeader(self):
+        """
+        Return a 3-tuple of the texts that will be shown in left, center, and right cells
+        of the page header
+        """
+        return self.engine.pageHeader
+
+    def SetPageHeader(self, leftText="", centerText="", rightText=""):
+        """
+        Set the texts that will be shown in various cells of the page header
+        """
+        if isinstance(leftText, (tuple, list)):
+            self.engine.pageHeader = leftText
+        else:
+            self.engine.pageHeader = (leftText, centerText, rightText)
+
+    def GetPrintData(self):
+        """
+        Return the wx.PrintData that controls the printing of this report
+        """
+        return self.printout.printData
 
     def GetReportFormat(self):
         """
@@ -105,35 +176,23 @@ class ListCtrlPrinter(object):
         """
         self.engine.reportFormat = fmt
 
-    ReportFormat = property(GetReportFormat, SetReportFormat)
+    def GetWatermark(self, txt):
+        """
+        Get the text that will be printed as a watermark on the report
+        """
+        return self.engine.watermark
 
-
-    def Watermark(self, txt):
+    def SetWatermark(self, txt):
         """
         Set the text that will be printed as a watermark on the report
         """
         self.engine.watermark = txt
 
-
-    def PageHeader(self, leftText="", centerText="", rightText=""):
-        """
-        Set the texts that will be shown in various cells of the page header
-        """
-        self.engine.pageHeader = (leftText, centerText, rightText)
-
-
-    def PageFooter(self, leftText="", centerText="", rightText=""):
-        """
-        Set the texts that will be shown in various cells of the page footer
-        """
-        self.engine.pageFooter = (leftText, centerText, rightText)
-
-
-    def GetPrintData(self):
-        """
-        Return the wx.PrintData that controls the printing of this report
-        """
-        return self.printout.printData
+    ReportFormat = property(GetReportFormat, SetReportFormat)
+    PageFooter = property(GetPageFooter, SetPageFooter)
+    PageHeader = property(GetPageHeader, SetPageHeader)
+    PrintData = property(GetPrintData)
+    Watermark = property(GetWatermark, SetWatermark)
 
     #----------------------------------------------------------------------------
     # Setup
@@ -143,6 +202,7 @@ class ListCtrlPrinter(object):
         Add the given list to those that will be printed by this report.
         """
         self.engine.AddListCtrl(listCtrl, title)
+
 
     def Clear(self):
         """
@@ -188,7 +248,7 @@ class ListCtrlPrinter(object):
 
     def StartPrinting(self):
         """
-        Print the given page on the given device context.
+        A new print job is about to begin.
         """
         self.engine.StartPrinting()
 
@@ -204,6 +264,15 @@ class ListCtrlPrinter(object):
 class ReportEngine(object):
     """
     A ReportEngine handles all the work of actually producing a report.
+
+    Public instance variables (all others should be treated as private):
+
+    * dateFormat
+         When the current date/time is substituted into report text, how should
+         the datetime be formatted? This must be a valid format string for the
+         strftime() method.
+         Default: "%x %X"
+
     """
 
     def __init__(self):
@@ -216,16 +285,16 @@ class ReportEngine(object):
         self.listCtrls = list()
         self.dateFormat = "%x %X"
 
-        # If this is False, no drawing should be done. The engine is either counting
-        # pages, or skipping to a specific page
-        self.shouldDrawBlocks = True
-
-        self.reportFormat = ReportFormat()
+        self.reportFormat = ReportFormat.Normal()
 
         self.watermark = ""
         self.pageHeader = list()
         self.pageFooter = list()
-        self.isPrintSelectionOnly = False
+        #self.isPrintSelectionOnly = False # not currently implemented
+
+        # If this is False, no drawing should be done. The engine is either counting
+        # pages, or skipping to a specific page
+        self.shouldDrawBlocks = True
 
     #----------------------------------------------------------------------------
     # Accessing
@@ -596,14 +665,6 @@ class ReportFormat(object):
 
     Public instance variables:
 
-    * AlwaysCenterColumnHeader
-        Should column header always be centered, regardless of the alignment of the column in the control itself?
-        Default: *False*.
-
-    * CanCellsWrap
-        If a string is too long to fit within a cell, will it be wrapped onto new lines (True) or truncated (False)"?
-        Default: *True*
-
     * IncludeImages
         Should images from the ListCtrl be printed in the report?
         Default: *True*
@@ -637,8 +698,6 @@ class ReportFormat(object):
         self.PageFooter = BlockFormat()
         self.Watermark = BlockFormat()
 
-        self.AlwaysCenterColumnHeader = False
-        self.CanCellsWrap = True
         self.IncludeImages = True
         self.IsColumnHeadingsOnEachPage = False
         self.IsShrinkToFit = False
@@ -667,7 +726,7 @@ class ReportFormat(object):
         """
         defaultFaceName = "Stencil"
         self.Watermark.Font = font or wx.FFont(96, wx.FONTFAMILY_DEFAULT, 0, defaultFaceName)
-        self.Watermark.TextColor = color or wx.Colour(128, 128, 128)
+        self.Watermark.TextColor = color or wx.Colour(204, 204, 204)
         self.Watermark.Angle = angle
         self.Watermark.Over = over
 
@@ -681,9 +740,7 @@ class ReportFormat(object):
         Return a minimal format for a report
         """
         fmt = ReportFormat()
-        fmt.AlwaysCenterColumnHeader = True
         fmt.IsShrinkToFit = False
-        fmt.CanCellsWrap = True
 
         fmt.PageHeader.Font = wx.FFont(12, wx.FONTFAMILY_DEFAULT, face=headerFontName)
         fmt.PageHeader.Line(wx.BOTTOM, wx.BLACK, 1, space=5)
@@ -705,10 +762,12 @@ class ReportFormat(object):
         fmt.ColumnHeader.Padding = (0, 12, 0, 12)
         fmt.ColumnHeader.CellPadding = 5
         fmt.ColumnHeader.Line(wx.BOTTOM, wx.Colour(192, 192, 192), 1, space=3)
+        fmt.ColumnHeader.AlwaysCenter = True
 
         fmt.Row.Font = wx.FFont(10, wx.FONTFAMILY_DEFAULT, face=rowFontName)
         fmt.Row.CellPadding = 5
         fmt.Row.Line(wx.BOTTOM, wx.Colour(192, 192, 192), 1, space=3)
+        fmt.Row.CanWrap = True
 
         return fmt
 
@@ -718,9 +777,7 @@ class ReportFormat(object):
         Return a reasonable default format for a report
         """
         fmt = ReportFormat()
-        fmt.AlwaysCenterColumnHeader = False
         fmt.IsShrinkToFit = True
-        fmt.CanCellsWrap = False
 
         fmt.PageHeader.Font = wx.FFont(12, wx.FONTFAMILY_DEFAULT, face=headerFontName)
         fmt.PageHeader.Line(wx.BOTTOM, wx.BLUE, 2, space=5)
@@ -733,8 +790,8 @@ class ReportFormat(object):
         fmt.ListHeader.Background(wx.BLUE, wx.WHITE, space=(16, 4, 0, 4))
 
         fmt.GroupTitle.Font = wx.FFont(14, wx.FONTFAMILY_DEFAULT, face=headerFontName)
-        fmt.GroupTitle.Padding = (0, 12, 0, 12)
         fmt.GroupTitle.Line(wx.BOTTOM, wx.BLUE, 4, toColor=wx.WHITE, space=5)
+        fmt.GroupTitle.Padding = (0, 12, 0, 12)
 
         fmt.PageFooter.Font = wx.FFont(10, wx.FONTFAMILY_DEFAULT, face=headerFontName)
         fmt.PageFooter.Background(wx.WHITE, wx.BLUE, space=(0, 4, 0, 4))
@@ -744,10 +801,12 @@ class ReportFormat(object):
         fmt.ColumnHeader.Background(wx.Colour(192, 192, 192))
         fmt.ColumnHeader.GridPen = wx.Pen(wx.WHITE, 1)
         fmt.ColumnHeader.Padding = (0, 0, 0, 12)
+        fmt.ColumnHeader.AlwaysCenter = True
 
         fmt.Row.Font = wx.FFont(12, wx.FONTFAMILY_DEFAULT, face=rowFontName)
-        fmt.Row.CellPadding = 2
         fmt.Row.Line(wx.BOTTOM, pen=wx.Pen(wx.BLUE, 1, wx.DOT), space=3)
+        fmt.Row.CellPadding = 2
+        fmt.Row.CanWrap = True
 
         return fmt
 
@@ -757,9 +816,7 @@ class ReportFormat(object):
         Return a reasonable default format for a report
         """
         fmt = ReportFormat()
-        fmt.AlwaysCenterColumnHeader = True
         fmt.IsShrinkToFit = False
-        fmt.CanCellsWrap = True
 
         fmt.PageHeader.Font = wx.FFont(12, wx.FONTFAMILY_DECORATIVE, wx.FONTFLAG_BOLD, face=headerFontName)
         fmt.PageHeader.TextColor = wx.WHITE
@@ -789,6 +846,7 @@ class ReportFormat(object):
         fmt.Row.Font = wx.FFont(12, wx.FONTFAMILY_SWISS, face=rowFontName)
         fmt.Row.CellPadding = 5
         fmt.Row.GridPen = wx.Pen(wx.BLUE, 1, wx.DOT)
+        fmt.Row.CanWrap = True
 
         fmt.Watermark.TextColor = wx.Colour(233, 150, 122)
 
@@ -800,6 +858,55 @@ class BlockFormat(object):
     """
     A block format defines how a Block is formatted.
 
+    These properties control the formatting of the matching Block:
+
+    * CanWrap
+        If the text for this block cannot fit horizontally, should be wrap to a new line (True)
+        or should it be truncated (False)?
+    * Font
+        What font should be used to draw the text of this block
+    * Padding
+        How much padding should be applied to the block before the text or other decorations
+        are drawn? This can be a numeric (which will be applied to all sides) or it can be
+        a collection of the paddings to be applied to the various sides: (left, top, right, bottom).
+    * TextAlignment
+        How should text be aligned within this block? Can be wx.ALIGN_LEFT, wx.ALIGN_CENTER, or
+        wx.ALIGN_RIGHT.
+    * TextColor
+        In what color should be text be drawn?
+
+    The blocks that are based on cells (PageHeader, ColumnHeader, Row, PageFooter) can also
+    have the following properties set:
+
+    * AlwaysCenter
+        Will the text in the cells be center aligned, regardless of other settings?
+    * CellPadding
+        How much padding should be applied to this cell before the text or other decorations
+        are drawn? This can be a numeric (which will be applied to all sides) or it can be a
+        collection of the paddings to be applied to the various sides: (left, top, right,
+        bottom).
+    * GridPen
+        What Pen will be used to draw the grid lines of the cells?
+
+    In addition to these properties, there are some methods which add various decorations to
+    the blocks:
+
+    * Background(color=wx.BLUE, toColor=None, space=0)
+
+        This gives the block a solid color background (or a gradient background if *toColor*
+        is not None). If *space* is not 0, *space* pixels will be subtracted from all sides
+        from the space available to the block.
+
+    * Frame(pen=None, space=0)
+
+        Draw a rectangle around the block in the given pen
+
+    * Line(side=wx.BOTTOM, color=wx.BLACK, width=1, toColor=None, space=0, pen=None)
+
+        Draw a line on a given side of the block. If a pen is given, that is used to draw the
+        line (and the other parameters are ignored), otherwise a solid line (or a gradient
+        line is *toColor* is not None) of *width* pixels is drawn.
+
     """
 
     def __init__(self):
@@ -810,6 +917,8 @@ class BlockFormat(object):
         self.font = wx.FFont(11, wx.FONTFAMILY_SWISS, face="Gill Sans")
         self.textColor = None
         self.textAlignment = wx.ALIGN_LEFT
+        self.alwaysCenter = False
+        self.canWrap = False
 
         #THINK: These attributes are only for grids. Should we have a GridBlockFormat object?
         self.cellPadding = None
@@ -909,12 +1018,38 @@ class BlockFormat(object):
         except TypeError:
             return (padding,) * 4
 
+    def GetAlwaysCenter(self):
+        """
+        Return if the text controlled by this format should always be centered?
+        """
+        return self.alwaysCenter
+
+    def SetAlwaysCenter(self, value):
+        """
+        Remember if the text controlled by this format should always be centered?
+        """
+        self.alwaysCenter = value
+
+    def GetCanWrap(self):
+        """
+        Return if the text controlled by this format can wrap to cover more than one line?
+        """
+        return self.canWrap
+
+    def SetCanWrap(self, value):
+        """
+        Remember if the text controlled by this format can wrap to cover more than one line?
+        """
+        self.canWrap = value
+
     Font = property(GetFont, SetFont)
     Padding = property(GetPadding, SetPadding)
     TextAlignment = property(GetTextAlignment, SetTextAlignment)
     TextColor = property(GetTextColor, SetTextColor)
     CellPadding = property(GetCellPadding, SetCellPadding)
     GridPen = property(GetGridPen, SetGridPen)
+    AlwaysCenter = property(GetAlwaysCenter, SetAlwaysCenter)
+    CanWrap = property(GetCanWrap, SetCanWrap)
 
     # Misspellers of the world Untie!
     # Ok, ok... there're not really misspellings - just alternatives :)
@@ -1080,21 +1215,6 @@ class Block(object):
         return self.engine.reportFormat.IsShrinkToFit
 
 
-    def AlwaysCenterColumnHeader(self):
-        """
-        Return True if the text of column headers should always be centered, even
-        if the alignment used in the list ctrl itself is something else
-        """
-        return self.engine.reportFormat.AlwaysCenterColumnHeader
-
-
-    def CanCellsWrap(self):
-        """
-        Return True if the text values can wrap within a cell, producing muliline cells
-        """
-        return self.engine.reportFormat.CanCellsWrap
-
-
     def IsUseSubstitution(self):
         """
         Should the text values printed by this block have substitutions performed before being printed?
@@ -1135,7 +1255,12 @@ class Block(object):
         bounds = bounds or self.GetReducedBlockBounds(dc)
         font = font or self.GetFont()
         dc.SetFont(font)
-        return WordWrapRenderer.CalculateHeight(dc, txt, RectUtils.Width(bounds))
+        if self.GetFormat().CanWrap:
+            return WordWrapRenderer.CalculateHeight(dc, txt, RectUtils.Width(bounds))
+        else:
+            # Calculate the height of one line. The 1000 pixel width
+            # ensures that 'Wy' doesn't wrap, which might happen if bounds is narrow
+            return WordWrapRenderer.CalculateHeight(dc, "Wy", 1000)
 
 
     def CanFit(self, height):
@@ -1337,7 +1462,8 @@ class TextBlock(Block):
         """
         Do the actual work of rendering this block.
         """
-        self.DrawText(dc, self.GetSubstitutedText(), bounds, alignment=self.GetFormat().TextAlignment)
+        fmt = self.GetFormat()
+        self.DrawText(dc, self.GetSubstitutedText(), bounds, canWrap=fmt.CanWrap, alignment=fmt.TextAlignment)
 
 
 #----------------------------------------------------------------------------
@@ -1433,7 +1559,7 @@ class CellBlock(Block):
         GAP_BETWEEN_IMAGE_AND_TEXT = 4
 
         # If cells can wrap, figure out the tallest, otherwise we just figure out the height of one line
-        if self.CanCellsWrap():
+        if self.GetFormat().CanWrap:
             font = self.GetFont()
             height = 0
             for x in self.GetCombinedLists():
@@ -1518,7 +1644,7 @@ class CellBlock(Block):
         for x in combined:
             cellBounds = RectUtils.InsetRect(x.cell, cellPadding)
             self.DrawText(dc, x.text, cellBounds, font, x.align, imageIndex=x.image,
-                          canWrap=self.CanCellsWrap(), listCtrl=self.GetListCtrl())
+                          canWrap=cellFmt.CanWrap, listCtrl=self.GetListCtrl())
 
         if cellFmt.GridPen and combined:
             dc.SetPen(cellFmt.GridPen)
@@ -1965,7 +2091,7 @@ class ColumnHeaderBlock(ColumnBasedBlock):
         """
         Return a list indicating how the text within each cell is aligned.
         """
-        if self.AlwaysCenterColumnHeader():
+        if self.GetFormat().AlwaysCenter:
             return [wx.ALIGN_CENTRE for i in range(self.left, self.right+1)]
         else:
             return self.GetColumnAlignments(self.lv, self.left, self.right)
@@ -2655,9 +2781,9 @@ if __name__ == '__main__':
             #printer.ReportFormat.Page.Add(ImageDecoration(ExampleImages.getGroup32Bitmap(), wx.RIGHT, wx.BOTTOM))
 
             #printer.PageHeader("%(listTitle)s") # nice idea but not possible at the moment
-            printer.PageHeader("Playing with ListCtrl Printing")
-            printer.PageFooter("Bright Ideas Software", "%(date)s", "%(currentPage)d of %(totalPages)d")
-            #printer.Watermark("Sloth!")
+            printer.PageHeader = "Playing with ListCtrl Printing"
+            printer.PageFooter = ("Bright Ideas Software", "%(date)s", "%(currentPage)d of %(totalPages)d")
+            printer.Watermark = "Sloth!"
 
             #printer.PageSetup()
             printer.PrintPreview(self)
