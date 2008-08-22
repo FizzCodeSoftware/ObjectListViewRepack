@@ -5,6 +5,84 @@
 Change Log
 ==========
 
+2008-08-22 19:38 (#220) - docs/listCtrlPrinter.rst
+  - Added formatting picture
+
+
+2008-08-20 22:21 (#219) - Examples/Demo.py
+  - Changed to use new properties on ListViewPrinter
+
+
+2008-08-20 22:20 (#218) - ObjectListView/ListCtrlPrinter.py
+  - Consistently use properties on ListCtrlPrinter (ReportFormat, PageFooter, PageHeader, Watermark and PrintData are now all properties)
+  - Removed ListCtrlPrinter.PageHeader(), ListCtrlPrinter.PageFooter(), ListCtrlPrinter.Watermark(), since they are now replaced with properties (and make more sense that way)
+
+
+2008-08-20 00:28 (#217) - docs/.static/icon.ico, docs/images/listctrlprinter-example2.png, docs/images/listctrlprinter-structure.png, docs/listCtrlPrinter.rst, docs/.templates/layout.html, Examples/Demo.py
+  - Added lots of documentation about ListCtrlPrinter
+
+
+2008-08-20 00:27 (#216) - ObjectListView/ListCtrlPrinter.py
+  - Moved AlwaysCenter and CanWrap to BlockFormat
+  - Improved docs
+
+
+2008-08-18 10:04 (#214) - THANKS.txt
+  - Added Werner Bruhin to THANKS
+
+
+2008-08-18 10:03 (#213) - ObjectListView/ObjectListView.py, ObjectListView/__init__.py, ObjectListView/OLVEvent.py
+  - Handle model objects that cannot be hashed
+  - Added editing started and finished events
+
+
+2008-08-18 10:02 (#212) - Examples/SqlExample.py
+  - Reorganized code slightly
+
+
+2008-08-18 00:37 (#211) - Examples/SqlExample.py
+  - Initial checkin
+
+
+2008-08-17 21:47 (#210) - ObjectListView/WordWrapRenderer.py
+  - Second attempt at avoid bug in wordwrap module
+
+
+2008-08-16 23:31 (#209) - ObjectListView/WordWrapRenderer.py
+  - Allow truncated text to be vertically aligned
+
+
+2008-08-16 23:24 (#208) - ObjectListView/ListCtrlPrinter.py
+  - Use RunningBlockPusher to simplify code
+  - Allow truncated strings to be vertically aligned
+
+
+2008-08-16 22:58 (#207) - ObjectListView/ListCtrlPrinter.py
+  - Centralize cell width calculation (again)
+  - Gracefully handle substitutions that fail
+
+
+2008-08-16 22:55 (#206) - Examples/Demo.wxg, Examples/Demo.py
+  - All control changes on ListCtrlPrinting now update the preview
+
+
+2008-08-16 10:23 (#205) - ObjectListView/WordWrapRenderer.py
+  - Avoid bug in wordwrap module
+  - use DCClipper
+  - Simplified some code
+
+
+2008-08-16 09:47 (#204) - ObjectListView/ListCtrlPrinter.py
+  - Column width is now calculated by the column headers only
+  - Added ListCtrlPrinter.GetPrintData()
+  - Make sure print data is destroyed after printing
+  - Remove print statements
+
+
+2008-08-16 09:38 (#203) - ObjectListView/ObjectListView.py
+  - Added ensureVisible parameter to SelectObject()
+
+
 2008-08-13 00:09 (#199) - ObjectListView/ObjectListView.py, ObjectListView/__init__.py, ObjectListView/OLVPrinter.py, ObjectListView/ListCtrlPrinter.py
   - Allow text to be vertically aligned in cells
   - Improved some docs
