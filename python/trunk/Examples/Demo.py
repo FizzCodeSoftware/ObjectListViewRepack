@@ -1088,15 +1088,15 @@ class MyFrame(wx.Frame):
     def DoAdd1000(self, olv):
         self.counter += 1
         def func():
-            objects = self._MakeAtLeast(olv.modelObjects, len(olv.modelObjects)+1000)
-            olv.SetObjects(objects, True)
-        self._timeCall(func, "Adding 1000 and repopulating %d items took %%0.2f milliseconds" % olv.GetItemCount())
+            objects = self._MakeAtLeast([], 1000)
+            olv.AddObjects(objects)
+        self._timeCall(func, "Adding 1000 and repopulating %d items took %%0.2f milliseconds" % (olv.GetItemCount()+1000))
 
     def DoAdd1000Virtual(self, olv):
         self.counter += 1
         def func():
             olv.SetItemCount(olv.GetItemCount() + 1000)
-        self._timeCall(func, "Virtually adding 1000 and repopulating %d items took %%0.2f milliseconds" % olv.GetItemCount())
+        self._timeCall(func, "Virtually adding 1000 and repopulating %d items took %%0.2f milliseconds" % (olv.GetItemCount()+1000))
 
     def DoSelectAll(self, olv):
         self._timeCall(olv.SelectAll, "Selecting all %d items took %%0.2f milliseconds" % olv.GetItemCount())
