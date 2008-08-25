@@ -8,6 +8,9 @@
 # License:      wxWindows license
 #----------------------------------------------------------------------------
 # Change log:
+# 2008/08/23  JPP   - Added AddObjects()/RemoveObjects() and friends
+#                   - Removed duplicate code when building/refreshing/adding objects
+#                   - One step closer to secondary sort column support
 # 2008/08/18  JPP   - Handle model objects that cannot be hashed
 #                   - Added CELL_EDIT_STARTED and CELL_EDIT_FINISHED events
 # 2008/08/16  JPP   - Added ensureVisible parameter to SelectObject()
@@ -234,6 +237,8 @@ class ObjectListView(wx.ListCtrl):
         self.selectionBeforeCellEdit = []
         self.checkStateColumn = None
         self.handleStandardKeys = True
+        self.searchPrefix = u""
+        self.whenLastTypingEvent = 0
 
         self.rowFormatter = kwargs.pop("rowFormatter", None)
         self.useAlternateBackColors = kwargs.pop("useAlternateBackColors", True)
@@ -271,14 +276,13 @@ class ObjectListView(wx.ListCtrl):
         else:
             StaticText = wx.StaticText
 
-        self.stEmptyListMsg = StaticText(self, -1, "This list is empty and is a long string to see what happens",
+        self.stEmptyListMsg = StaticText(self, -1, "This list is empty",
             wx.Point(0, 0), wx.Size(0, 0), wx.ALIGN_CENTER | wx.ST_NO_AUTORESIZE | wx.FULL_REPAINT_ON_RESIZE)
         self.stEmptyListMsg.Hide()
         self.stEmptyListMsg.SetForegroundColour(wx.LIGHT_GREY)
         self.stEmptyListMsg.SetBackgroundColour(self.GetBackgroundColour())
         self.stEmptyListMsg.SetFont(wx.Font(24, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, ""))
-        self.searchPrefix = u""
-        self.whenLastTypingEvent = 0
+
 
     #--------------------------------------------------------------#000000#FFFFFF
     # Setup
@@ -473,6 +477,42 @@ class ObjectListView(wx.ListCtrl):
         Add the given images to the list of available images. Return the index of the image.
         """
         return self.AddNamedImages(None, smallImage, normalImage)
+
+
+    def AddObject(self, modelObject):
+        """
+        Add the given object to our collection of objects.
+
+        The object will appear at its sorted location, or at the end of the list if
+        the list is unsorted
+        """
+        self.AddObjects([modelObject])
+
+
+    def AddObjects(self, modelObjects):
+        """
+        Add the given collections of objects to our collection of objects.
+
+        The objects will appear at their sorted locations, or at the end of the list if
+        the list is unsorted
+        """
+        if len(self.innerList) == 0:
+            return self.SetObjects(modelObjects)
+
+        # This technique of adding objects will not work if we support filtering on the inner list
+        try:
+            self.Freeze()
+            originalSize = len(self.modelObjects)
+            self.modelObjects.extend(modelObjects)
+            self._BuildInnerList()
+            item = wx.ListItem()
+            item.SetColumn(0)
+            for (i, x) in enumerate(modelObjects):
+                item.Clear()
+                self._InsertUpdateItem(item, originalSize+i, x, True)
+            self._SortItemsNow()
+        finally:
+            self.Thaw()
 
 
     def AddNamedImages(self, name, smallImage=None, normalImage=None):
@@ -687,6 +727,8 @@ class ObjectListView(wx.ListCtrl):
         """
         Completely rebuild the contents of the list control
         """
+        self._SortObjects()
+        self._BuildInnerList()
         self.Freeze()
         try:
             wx.ListCtrl.DeleteAllItems(self)
@@ -697,53 +739,44 @@ class ObjectListView(wx.ListCtrl):
 
             self.stEmptyListMsg.Hide()
 
-            # Sort the objects so they are in the order they will be displayed.
-            # Sorting like this is 5-10x faster than relying on the ListCtrl::SortItems()
-            # (under Windows, at least)
-            if self.GetSortColumn() is not None:
-                self._SortObjects()
+            # Insert all the rows
+            item = wx.ListItem()
+            item.SetColumn(0)
+            for (i, x) in enumerate(self.innerList):
+                item.Clear()
+                self._InsertUpdateItem(item, i, x, True)
 
-            self._BuildAllRows()
 
             # Auto-resize once all the data has been added
             self.AutoSizeColumns()
         finally:
             self.Thaw()
 
-    def _BuildAllRows(self):
-        # Insert all the rows
-        item = wx.ListItem()
-        item.SetColumn(0)
-        colZero = self.columns[0]
-        for (i, x) in enumerate(self.innerList):
-            # Insert the new row
-            item.Clear()
-            item.SetId(i)
-            item.SetData(i)
-            item.SetText(colZero.GetStringValue(x))
-            item.SetImage(self.GetImageAt(x, 0))
-            self._FormatOneItem(item, i, x)
-            self.InsertItem(item)
-
-            # Insert all the subitems
-            for iCol in range(1, len(self.columns)):
-                self.SetStringItem(i, iCol, self.GetStringValueAt(x, iCol),
-                                   self.GetImageAt(x, iCol))
 
     def RefreshIndex(self, index, modelObject):
         """
         Refresh the item at the given index with data associated with the given object
         """
-        item = self.GetItem(index)
-        item.SetText(self.GetStringValueAt(modelObject, 0))
-        item.SetImage(self.GetImageAt(modelObject, 0))
-        self._FormatOneItem(item, index, modelObject)
-        self.SetItem(item)
+        self._InsertUpdateItem(self.GetItem(index), index, modelObject, False)
+
+
+    def _InsertUpdateItem(self, listItem, index, modelObject, isInsert):
+        if isInsert:
+            listItem.SetId(index)
+            listItem.SetData(index)
+
+        listItem.SetText(self.GetStringValueAt(modelObject, 0))
+        listItem.SetImage(self.GetImageAt(modelObject, 0))
+        self._FormatOneItem(listItem, index, modelObject)
+
+        if isInsert:
+            self.InsertItem(listItem)
+        else:
+            self.SetItem(listItem)
 
         for iCol in range(1, len(self.columns)):
             self.SetStringItem(index, iCol, self.GetStringValueAt(modelObject, iCol),
                                self.GetImageAt(modelObject, iCol))
-
 
     def RefreshObject(self, modelObject):
         """
@@ -767,6 +800,32 @@ class ObjectListView(wx.ListCtrl):
                 self.RefreshObject(x)
         finally:
             self.Thaw()
+
+
+
+    def RemoveObjects(self, modelObjects):
+        """
+        Remove the given collections of objects from our collection of objects.
+        """
+        # Unlike AddObjects(), there is no clever way to do this. We can't just remove the
+        # rows because every wxListItem holds the index of its matching model object. If we
+        # remove the first model object, the index of every object will change.
+        selection = self.GetSelectedObjects()
+
+        # Use sets to quickly remove objects from self.modelObjects
+        # For large collections, this is MUCH faster.
+        try:
+            s1 = set(self.modelObjects)
+            s2 = set(modelObjects)
+            self.modelObjects = list(s1 - s2)
+        except TypeError:
+            # Not every object can be hashed, so some model objects can be placed in a set.
+            # For such object, we have to resort to the slow method.
+            for x in modelObjects:
+                self.modelObjects.remove(x)
+
+        self.RepopulateList()
+        self.SelectObjects(selection)
 
 
     def _ResizeSpaceFillingColumns(self):
@@ -860,7 +919,6 @@ class ObjectListView(wx.ListCtrl):
         else:
             self.modelObjects = modelObjects[:]
 
-        self._BuildInnerList()
         self.RepopulateList()
 
         if preserveSelection:
@@ -1603,17 +1661,27 @@ class ObjectListView(wx.ListCtrl):
         """
         Sort the actual items in the list now, according to the current column and order
         """
-        col = self.GetSortColumn()
-        def _itemComparer(object1, object2):
+        sortColumn = self.GetSortColumn()
+        if not sortColumn:
+            return
+
+        secondarySortColumn = None # self.GetSecondarySortColumn()
+
+        def _singleObjectComparer(col, object1, object2):
             value1 = col.GetValue(object1)
             value2 = col.GetValue(object2)
-
             try:
                 return locale.strcoll(value1.lower(), value2.lower())
             except:
                 return cmp(value1, value2)
 
-        self.SortListItemsBy(_itemComparer)
+        def _objectComparer(object1, object2):
+            result = _singleObjectComparer(sortColumn, object1, object2)
+            if secondarySortColumn and result == 0:
+                result = _singleObjectComparer(secondarySortColumn, object1, object2)
+            return result
+
+        self.SortListItemsBy(_objectComparer)
 
 
     def SortListItemsBy(self, cmpFunc, ascending=None):
@@ -1621,6 +1689,9 @@ class ObjectListView(wx.ListCtrl):
         Sort the existing list items using the given comparison function.
 
         The comparison function must accept two model objects as parameters.
+
+        The primary users of this method are handlers of the SORT event that want
+        to sort the items by their own special function.
         """
         if ascending is None:
             ascending = self.sortAscending
@@ -1652,7 +1723,7 @@ class ObjectListView(wx.ListCtrl):
         if sortColumn is None:
             return
 
-        # Let the world have a change to sort the model objects
+        # Let the world have a chance to sort the model objects
         evt = OLVEvent.SortEvent(self, self.sortColumnIndex, self.sortAscending, True)
         self.GetEventHandler().ProcessEvent(evt)
         if evt.IsVetoed() or evt.wasHandled:
@@ -2232,21 +2303,43 @@ class VirtualObjectListView(AbstractVirtualObjectListView):
     #----------------------------------------------------------------------------
     # Commands
 
+    def AddObjects(self, modelObjects):
+        """
+        Add the given collections of objects to our collection of objects.
+
+        This cannot work for virtual lists since the source of model objects is not
+        under the control of the VirtualObjectListView.
+        """
+        pass
+
+
+    def RemoveObjects(self, modelObjects):
+        """
+        Remove the given collections of objects from our collection of objects.
+
+        This cannot work for virtual lists since the source of model objects is not
+        under the control of the VirtualObjectListView.
+        """
+        pass
+
+
     def SelectObject(self, modelObject, deselectOthers=True):
         """
         Select the given modelObject. If deselectOthers is True, all other objects will be deselected
+
+        This doesn't work for virtual lists, since the virtual list has no way
+        of knowing where 'modelObject' is within the list.
         """
-        # This doesn't work for virtual lists, since the virtual list has no way
-        # of knowing where 'modelObject' is within the list.
         pass
 
 
     def SelectObjects(self, modelObjects, deselectOthers=True):
         """
         Select all of the given modelObjects. If deselectOthers is True, all other modelObjects will be deselected
+
+        This doesn't work for virtual lists, since the virtual list has no way
+        of knowing where any of the modelObjects are within the list.
         """
-        # This doesn't work for virtual lists, since the virtual list has no way
-        # of knowing where any of the modelObjects are within the list.
         pass
 
 
@@ -2282,14 +2375,21 @@ class FastObjectListView(AbstractVirtualObjectListView):
     #----------------------------------------------------------------------------
     # Commands
 
+    def AddObjects(self, modelObjects):
+        """
+        Add the given collections of objects to our collection of objects.
+        """
+        self.modelObjects.extend(modelObjects)
+        self.RepopulateList()
+
+
     def RepopulateList(self):
         """
         Completely rebuild the contents of the list control
         """
         self.lastGetObjectIndex = -1
-        if self.GetSortColumn() is not None:
-            self._SortObjects()
-
+        self._SortObjects()
+        self._BuildInnerList()
         self.SetItemCount(len(self.innerList))
         self.Refresh()
 
@@ -2500,7 +2600,14 @@ class GroupListView(FastObjectListView):
 
 
     #----------------------------------------------------------------------------
-    # Setup
+    # Commands
+
+    def AddObjects(self, modelObjects):
+        """
+        Add the given collections of objects to our collection of objects.
+        """
+        self.groups = None
+        FastObjectListView.AddObjects(self, modelObjects)
 
 
     def CreateCheckStateColumn(self, columnIndex=0):
@@ -2513,6 +2620,14 @@ class GroupListView(FastObjectListView):
         if self.useExpansionColumn and columnIndex == 0:
             columnIndex = 1
         FastObjectListView.CreateCheckStateColumn(self, columnIndex)
+
+
+    def RemoveObjects(self, modelObjects):
+        """
+        Remove the given collections of objects from our collection of objects.
+        """
+        self.groups = None
+        FastObjectListView.RemoveObjects(self, modelObjects)
 
 
     def SetColumns(self, columns, repopulate=True):
@@ -2559,7 +2674,6 @@ class GroupListView(FastObjectListView):
         Present the collection of ListGroups in this control.
         """
         self.groups = groups
-        self._BuildInnerList()
         self.RepopulateList()
 
 
