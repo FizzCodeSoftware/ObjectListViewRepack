@@ -8,6 +8,9 @@
 # License:      wxWindows license
 #----------------------------------------------------------------------------
 # Change log:
+# 2008/08/27  JPP   - Implemented filtering
+#                   - Added GetObjects() and GetFilteredObjects()
+#                   - Added resortNow parameter to SetSortColumn()
 # 2008/08/23  JPP   - Added AddObjects()/RemoveObjects() and friends
 #                   - Removed duplicate code when building/refreshing/adding objects
 #                   - One step closer to secondary sort column support
@@ -239,6 +242,7 @@ class ObjectListView(wx.ListCtrl):
         self.handleStandardKeys = True
         self.searchPrefix = u""
         self.whenLastTypingEvent = 0
+        self.filter = None
 
         self.rowFormatter = kwargs.pop("rowFormatter", None)
         self.useAlternateBackColors = kwargs.pop("useAlternateBackColors", True)
@@ -502,12 +506,12 @@ class ObjectListView(wx.ListCtrl):
         # This technique of adding objects will not work if we support filtering on the inner list
         try:
             self.Freeze()
-            originalSize = len(self.modelObjects)
+            originalSize = len(self.innerList)
             self.modelObjects.extend(modelObjects)
             self._BuildInnerList()
             item = wx.ListItem()
             item.SetColumn(0)
-            for (i, x) in enumerate(modelObjects):
+            for (i, x) in enumerate(self.innerList[originalSize:]):
                 item.Clear()
                 self._InsertUpdateItem(item, originalSize+i, x, True)
             self._SortItemsNow()
@@ -807,8 +811,9 @@ class ObjectListView(wx.ListCtrl):
         """
         Remove the given collections of objects from our collection of objects.
         """
-        # Unlike AddObjects(), there is no clever way to do this. We can't just remove the
-        # rows because every wxListItem holds the index of its matching model object. If we
+        # Unlike AddObjects(), there is no clever way to do this -- we have to simply
+        # remove the objects and rebuild the whole list. We can't just remove the rows
+        # because every wxListItem holds the index of its matching model object. If we
         # remove the first model object, the index of every object will change.
         selection = self.GetSelectedObjects()
 
@@ -819,8 +824,8 @@ class ObjectListView(wx.ListCtrl):
             s2 = set(modelObjects)
             self.modelObjects = list(s1 - s2)
         except TypeError:
-            # Not every object can be hashed, so some model objects can be placed in a set.
-            # For such object, we have to resort to the slow method.
+            # Not every object can be hashed, so some model objects cannot be placed in sets.
+            # For such objects, we have to resort to the slow method.
             for x in modelObjects:
                 self.modelObjects.remove(x)
 
@@ -934,7 +939,10 @@ class ObjectListView(wx.ListCtrl):
         Build the list that will actually populate the control
         """
         # This is normally just the list of model objects
-        self.innerList = self.modelObjects
+        if self.filter:
+            self.innerList = self.filter(self.modelObjects)
+        else:
+            self.innerList = self.modelObjects
 
 
     def ToggleCheck(self, modelObject):
@@ -975,6 +983,22 @@ class ObjectListView(wx.ListCtrl):
             return None
         else:
             return self.checkStateColumn.GetCheckState(modelObject)
+
+
+    def GetFilter(self):
+        """
+        Return the filter that is currently operating on this control.
+        """
+        return self.filter
+
+
+    def GetFilteredObjects(self):
+        """
+        Return the model objects that are actually displayed in the control.
+
+        If no filter is in effect, this is the same as GetObjects().
+        """
+        return self.innerList
 
 
     def GetFocusedRow(self):
@@ -1022,6 +1046,15 @@ class ObjectListView(wx.ListCtrl):
         Synactic sugar over GetObjectAt()
         """
         return self.GetObjectAt(index)
+
+
+    def GetObjects(self):
+        """
+        Return the model objects that are available to the control.
+
+        If no filter is in effect, this is the same as GetFilteredObjects().
+        """
+        return self.modelObjects
 
 
     def GetPrimaryColumn(self):
@@ -1120,7 +1153,23 @@ class ObjectListView(wx.ListCtrl):
         return modelObject in self.GetSelectedObjects()
 
 
-    def SetSortColumn(self, column):
+    def SetFilter(self, filter):
+        """
+        Remember the filter that is currently operating on this control.
+        Set this to None to clear the current filter.
+
+        A filter is a callable that accepts one parameter: the original list
+        of model objects. The filter chooses which of these model objects should
+        be visible to the user, and returns a collection of only those objects.
+
+        The Filter module has some useful standard filters.
+
+        You must call RepopulateList() for changes to the filter to be visible.
+        """
+        self.filter = filter
+
+
+    def SetSortColumn(self, column, resortNow=False):
         """
         Set the column by which the rows should be sorted.
 
@@ -1136,7 +1185,11 @@ class ObjectListView(wx.ListCtrl):
                 self.sortColumnIndex = -1
         else:
             self.sortColumnIndex = column
-        self._UpdateColumnSortIndicators()
+        if resortNow:
+            self.SortBy(self.sortColumnIndex)
+        else:
+            self._UpdateColumnSortIndicators()
+
 
     def YieldSelectedObjects(self):
         """
@@ -2677,9 +2730,12 @@ class GroupListView(FastObjectListView):
         self.RepopulateList()
 
 
-    def _RebuildGroups(self):
+    def RebuildGroups(self):
         """
-        Completely rebuild our groups from our current list of model objects
+        Completely rebuild our groups from our current list of model objects.
+
+        Only use this if SetObjects() has been called. If you have specifically created
+        your groups and called SetGroups(), do not use this method.
         """
         groups = self._BuildGroups()
         self.SortGroups(groups)
@@ -2694,6 +2750,9 @@ class GroupListView(FastObjectListView):
         """
         if modelObjects is None:
             modelObjects = self.modelObjects
+        if self.filter:
+            modelObjects = self.filter(modelObjects)
+
         groupingColumn = self.GetGroupByColumn()
 
         groupMap = {}
@@ -2977,6 +3036,16 @@ class GroupListView(FastObjectListView):
                 selectedGroups.append(model)
             i = self.GetNextItem(i, wx.LIST_NEXT_ALL, wx.LIST_STATE_SELECTED)
         return selectedGroups
+
+
+    def GetFilteredObjects(self):
+        """
+        Return the model objects that are actually displayed in the control.
+        """
+        objects = list()
+        for x in self.groups:
+            objects.extend(x.modelObjects)
+        return objects
 
 
     def GetObjectAt(self, index):
