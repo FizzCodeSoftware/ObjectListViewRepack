@@ -26,7 +26,7 @@ from OLVEvent import EVT_CELL_EDIT_STARTING, EVT_CELL_EDIT_STARTED, EVT_CELL_EDI
 from OLVEvent import EVT_COLLAPSING, EVT_COLLAPSED, EVT_EXPANDING, EVT_EXPANDED, EVT_GROUP_CREATING, EVT_GROUP_SORT
 from CellEditor import CellEditorRegistry, MakeAutoCompleteTextBox, MakeAutoCompleteComboBox
 from ListCtrlPrinter import ListCtrlPrinter, ReportFormat, BlockFormat, LineDecoration, RectangleDecoration, ImageDecoration
-
+import Filter
 __all__ = [
     "BlockFormat",
     "CellEditFinishedEvent",
@@ -46,6 +46,7 @@ __all__ = [
     "EVT_GROUP_CREATING",
     "EVT_GROUP_SORT"
     "EVT_SORT",
+    "Filter",
     "FastObjectListView",
     "GroupListView",
     "ListGroup",
