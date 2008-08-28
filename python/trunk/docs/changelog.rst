@@ -5,6 +5,47 @@
 Change Log
 ==========
 
+2008-08-28 22:41 (#235) - test/test_ObjectListView.py
+  - Added filtering tests
+
+
+2008-08-28 22:41 (#234) - ObjectListView/ObjectListView.py
+  - Added GetObjects() and GetFilteredObjects()
+  - Added resortNow parameter to SetSortColumn()
+
+
+2008-08-28 22:39 (#233) - ObjectListView/Filter.py
+  - Added Filter.Chain
+  - Added text constructor parameter to TextSearch
+
+
+2008-08-28 01:22 (#232) - ObjectListView/ObjectListView.py
+  - Correct AddObjects() when a filter is in effect
+  - Made RebuildGroups() public
+
+
+2008-08-28 01:21 (#231) - Examples/Demo.py
+  - Implement search controls on several tabs
+
+
+2008-08-28 01:20 (#230) - ObjectListView/Filter.py
+  - Make text search handle non-report views better
+
+
+2008-08-27 23:59 (#229) - ObjectListView/ObjectListView.py, ObjectListView/__init__.py, ObjectListView/Filter.py
+  - Filters work
+
+
+2008-08-25 10:51 (#225) - Examples/Demo.py
+  - Use AddObjects() for "Add 1000" commands
+
+
+2008-08-25 10:50 (#224) - ObjectListView/ObjectListView.py
+  - Added AddObjects()/RemoveObjects() and friends
+  - Removed duplicate code when building/refreshing/adding objects
+  - One step closer to secondary sort column support
+
+
 2008-08-22 19:38 (#220) - docs/listCtrlPrinter.rst
   - Added formatting picture
 
