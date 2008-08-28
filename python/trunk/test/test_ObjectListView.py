@@ -5,7 +5,7 @@ import time
 
 import sys
 sys.path.append("..")
-from ObjectListView import ObjectListView, FastObjectListView, VirtualObjectListView, GroupListView, ColumnDefn, EVT_SORT
+from ObjectListView import ObjectListView, FastObjectListView, VirtualObjectListView, GroupListView, ColumnDefn, EVT_SORT, Filter
 
 class Person:
 
@@ -271,6 +271,55 @@ class TestObjectListView(unittest.TestCase):
         self.objectListView.SetObjects(self.persons)
         self.assertFalse(self.objectListView.stEmptyListMsg.IsShown())
 
+    def testFilteringHead(self):
+        self.objectListView.SetFilter(Filter.Head(1))
+        self.objectListView.SetObjects(self.persons)
+        self.assertEqual(len(self.objectListView.GetFilteredObjects()), 1)
+        self.assertEqual(self.objectListView.GetFilteredObjects()[0], self.persons[0])
+
+        self.objectListView.SetFilter(None)
+
+    def testFilteringTail(self):
+        self.objectListView.SetFilter(Filter.Tail(1))
+        self.objectListView.SetObjects(self.persons)
+        # The group list will have a group header at row 0 so skip it
+        if isinstance(self.objectListView, GroupListView):
+            firstDataIndex = 1
+        else:
+            firstDataIndex = 0
+        self.assertEqual(len(self.objectListView.GetFilteredObjects()), 1)
+        self.assertEqual(self.objectListView.GetFilteredObjects()[0], self.persons[-1])
+
+        self.objectListView.SetFilter(None)
+
+    def testFilteringPredicate(self):
+        males = [x for x in self.persons if x.sex == "Male"]
+        self.objectListView.SetFilter(Filter.Predicate(lambda person: person.sex == "Male"))
+        self.objectListView.SetSortColumn(self.personColumns[-1])
+        self.objectListView.SetObjects(self.persons)
+
+        self.assertEqual(set(self.objectListView.GetFilteredObjects()), set(males))
+
+        self.objectListView.SetFilter(None)
+
+    def testFilteringTextSearch(self):
+        containsF = [x for x in self.persons if "f" in x.sex.lower() or  "f" in x.name.lower()]
+
+        self.objectListView.SetFilter(Filter.TextSearch(self.objectListView, text="f"))
+        self.objectListView.SetObjects(self.persons)
+        self.assertEqual(set(self.objectListView.GetFilteredObjects()), set(containsF))
+
+        self.objectListView.SetFilter(None)
+
+    def testFilteringChain(self):
+        filterMale = Filter.Predicate(lambda person: person.sex == "Male")
+        filterContainsF = Filter.TextSearch(self.objectListView, text="f")
+        self.objectListView.SetFilter(Filter.Chain(filterMale, filterContainsF))
+        self.objectListView.SetObjects(self.persons)
+        self.assertEqual(len(self.objectListView.GetFilteredObjects()), 1)
+        self.assertEqual(self.objectListView.GetFilteredObjects()[0].name, "Eric Fandango")
+
+        self.objectListView.SetFilter(None)
 
 class TestNormalObjectListView(TestObjectListView):
 
@@ -337,22 +386,6 @@ class TestVirtualObjectListView(TestObjectListView):
         self.persons.sort(key=_getLowerCaseSortValue, reverse=(not evt.sortAscending))
         evt.objectListView.RefreshObjects()
 
-    def testSelectObject(self):
-        # Virtual lists can't select objects
-        pass
-
-    def testGetSelectedObject(self):
-        # Virtual lists can't get selected object
-        pass
-
-    def testGetSelectedObjects(self):
-        # Virtual lists can't get selected objects -- Is this really true? Does it have to be?
-        pass
-
-    def testGetSelectedObjects(self):
-        # Virtual lists can't get selected objects -- Is this really true? Does it have to be?
-        pass
-
     def testEmptyListMsg(self):
         self.objectListView.SetItemCount(0)
         self.assertTrue(self.objectListView.stEmptyListMsg.IsShown())
@@ -360,6 +393,17 @@ class TestVirtualObjectListView(TestObjectListView):
         self.objectListView.SetItemCount(len(self.persons))
         self.assertFalse(self.objectListView.stEmptyListMsg.IsShown())
 
+    # Virtual lists can't get or set selected objects -- Is this really true? Does it have to be?
+    def testSelectObject(self): pass
+    def testGetSelectedObject(self): pass
+    def testGetSelectedObjects(self): pass
+
+    # Virtual lists can't filter since the model objects are not controlly by it
+    def testFilteringHead(self): pass
+    def testFilteringTail(self): pass
+    def testFilteringPredicate(self): pass
+    def testFilteringTextSearch(self): pass
+    def testFilteringChain(self): pass
 
 class TestGroupObjectListView(TestObjectListView):
 
@@ -406,7 +450,7 @@ class TestGroupObjectListView(TestObjectListView):
             return self.objectListView.GetItemBackgroundColour(i) # this returns an invalid color
         else:
             return attr.GetBackgroundColour()
-        
+
     #----------------------------------------------------------------------------
     # Test class specific functionality
 
