@@ -9,6 +9,7 @@
 # License:      wxWindows license
 #----------------------------------------------------------------------------
 # Change log:
+# 2008/08/30  JPP   Simplified initial insertions (removed executemany)
 # 2008/06/20  JPP   Initial version
 #----------------------------------------------------------------------------
 # To do:
@@ -91,16 +92,14 @@ class MyFrame(wx.Frame):
             { "title":"Dare you to move", "artist": "Switchfoot",  "album":"The Beautiful Letdown"},
             { "title":"Redemption", "artist": "Switchfoot",  "album":"The Beautiful Letdown"},
             { "title":"The beautiful letdown", "artist": "Switchfoot",  "album":"The Beautiful Letdown"},
+            { "title":"Death And All His Friends", "artist": "Coldplay",  "album":"Viva la Vida"},
         ]
 
-        def dataProvider():
-            i = 0
-            while i < self.NUMBER_OF_ROWS:
-                for x in baseData:
-                    yield([i, x["title"] + str(i), x["artist"], x["album"]])
-                    i += 1
-
-        self.connection.executemany(self.INSERT_STMT, dataProvider())
+        i = 0
+        while i < self.NUMBER_OF_ROWS:
+            for x in baseData:
+                self.connection.execute(self.INSERT_STMT, [i, x["title"] + str(i), x["artist"], x["album"]])
+                i += 1
         self.connection.commit()
 
         # We use a reorder map when the list is sorted
@@ -112,7 +111,7 @@ class MyFrame(wx.Frame):
         result = cur.fetchone()
         self.myOlv.SetItemCount(int(result[0]))
 
-        print "Building database took %2f seconds." % (time.clock() - start)
+        print "Building database %d rows of took %2f seconds." % (self.myOlv.GetItemCount(), time.clock() - start)
 
     def InitWidgets(self):
         panel = wx.Panel(self, -1)
