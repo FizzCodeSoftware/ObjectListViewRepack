@@ -5,6 +5,65 @@
 Change Log
 ==========
 
+2008-09-04 23:12 (#250) - setup.py
+  - v1.2
+
+
+2008-09-04 22:30 (#249) - ObjectListView/ObjectListView.py
+  - Correct an incomplete comment
+
+
+2008-09-04 22:30 (#248) - Examples/SqlExample.py
+  - Correctly locate primary key when there is a WHERE clause
+
+
+2008-09-04 22:30 (#247) - Examples/BatchedUpdateExample.py
+  - Nicely format file size column
+
+
+2008-09-04 22:29 (#246) - docs/whatsnew.rst, docs/index.rst, docs/recipes.rst
+  - Final changes for v1.2
+
+
+2008-09-02 23:25 (#245) - docs/features.rst, docs/.static/icon.ico, docs/whatsnew.rst, docs/listCtrlPrinter.rst, docs/conf.py, docs/majorClasses.rst, docs/index.rst
+  - Updated in preparation for v1.2 release
+
+
+2008-09-02 23:22 (#244) - Examples/UsingVirtualListExample.py
+  - Simplified initial insertions (removed executemany)
+
+
+2008-09-02 23:21 (#243) - ObjectListView/__init__.py
+  - Added BatchedUpdate
+
+
+2008-09-02 23:20 (#242) - Examples/BatchedUpdateExample.py
+  - First version
+
+
+2008-09-02 23:20 (#241) - ObjectListView/ObjectListView.py
+  - Added BatchedUpdate adaptor
+  - Improved speed of selecting and refreshing by keeping a map of objects to indicies
+  - Added GetIndexOf()
+  - Removed flicker from FastObjectListView.AddObjects() and RefreshObjects()
+
+
+2008-08-31 23:09 (#240) - Examples/BatchedUpdateExample.py
+  - Scanning now works
+
+
+2008-08-31 20:58 (#239) - Examples/BatchedUpdateExample.py
+  - First hand done layout
+
+
+2008-08-31 18:07 (#238) - Examples/BatchedUpdateExample.py
+  - Initial checkin
+
+
+2008-08-28 22:50 (#237) - CHANGELOG.txt, docs/changelog.rst
+  - Rebuilt change log
+
+
 2008-08-28 22:41 (#235) - test/test_ObjectListView.py
   - Added filtering tests
 

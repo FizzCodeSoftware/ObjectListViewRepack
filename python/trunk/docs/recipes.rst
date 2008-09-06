@@ -29,6 +29,8 @@ Learning to cook
 
     :ref:`recipe-group-format`
 
+    :ref:`recipe-batched-updates`
+
 
 .. _recipe-flavour:
 
@@ -358,3 +360,29 @@ What you can do is:
 - change the font of the header via the *groupFont* variable. Remember that row height is fixed,
   so if you make the font too big, the text will be truncated. The header row will *not* become
   bigger.
+
+
+.. _recipe-batched-updates:
+
+12. How can I only redraw the control every N seconds?
+------------------------------------------------------
+
+    *I'm writing a network monitor app. In some circumstances, the model objects can be updated
+    100 times or more each second. But if I try to update the ObjectListView that often, the
+    application grinds to a halt. Is there is an easy way to make the ObjectListView not redraw
+    so often?*
+
+Yes. You can use a ``BatchedUpdate`` adapter. This wraps an ObjectListView such that no
+matter how often you update it, it will redraw at most once every N seconds (you supply
+the value of N).
+
+So in your network monitor app, you need to added a line like this some time after the
+ObjectListView is created and before it is used::
+
+    self.olv = ObjectListView.BatchedUpdate(self.olv, SECONDS_BETWEEN_UPDATES)
+
+This wraps the original *olv* with an Adapter that intercepts some of the model updating commands
+(``SetObjects()`` or ``AddObjects()`` or ``RefreshObjects()``) so that the control only redraws once every
+SECONDS_BETWEEN_UPDATES seconds (SECONDS_BETWEEN_UPDATES is a constant defined by you somewhere else).
+
+See Examples/BatchedUpdateExample.py for a demonstration and :ref:``here for class docs <batchedupdate-class>``.

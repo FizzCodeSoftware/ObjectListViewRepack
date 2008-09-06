@@ -22,17 +22,18 @@ OK, here's the bullet point feature list:
 
 * Automatically transforms a collection of model objects into a fully functional wx.ListCtrl.
 * Automatically sorts rows.
-* Easily edits the cell values.
+* Easily :ref:`edit the cell values <cell-editing-label>`.
 * Supports all ListCtrl views (report, list, large and small icons).
-* Columns can be fixed-width, have a minimum and/or maximum width, or be space-filling.
-* Displays a "list is empty" message when the list is empty (obviously).
-* Supports checkboxes in any column
-* Supports alternate rows background colors.
-* Supports custom formatting of rows.
-* Supports searching (by typing) on any column, even on massive lists.
+* Columns can be fixed-width, have a minimum and/or maximum width, or be space-filling (:ref:`Column Widths <column-widths>`)
+* Displays a :ref:`"list is empty" message <recipe-emptymsg>` when the list is empty (obviously).
+* Supports :ref:`checkboxes in any column <recipe-checkbox>`
+* Supports :ref:`alternate rows background colors <alternate-row-backgrounds>`.
+* Supports :ref:`custom formatting of rows <recipe-formatter>`.
+* Supports :ref:`searching (by typing) on any column <search-by-typing>`, even on massive lists.
 * Supports custom sorting
-* The `FastObjectListView` version can build a list of 10,000 objects in less than 0.1 seconds.
-* The `VirtualObjectListView` version supports millions of rows through ListCtrl's virtual mode.
+* Supports :ref:`filtering` and :ref:`batched updates <recipe-batched-updates>`
+* The ``FastObjectListView`` version can build a list of 10,000 objects in less than 0.1 seconds.
+* The ``VirtualObjectListView`` version supports millions of rows through ListCtrl's virtual mode.
 * The :ref:`GroupListView <using-grouplistview>` version supports arranging rows into collapsible groups.
 * Effortlessly produce professional-looking reports using a :ref:`ListCtrlPrinter <using-listctrlprinter>`.
 

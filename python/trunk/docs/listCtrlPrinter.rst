@@ -46,9 +46,8 @@ usage should be as simple as::
    printer = ListCtrlPrinter(self.myListCtrl, "My Report Title")
    printer.PrintPreview()
 
-This code create a new ``ListCtrlPrinter``, telling it what ``ListCtrl`` it should print and
-what the report should be titled. It then tell the printer how the list should be formatted
-(more on this later). Then a print preview of the report is opened.
+This code create a new ``ListCtrlPrinter``, telling it what ``ListCtrl`` it should print
+and what the report should be titled. Then a print preview of the report is opened.
 
 A more complete example might look like this::
 
@@ -67,7 +66,6 @@ Primary commands
 
 The ``ListCtrlPrinter`` has commands that match the normal printing commands, which should
 be hooked into the menu structure of your application.
-
 
 * ``PageSetup()``
     Opens the normal "Page Setup" dialog that allows the user to choose the
@@ -101,10 +99,6 @@ The formatting of a report is controlled completely by the ``ReportFormat`` obje
 ``ListCtrlPrinter``. To change the appearance of the report, you change the settings in
 this object.
 
-As was illustrated above, a report consists of various sections (called "blocks"). Each
-of these blocks has a matching ``BlockFormat`` object in the ``ReportFormat``. So, to
-modify the format of the page header, you change the ``ReportFormat.PageHeader`` object.
-
 These properties control the appearance of the report as a whole:
 
 * ``IncludeImages``
@@ -112,14 +106,18 @@ These properties control the appearance of the report as a whole:
 * ``IsColumnHeadingsOnEachPage``
     If this is True, the column headers will be repeated at the top of each page.
 * ``IsShrinkToFit``
-    If this is True, the report will be shrunk so that all the column of the ListCtrl can fit within
+    If this is True, the report will be shrunk so that all the column of the ``ListCtrl`` can fit within
     the width of page.
 * ``UseListCtrlTextFormat``
-    If this is True, the format (text font and color) of the list ctrl cells will be taken
-    from the ListCtrl itself, rather than the ``Cell.BlockFormat`` object. Useful if your
+    If this is True, the format (text font and color) of the rows will be taken
+    from the ``ListCtrl`` itself, rather than the ``Cell.BlockFormat`` object. Useful if your
     ``ListCtrl`` has fancy formatting on the rows that you want to replicate in the printed
-    version of the ``ListCtrl``.
+    version.
 
+As was illustrated above, a report consists of various sections (called "blocks"). Each
+of these blocks has a matching ``BlockFormat`` object in the ``ReportFormat``. To modify
+the appearance of a block, you modify its matching ``BlockFormat`` object. So, to
+modify the format of the page header, you change the ``ReportFormat.PageHeader`` object.
 
 A ``ReportFormat`` object has the following properties which control the appearance of the matching
 sections of the report:
@@ -145,8 +143,8 @@ These properties return ``BlockFormat`` objects, which have the following proper
     are drawn? This can be a numeric (which will be applied to all sides) or it can be
     a collection of the paddings to be applied to the various sides: (left, top, right, bottom).
 * ``TextAlignment``
-    How should text be aligned within this block? Can be wx.ALIGN_LEFT, wx.ALIGN_CENTER, or
-    wx.ALIGN_RIGHT.
+    How should text be aligned within this block? Can be *wx.ALIGN_LEFT*, *wx.ALIGN_CENTER*, or
+    *wx.ALIGN_RIGHT*.
 * ``TextColor``
     In what color should be text be drawn?
 
@@ -167,17 +165,14 @@ In addition to these properties, there are some methods which add various decora
 the blocks:
 
 * ``Background(color=wx.BLUE, toColor=None, space=0)``
-
     This gives the block a solid color background (or a gradient background if *toColor*
     is not None). If *space* is not 0, *space* pixels will be subtracted from all sides
     from the space available to the block.
 
 * ``Frame(pen=None, space=0)``
-
     Draw a rectangle around the block in the given pen
 
 * ``Line(side=wx.BOTTOM, color=wx.BLACK, width=1, toColor=None, space=0, pen=None)``
-
     Draw a line on a given side of the block. If a pen is given, that is used to draw the
     line (and the other parameters are ignored), otherwise a solid line (or a gradient
     line is *toColor* is not None) of *width* pixels is drawn.
@@ -201,12 +196,12 @@ Other things to be aware of
 * A ``ListCtrlPrinter`` only works on ListCtrls that are in report view. It will ignore
   any ListCtrl that is in any other view.
 
-* You can set the left Padding of the ColumnHeader format and Row format to different
+* You can set the left *Padding* of the *ColumnHeader* format and *Row* format to different
   values. This results in the column headers not lining up with the rows. This should be
   understood as a feature.
 
 * For reasons that are still not clear to me, images that come from BMP files will not
   print on some (most?) printers. Images that come from PNG and other formats work fine.
 
-* The ListCtrlPrinter is not designed to be general purpose reporting solution. There are
+* The ``ListCtrlPrinter`` is not designed to be general purpose reporting solution. There are
   no running totals, macro language, or ODBC data sources. It just prints ListCtrls.

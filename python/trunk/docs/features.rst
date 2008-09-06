@@ -77,6 +77,7 @@ Supports all ListCtrl views
 An ObjectListView supports all views: report, list, large and small icons. All functions
 should work equally in all views: editing, check state, icons, selection.
 
+.. _column-widths:
 
 More control over column width
 ------------------------------
@@ -107,10 +108,10 @@ See these recipes:
 Displays a "list is empty" message
 ----------------------------------
 
-Sometimes, an empty ListCtrl could be confusing to the user: did something go wrong?
+An empty ``ListCtrl`` can be confusing to the user: did something go wrong?
 Do I need to wait longer and then something will appear?
 
-An ObjectListView can show a "this list is empty" message when there is nothing
+An ``ObjectListView`` can show a "this list is empty" message when there is nothing
 to show in the list, so that the user knows the control is supposed to be empty.
 
 See this recipe: :ref:`recipe-emptymsg`
@@ -123,12 +124,13 @@ An ObjectListView trivially supports checkboxes on rows. In fact, it supports mu
 checkboxes per row, if you are really keen. See this recipe for more details:
 :ref:`recipe-checkbox`.
 
+.. _alternate-row-backgrounds:
 
 Alternate rows background colors
 --------------------------------
 
-Having subtly different row colours for even and odd rows can make a ListCtrl easier
-for users to read. ObjectListView supports this alternating of background colours.
+Having subtly different row colours for even and odd rows can make a ``ListCtrl`` easier
+for users to read. ``ObjectListView`` supports this alternating of background colours.
 It is enabled by default, and the background colours are controlled by the `evenRowsBackColor`
 and `oddRowsBackColor` attributes.
 
@@ -136,7 +138,7 @@ and `oddRowsBackColor` attributes.
 Custom row formatting
 ---------------------
 
-An ObjectListView allows rows to be formatted with custom colours and fonts. For example,
+An ``ObjectListView`` allows rows to be formatted with custom colours and fonts. For example,
 you could draw clients with debts in red, or big spending customers could be given a gold
 background. See here: :ref:`recipe-formatter`
 
@@ -144,25 +146,26 @@ background. See here: :ref:`recipe-formatter`
 Model object level operations
 -----------------------------
 
-The ObjectListView allows operations at the level that makes most sense to the
+The ``ObjectListView`` allows operations at the level that makes most sense to the
 application: at the level of model objects. Operations like `SelectObjects()`,
 `RefreshObjects()`, `GetSelectedObjects()` and `GetCheckedObjects()` provide a high-level
 interface to the ListCtrl.
 
-The VirtualObjectListView is an unfortunate exception to these features. It does not know
+The ``VirtualObjectListView`` is an unfortunate exception to these features. It does not know
 where any given model object is located in the control (since it never deals with the
 whole list of objects), so these model level operations are not available to it.
 
+.. _search-by-typing:
 
 Searching on the sort column
 ----------------------------
 
-When a user types into a normal ListCtrl, the control tries to find the first row where
+When a user types into a normal ``ListCtrl``, the control tries to find the first row where
 the value in cell 0 begins with the character that the user typed. [This feature is not
-supported by a standard ListCtrl on all platforms, but it is supported on all platforms
-by ObjectListView].
+supported by a standard ``ListCtrl`` on all platforms, but it is supported on all platforms
+by ``ObjectListView``].
 
-ObjectListView extends this idea so that the searching can be done on the column by which
+``ObjectListView`` extends this idea so that the searching can be done on the column by which
 the control is sorted (the "sort column"). If your music collection is sorted by "Album"
 and the user presses "z", ObjectListView will move the selection to the first track of the
 "Zooropa" album, rather than find the next track whose title starts with "z".
@@ -174,10 +177,54 @@ string value columns (e.g. Name, Artist, Album, Genre).
 Fast searching on sorted column
 -------------------------------
 
-When the user types something into a control, the ObjectListView will use a binary search
+When the user types something into a control, the ``ObjectListView`` will use a binary search
 (if possible) to find a match for what was typed. A binary search is normally possible if
-the ObjectListView is sorted on a column that shows strings.
+the ``ObjectListView`` is sorted on a column that shows strings.
 
 A binary search is able to handle very large collections: 10,000,000 rows can be searched
 in about 24 comparisons. This makes it feasible to seach by typing even on large virtual
 lists.
+
+.. _filtering:
+
+Filtering
+---------
+
+By calling ``SetFilter()``, you can dynamically filter the model objects that are presented
+to the user in the control.
+
+A filter is a callable that accepts a single parameter, which is the list of model objects
+provided to the ``ObjectListView`` via the ``SetObjects()`` method. The filter should
+return the list of objects that will be presented to the user.
+
+The supplied module ``Filter`` provides some useful standard filters:
+
+* ``Filter.Predicate(booleanCallable)``
+    Show only the model objects for which the given callable returns true. The callable must
+    accept a single parameter, which is the model object to be considered.
+
+* ``Filter.Head(n)``
+    Show only the first N model objects.
+
+* ``Filter.Tail(n)``
+    Show only the last N model objects. Useful to watching logs.
+
+* ``Filter.TextSearch(objectListView, columns=(), text="")``
+    Show only model objects that contain *text* in one of the given columns. If *columns*
+    is empty, all columns from the ``ObjectListView`` will be considered.
+
+* ``Filter.Chain(filters)``
+    Show only model objects which satisfy all of the given filters.
+
+Filtering and performance
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Most filters impose a performance penalty on the rebuilding of an ``ObjectListViews`` contents.
+
+This is because they (normally) examine each model object provided to the ``SetObjects()``
+method and decide if it should be included. Thus, a filter normally has a O(n) performance hit.
+
+However, for a plain vanilla ``ObjectListView``, if the filter significantly reduces the
+number of displayed rows, rebuilding the list may be *faster* with the filter installed,
+since building N/2 rows (for example) is faster than building N rows. This does not apply for
+``FastObjectListViews``, since it only builds rows when they are displayed.

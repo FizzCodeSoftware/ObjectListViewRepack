@@ -3,6 +3,13 @@
 Major Classes Reference
 =======================
 
+* :ref:objectlistview-class
+* :ref:columndefn-class
+* :ref:grouplistview-class
+* :ref:batchedupdate-class
+
+.. _objectlistview-class:
+
 ObjectListView
 --------------
 
@@ -12,6 +19,8 @@ ObjectListView
    .. automethod:: ObjectListView.ObjectListView.__init__
 
 ----------------------------------------------
+
+.. _columndefn-class:
 
 ColumnDefn
 ----------
@@ -23,6 +32,8 @@ ColumnDefn
 
 ----------------------------------------------
 
+.. _grouplistview-class:
+
 GroupListView
 -------------
 
@@ -30,3 +41,13 @@ GroupListView
    :members:
 
    .. automethod:: ObjectListView.GroupListView.__init__
+
+
+----------------------------------------------
+
+.. _batchedupdate-class:
+
+BatchedUpdate
+-------------
+
+.. autoclass:: ObjectListView.BatchedUpdate
