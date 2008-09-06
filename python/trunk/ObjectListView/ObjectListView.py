@@ -8,6 +8,11 @@
 # License:      wxWindows license
 #----------------------------------------------------------------------------
 # Change log:
+# 2008/09/02  JPP   - Added BatchedUpdate adaptor
+#                   - Improved speed of selecting and refreshing by keeping a map
+#                     of objects to indicies
+#                   - Added GetIndexOf()
+#                   - Removed flicker from FastObjectListView.AddObjects() and RefreshObjects()
 # 2008/08/27  JPP   - Implemented filtering
 #                   - Added GetObjects() and GetFilteredObjects()
 #                   - Added resortNow parameter to SetSortColumn()
@@ -67,6 +72,7 @@ The major features of an `ObjectListView` are:
     * Supports alternate rows background colors.
     * Supports checkbox columns
     * Supports searching (by typing) on the sorted column -- even on virtual lists.
+    * Supports filtering of rows
     * The `FastObjectListView` version can build a list of 10,000 objects in less than 0.1 seconds.
     * The `VirtualObjectListView` version supports millions of rows through ListCtrl's virtual mode.
     * The `GroupListView` version partitions it's rows into collapsible groups.
@@ -243,6 +249,7 @@ class ObjectListView(wx.ListCtrl):
         self.searchPrefix = u""
         self.whenLastTypingEvent = 0
         self.filter = None
+        self.objectToIndexMap = None
 
         self.rowFormatter = kwargs.pop("rowFormatter", None)
         self.useAlternateBackColors = kwargs.pop("useAlternateBackColors", True)
@@ -503,7 +510,6 @@ class ObjectListView(wx.ListCtrl):
         if len(self.innerList) == 0:
             return self.SetObjects(modelObjects)
 
-        # This technique of adding objects will not work if we support filtering on the inner list
         try:
             self.Freeze()
             originalSize = len(self.innerList)
@@ -750,7 +756,6 @@ class ObjectListView(wx.ListCtrl):
                 item.Clear()
                 self._InsertUpdateItem(item, i, x, True)
 
-
             # Auto-resize once all the data has been added
             self.AutoSizeColumns()
         finally:
@@ -782,16 +787,14 @@ class ObjectListView(wx.ListCtrl):
             self.SetStringItem(index, iCol, self.GetStringValueAt(modelObject, iCol),
                                self.GetImageAt(modelObject, iCol))
 
+
     def RefreshObject(self, modelObject):
         """
         Refresh the display of the given model
         """
-        try:
-            i = self.innerList.index(modelObject)
-        except ValueError:
-            return
-
-        self.RefreshIndex(self._MapModelIndexToListIndex(i), modelObject)
+        idx = self.GetIndexOf(modelObject)
+        if idx != -1:
+            self.RefreshIndex(self._MapModelIndexToListIndex(idx), modelObject)
 
 
     def RefreshObjects(self, aList):
@@ -805,6 +808,12 @@ class ObjectListView(wx.ListCtrl):
         finally:
             self.Thaw()
 
+
+    def RemoveObject(self, modelObject):
+        """
+        Remove the given object from our collection of objects.
+        """
+        self.RemoveObjects([modelObject])
 
 
     def RemoveObjects(self, modelObjects):
@@ -839,7 +848,7 @@ class ObjectListView(wx.ListCtrl):
         unoccupied width of the listview
         """
         # If the list isn't in report view or there are no space filling columns, just return
-        if not self.HasFlag(wx.LC_REPORT):
+        if not self.InReportView():
             return
 
         # Don't do anything if there are no space filling columns
@@ -944,6 +953,9 @@ class ObjectListView(wx.ListCtrl):
         else:
             self.innerList = self.modelObjects
 
+        # Our map isn't valid after doing this
+        self.objectToIndexMap = None
+
 
     def ToggleCheck(self, modelObject):
         """
@@ -1006,6 +1018,34 @@ class ObjectListView(wx.ListCtrl):
         Return the index of the row that has the focus. -1 means no focus
         """
         return self.GetNextItem(-1, wx.LIST_NEXT_ALL, wx.LIST_STATE_FOCUSED)
+
+
+    def GetIndexOf(self, modelObject):
+        """
+        Return the index of the given modelObject in the list.
+
+        This method works on the visible item in the control. If a filter
+        is in place, not all model object given to SetObjects() are visible.
+        """
+        # Rebuild our index map if it has been invalidated. The TypeError
+        # exceptions are for objects that cannot be hashed (like lists)
+        if self.objectToIndexMap is None:
+            self.objectToIndexMap = dict()
+            for (i, x) in enumerate(self.innerList):
+                try:
+                    self.objectToIndexMap[x] = i
+                except TypeError:
+                    pass
+
+        # Use our map to find the object (but fall back to simple search
+        # for non-hashable objects)
+        try:
+            return self.objectToIndexMap.get(modelObject, -1)
+        except TypeError:
+            try:
+                return self.innerList.index(modelObject)
+            except ValueError:
+                return -1
 
 
     def GetImageAt(self, modelObject, columnIndex):
@@ -1173,7 +1213,7 @@ class ObjectListView(wx.ListCtrl):
         """
         Set the column by which the rows should be sorted.
 
-        'column' can be None (which clears the setting), a ColumnDefn,
+        'column' can be None (which makes the list be unsorted), a ColumnDefn,
         or the index of the column desired
         """
         if column is None:
@@ -1803,6 +1843,9 @@ class ObjectListView(wx.ListCtrl):
 
         modelObjects.sort(key=_getSortValue, reverse=(not self.sortAscending))
 
+        # Sorting invalidates our object map
+        self.objectToIndexMap = None
+
 
     def _UpdateColumnSortIndicators(self, sortColumnIndex=None, oldSortColumnIndex=-1):
         """
@@ -1834,37 +1877,24 @@ class ObjectListView(wx.ListCtrl):
         """
         Selected all rows in the control
         """
-        # On Windows, -1 indicates 'all items'. Not sure about other platforms
+        # -1 indicates 'all items'
         self.SetItemState(-1, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
-
-                    # Elsewhere, use this code. But it's much slower especially for virtual lists
-        #if wx.Platform != "__WXMSW__":
-        #    for i in range(self.GetItemCount()):
-        #        self.SetItemState(i, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
 
 
     def DeselectAll(self):
         """
         De-selected all rows in the control
         """
-        # On Windows, -1 indicates 'all items'. Not sure about other platforms
+        # -1 indicates 'all items'
         self.SetItemState(-1, 0, wx.LIST_STATE_SELECTED)
-
-                    # Elsewhere, use this code. But it's much slower especially for virtual lists
-        #if wx.Platform != "__WXMSW__":
-        #    i = self.GetNextItem(-1, wx.LIST_NEXT_ALL, wx.LIST_STATE_SELECTED)
-        #    while i != -1:
-        #        self.SetItemState(i, 0, wx.LIST_STATE_SELECTED)
-        #        i = self.GetNextItem(i, wx.LIST_NEXT_ALL, wx.LIST_STATE_SELECTED)
 
 
     def SelectObject(self, modelObject, deselectOthers=True, ensureVisible=False):
         """
         Select the given modelObject. If deselectOthers is True, all other rows will be deselected
         """
-        try:
-            i = self.innerList.index(modelObject)
-        except ValueError:
+        i = self.GetIndexOf(modelObject)
+        if i == -1:
             return
 
         if deselectOthers:
@@ -1884,24 +1914,8 @@ class ObjectListView(wx.ListCtrl):
         if deselectOthers:
             self.DeselectAll()
 
-        # Select each modelObject that is in 'modelObjects'
-        try:
-            objectSet = set(modelObjects)
-        except TypeError:
-            # Some objects cannot be hashed and so can be added to a set. Lists are like that.
-            # We just use a less efficient method of finding them
-            objectSet = list(modelObjects)
-
-        if not objectSet:
-            return
-
-        for (i, x) in enumerate(self.innerList):
-            if x in objectSet:
-                self.SetItemState(self._MapModelIndexToListIndex(i),
-                                  wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
-                objectSet.remove(x)
-                if not objectSet:
-                    break
+        for x in modelObjects:
+            self.SelectObject(x, False)
 
 
     def _MapModelIndexToListIndex(self, modelIndex):
@@ -2180,30 +2194,13 @@ class AbstractVirtualObjectListView(ObjectListView):
     #----------------------------------------------------------------------------
     # Commands
 
-    def SetObjectGetter(self, aCallable):
-        """
-        Remember the callback that will be used to fetch the objects being displayed in
-        this list
-        """
-        self.objectGetter = aCallable
-
-
-    def SetItemCount(self, count):
-        """
-        Change the number of items visible in the list
-        """
-        wx.ListCtrl.SetItemCount(self, count)
-        self.stEmptyListMsg.Show(count == 0)
-        #self.Refresh()
-        self.lastGetObjectIndex = -1
-
-
     def ClearAll(self):
         """
         Remove all items and columns
         """
         ObjectListView.ClearAll(self)
         self.lastGetObjectIndex = -1
+        # Should this call SetItemCount()?
 
 
     def DeleteAllItems(self):
@@ -2212,24 +2209,15 @@ class AbstractVirtualObjectListView(ObjectListView):
         """
         ObjectListView.DeleteAllItems(self)
         self.lastGetObjectIndex = -1
+        # Should this call SetItemCount()?
 
 
-    def RepopulateList(self):
+    def RefreshIndex(self, index, modelObject):
         """
-        Completely rebuild the contents of the list control
+        Refresh the item at the given index with data associated with the given modelObject
         """
-        # Virtual lists never need to rebuild -- they simply redraw
-        self.RefreshObjects()
-
-
-    def RefreshObjects(self, aList=None):
-        """
-        Refresh all the objects in the given list
-        """
-        # We can only refresh everything
         self.lastGetObjectIndex = -1
-        self.RefreshItems(0, self.GetItemCount()-1)
-        self.Refresh()
+        self.RefreshItem(index)
 
 
     def RefreshObject(self, modelObject):
@@ -2240,12 +2228,39 @@ class AbstractVirtualObjectListView(ObjectListView):
         self.RefreshObjects()
 
 
-    def RefreshIndex(self, index, modelObject):
+    def RefreshObjects(self, aList=None):
         """
-        Refresh the item at the given index with data associated with the given modelObject
+        Refresh all the objects in the given list
         """
+        # We can only refresh everything
         self.lastGetObjectIndex = -1
-        self.RefreshItem(index)
+        self.RefreshItems(0, self.GetItemCount()-1)
+        #self.Refresh()
+
+
+    def RepopulateList(self):
+        """
+        Completely rebuild the contents of the list control
+        """
+        # Virtual lists never need to rebuild -- they simply redraw
+        self.RefreshObjects()
+
+
+    def SetItemCount(self, count):
+        """
+        Change the number of items visible in the list
+        """
+        wx.ListCtrl.SetItemCount(self, count)
+        self.stEmptyListMsg.Show(count == 0)
+        self.lastGetObjectIndex = -1
+
+
+    def SetObjectGetter(self, aCallable):
+        """
+        Remember the callback that will be used to fetch the objects being displayed in
+        this list
+        """
+        self.objectGetter = aCallable
 
 
     def _FormatAllRows(self):
@@ -2424,7 +2439,6 @@ class FastObjectListView(AbstractVirtualObjectListView):
 
         self.SetObjectGetter(lambda index: self.innerList[index])
 
-
     #----------------------------------------------------------------------------
     # Commands
 
@@ -2433,7 +2447,27 @@ class FastObjectListView(AbstractVirtualObjectListView):
         Add the given collections of objects to our collection of objects.
         """
         self.modelObjects.extend(modelObjects)
-        self.RepopulateList()
+        # We don't want to call RepopulateList() here since that makes the whole
+        # control redraw, which flickers slightly, which I *really* hate! So we
+        # most of the work of RepopulateList() but only redraw from the first
+        # added object down.
+        self._SortObjects()
+        self._BuildInnerList()
+        self.SetItemCount(len(self.innerList))
+
+        # Find where the first added object appears and make that and everything
+        # after it redraw
+        first = self.GetItemCount()
+        for x in modelObjects:
+            # Because of filtering the added objects may not be in the list
+            idx = self.GetIndexOf(x)
+            if idx != -1:
+                first = min(first, idx)
+                if first == 0:
+                    break
+
+        if first < self.GetItemCount():
+            self.RefreshItems(first, self.GetItemCount() - 1)
 
 
     def RepopulateList(self):
@@ -2444,10 +2478,25 @@ class FastObjectListView(AbstractVirtualObjectListView):
         self._SortObjects()
         self._BuildInnerList()
         self.SetItemCount(len(self.innerList))
-        self.Refresh()
+        self.RefreshObjects()
 
         # Auto-resize once all the data has been added
         self.AutoSizeColumns()
+
+
+    def RefreshObjects(self, aList=None):
+        """
+        Refresh all the objects in the given list
+        """
+        self.lastGetObjectIndex = -1
+        # If no list is given, refresh everything
+        if aList:
+            for x in aList:
+                idx = self.GetIndexOf(x)
+                if idx != -1:
+                    self.RefreshItem(idx)
+        else:
+            self.RefreshItems(0, self.GetItemCount() - 1)
 
     #----------------------------------------------------------------------------
     #  Accessing
@@ -2471,6 +2520,7 @@ class FastObjectListView(AbstractVirtualObjectListView):
         """
         selection = self.GetSelectedObjects()
         self._SortObjects()
+
         self.SelectObjects(selection)
         self.RefreshObjects()
 
@@ -2790,6 +2840,7 @@ class GroupListView(FastObjectListView):
         This internal list is an amalgum of model objects, ListGroups
         and None (which are blank rows).
         """
+        self.objectToIndexMap = None
         if not self.showGroups:
             return ObjectListView._BuildInnerList(self)
 
@@ -2962,7 +3013,7 @@ class GroupListView(FastObjectListView):
         self.SetItemCount(len(self.innerList))
 
         # Refresh eveything from the first group down
-        i = min([self.innerList.index(x) for x in evt.groups])
+        i = min([self.GetIndexOf(x) for x in evt.groups])
         self.RefreshItems(i, len(self.innerList)-1)
 
         # Let the world know that the given groups have been expanded/collapsed
@@ -2976,12 +3027,10 @@ class GroupListView(FastObjectListView):
         if necessary
         """
         # If it is already there, just make sure it is visible
-        try:
-            i = self.innerList.index(modelObject)
+        i = self.GetIndexOf(modelObject)
+        if i != -1:
             self.EnsureVisible(i)
             return True
-        except ValueError:
-            pass
 
         # Find which group (if any) the object belongs to, and
         # expand it and then try to reveal it again
@@ -3831,7 +3880,229 @@ class NamedImageList(object):
         """
         return self.nameToImageIndexMap.get(name, -1)
 
-#-------------------------------------------------------------------------------
+#======================================================================
+
+class BatchedUpdate(object):
+    """
+    This class is an *Adapter* around an ``ObjectListView`` which ensure that the list is updated, at most,
+    once every *N* seconds.
+
+    Usage::
+
+        self.olv2 = BatchedUpdate(self.olv, 3)
+        # Now use olv2 in place of olv, and the list will only be updated at most once
+        # every 3 second, no many how many calls are made to it.
+
+    This is useful for a certain class of problem where model objects are update frequently -- more
+    frequently than you wish to update the control. A backup program may be able to backup several
+    files a second, but does not wish to update the list ctrl that often. A packet sniffer will
+    receive hundreds of packets per second, but should not try to update the list ctrl for each
+    packet. A batched update adapter solves situations like these in a trivial manner.
+
+    This class only intercepts the following messages:
+        * ``AddObject()``, ``AddObjects()``
+        * ``RefreshObject()``, ``RefreshObjects()``
+        * ``RemoveObject()``, ``RemoveObjects()``
+        * ``RepopulateList()``
+        * ``SetObjects()``
+
+    All other message are passed directly to the ``ObjectListView`` and are thus unbatched. This means
+    that sorting and changes to columns are unbatched and will take effect immediately.
+
+    You need to be a little careful when using batched updates. There are at least two things
+    you need to avoid, or at least be careful about:
+
+    1) Don't mix batched and unbatched updates. If you go behind the back of the batched update
+       wrapper and make direct changes to the underlying control, you will probably get bitten by
+       difficult-to-reproduce bugs. For example::
+
+            self.olvBatched.SetObjects(objects) # Batched update
+            self.olvBatched.objectlistView.AddObject(aModel) # unbatched update
+
+       This will almost certainly not do what you expect, or at best, will only sometimes do
+       what you want.
+
+    2) You cannot assume that objects will immediately appear in the list and
+       thus be available for further operations. For example::
+
+            self.olv.AddObject(aModel)
+            self.olv.Check(aModel)
+
+       If *self.olv* is a batched update adapter, this code *may* not work since the
+       ``AddObject()`` might not have yet taken effect, so the ``Check()`` will not find
+       *aModel* in the control. Worse, it may work most of the time and fail only occassionally.
+
+       If you need to be able to do further processing on objects just added, it would be better
+       not to use a batched adapter.
+
+    """
+
+    # For SetObjects(), None and empty list are both possible valid values so we need a
+    # non-valid value that indicates that SetObjects() has not been called
+    NOT_SET = -1
+
+    def __init__(self, objectListView, updatePeriod=0):
+        self.objectListView = objectListView # Must not be None
+        self.updatePeriod = updatePeriod
+
+        self.objectListView.Bind(wx.EVT_IDLE, self._HandleIdle)
+
+        self.newModelObjects = BatchedUpdate.NOT_SET
+        self.objectsToAdd = list()
+        self.objectsToRefresh = list()
+        self.objectsToRemove = list()
+        self.freezeUntil = 0
+
+
+    def __getattr__(self, name):
+        """
+        Forward any unknown references to the original objectListView.
+
+        This is what allows us to pretend to be an ObjectListView.
+        """
+        return getattr(self.objectListView, name)
+
+
+    def RepopulateList(self):
+        """
+        Remember the given model objects so that they can be displayed when the next update cycle occurs
+        """
+        if self.freezeUntil < time.clock():
+            self.objectListView.RepopulateList()
+            self.freezeUntil = time.clock() + self.updatePeriod
+            return
+
+        self.newModelObjects = self.objectListView.modelObjects
+        self.objectsToRefresh = list()
+
+        # Unlike SetObjects(), refreshing the list does NOT invalidate the objects to be added/removed
+
+
+    def SetObjects(self, modelObjects):
+        """
+        Remember the given model objects so that they can be displayed when the next update cycle occurs
+        """
+        if self.freezeUntil < time.clock():
+            self.objectListView.SetObjects(modelObjects)
+            self.freezeUntil = time.clock() + self.updatePeriod
+            return
+
+        self.newModelObjects = modelObjects
+        # Explicitly setting the objects to be shown renders void any previous Add/Refresh/Remove commands
+        self.objectsToAdd = list()
+        self.objectsToRefresh = list()
+        self.objectsToRemove = list()
+
+
+    def AddObject(self, modelObject):
+        """
+        Add the given object to our collection of objects.
+
+        The object will appear at its sorted location, or at the end of the list if
+        the list is unsorted
+        """
+        self.AddObjects([modelObject])
+
+
+    def AddObjects(self, modelObjects):
+        """
+        Remember the given model objects so that they can be added when the next update cycle occurs
+        """
+        if self.freezeUntil < time.clock():
+            self.objectListView.AddObjects(modelObjects)
+            self.freezeUntil = time.clock() + self.updatePeriod
+            return
+
+        # TODO: We should check that none of the model objects is already in the list
+        self.objectsToAdd.extend(modelObjects)
+
+        # Since we are adding these objects, we must no longer remove them
+        if self.objectsToRemove:
+            for x in modelObjects:
+                self.objectsToRemove.remove(x)
+
+
+    def RefreshObject(self, modelObject):
+        """
+        Refresh the display of the given model
+        """
+        self.RefreshObjects([modelObject])
+
+
+    def RefreshObjects(self, modelObjects):
+        """
+        Refresh the information displayed about the given model objects
+        """
+        if self.freezeUntil < time.clock():
+            self.objectListView.RefreshObjects(modelObjects)
+            self.freezeUntil = time.clock() + self.updatePeriod
+            return
+
+        self.objectsToRefresh.extend(modelObjects)
+
+
+    def RemoveObject(self, modelObjects):
+        """
+        Remember the given model objects so that they can be removed when the next update cycle occurs
+        """
+        self.RemoveObjects([modelObject])
+
+
+    def RemoveObjects(self, modelObjects):
+        """
+        Remember the given model objects so that they can be removed when the next update cycle occurs
+        """
+        if self.freezeUntil < time.clock():
+            self.objectListView.RemoveObjects(modelObjects)
+            self.freezeUntil = time.clock() + self.updatePeriod
+            return
+
+        self.objectsToRemove.extend(modelObjects)
+
+        # Since we are removing these objects, we must no longer add them
+        if self.objectsToAdd:
+            for x in modelObjects:
+                self.objectsToAdd.remove(x)
+
+    #----------------------------------------------------------------------------
+    # Event processing
+
+    def _HandleIdle(self, evt):
+        """
+        The app is idle. Process any outstanding requests
+        """
+        if (self.newModelObjects != BatchedUpdate.NOT_SET or
+            self.objectsToAdd or
+            self.objectsToRefresh or
+            self.objectsToRemove):
+            if self.freezeUntil < time.clock():
+                self._ApplyChanges()
+            else:
+                evt.RequestMore()
+
+    def _ApplyChanges(self):
+        """
+        Apply any batched changes to the list
+        """
+        if self.newModelObjects != BatchedUpdate.NOT_SET:
+            self.objectListView.SetObjects(self.newModelObjects)
+
+        if self.objectsToAdd:
+            self.objectListView.AddObjects(self.objectsToAdd)
+
+        if self.objectsToRemove:
+            self.objectListView.RemoveObjects(self.objectsToRemove)
+
+        if self.objectsToRefresh:
+            self.objectListView.RefreshObjects(self.objectsToRefresh)
+
+        self.newModelObjects = BatchedUpdate.NOT_SET
+        self.objectsToAdd = list()
+        self.objectsToRemove = list()
+        self.objectsToRefresh = list()
+        self.freezeUntil = time.clock() + self.updatePeriod
+
+#----------------------------------------------------------------------------
 # Built in images so clients don't have to do the same
 
 import cStringIO, zlib
@@ -3848,8 +4119,6 @@ def _getSmallUpArrowBitmap():
     stream = cStringIO.StringIO(_getSmallUpArrowData())
     return wx.BitmapFromImage(wx.ImageFromStream(stream))
 
-#----------------------------------------------------------------------
-
 def _getSmallDownArrowData():
     return zlib.decompress(
 'x\xda\xeb\x0c\xf0s\xe7\xe5\x92\xe2b``\xe0\xf5\xf4p\t\x02\xd2\x02 \xcc\xc1\
@@ -3858,7 +4127,6 @@ def _getSmallDownArrowData():
 \x8b!v\xd2\x844\x1e\xe6\x0f\x92M\xde2\xd9\x12\x0b\xb4\x8f\xbd6rSK\x9b\xb3c\
 \xe1\xc2\x87\xf6v\x95@&\xdb\xb1\x8bK|v22,W\x12\xd0\xdb-\xc4\xe4\x044\x9b\xc1\
 \xd3\xd5\xcfe\x9dSB\x13\x00$1+:' )
-
 
 def _getSmallDownArrowBitmap():
     stream = cStringIO.StringIO(_getSmallDownArrowData())
