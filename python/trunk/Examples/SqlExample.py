@@ -181,7 +181,7 @@ class MyFrame(wx.Frame):
         Figure out the primary key of the table involved in the given statement.
         """
         # Can we find the name of the table involved?
-        match = re.search(r"from\s+(\b.+\b)", stmt, flags=re.IGNORECASE)
+        match = re.search(r"from\s+(\b[a-z0-9$@_]+\b)", stmt, flags=re.IGNORECASE)
         if not match:
             return
 
