@@ -16,7 +16,7 @@ namespace BrightIdeasSoftware.Tests
 	/// Description of Person.
 	/// </summary>
 
-	class Person
+	public class Person
 	{
         public bool? IsActive = null;
 
@@ -49,6 +49,7 @@ namespace BrightIdeasSoftware.Tests
             this.Comments = other.Comments;
         }
 
+        // Allows tests for properties.
         public string Name
         {
             get { return name; }
@@ -56,7 +57,6 @@ namespace BrightIdeasSoftware.Tests
         }
         private string name;
 
-        // Allows tests for fields.
         public string Occupation
         {
             get { return occupation; }
@@ -64,6 +64,12 @@ namespace BrightIdeasSoftware.Tests
         }
         private string occupation;
 
+
+        public Person Parent
+        {
+            get { return this; }
+        }
+	
 		public int CulinaryRating {
 			get { return culinaryRating; }
             set { culinaryRating = value; }
@@ -82,7 +88,8 @@ namespace BrightIdeasSoftware.Tests
             set { this.BirthDate = new DateTime(value, birthDate.Month, birthDate.Day); }
         }
 
-        public double GetRate()
+        // Allows tests for methods
+        virtual public double GetRate()
         {
             return hourlyRate;
         }
@@ -96,7 +103,25 @@ namespace BrightIdeasSoftware.Tests
 		// Allows tests for fields.
         public string Photo;
         public string Comments;
-		public int serialNumber;
         public bool CanTellJokes;
-}
+    }
+
+    public class Person2 : Person
+    {
+        public Person2(string name, string occupation, int culinaryRating, DateTime birthDate, double hourlyRate, bool canTellJokes, string photo, string comments)
+            : base(name, occupation, culinaryRating, birthDate, hourlyRate, canTellJokes, photo, comments)
+        {
+        }
+
+        public override double GetRate()
+        {
+            return base.GetRate() * 2;
+        }
+
+        new public int CulinaryRating
+        {
+            get { return base.CulinaryRating * 2; }
+            set { base.CulinaryRating = value; }
+        }
+    }
 }

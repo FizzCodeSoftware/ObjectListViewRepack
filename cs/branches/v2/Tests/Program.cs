@@ -27,9 +27,9 @@ namespace BrightIdeasSoftware.Tests
 //			Application.EnableVisualStyles();
 //			Application.SetCompatibleTextRenderingDefault(false);
 //			Application.Run(new MainForm());
-			TestAspectGeneration t = new TestAspectGeneration();
-			t.Init();
-			t.TestMethod();
+            TestAspectGeneration t = new TestAspectGeneration();
+            t.Init();
+            t.TestOverriddenProperty();
 		}
 		
 	}
