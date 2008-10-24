@@ -5,6 +5,7 @@
  * Date: 27/09/2008 9:15 AM
  *
  * Change log:
+ * 2008-10-24   JPP  - Generate dynamic methods MkII. This one handles value types
  * 2008-10-21   JPP  - Generate dynamic methods
  * 2008-09-27   JPP  - Separated from ObjectListView.cs
  * 
@@ -332,85 +333,105 @@ namespace BrightIdeasSoftware
                 this.AspectGetter = this.GenerateAspectGetter(typeof(T), this.column.AspectName);
         }
 
-        public int GenerateAspectGetter2(Type t)
-        {
-            return t.Name.Length;
-        }
-
+        /// <summary>
+        /// Generates an aspect getter method dynamically. The method will execute
+        /// the given dotted chain of selectors against a model object given at runtime.
+        /// </summary>
+        /// <param name="type">The type of model object to be passed to the generated method</param>
+        /// <param name="path">A dotted chain of selectors. Each selector can be the name of a 
+        /// field, property or parameter-less method.</param>
+        /// <returns>A typed delegate</returns>
         private TypedAspectGetterDelegate GenerateAspectGetter(Type type, string path)
         {
-            DynamicMethod accessor = new DynamicMethod(String.Empty,
-                typeof(Object), new Type[] { typeof(T) }, typeof(TypedColumn<T>), true);
-            ILGenerator il = accessor.GetILGenerator();
+            DynamicMethod getter = new DynamicMethod(String.Empty,
+                typeof(Object), new Type[] { type }, type, true);
+            this.GenerateIL(type, path, getter.GetILGenerator());
+            return (TypedAspectGetterDelegate)getter.CreateDelegate(typeof(TypedAspectGetterDelegate));
+        }
+
+        /// <summary>
+        /// This method generates the actual IL for the method.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="path"></param>
+        /// <param name="il"></param>
+        private void GenerateIL(Type type, string path, ILGenerator il)
+        {
+            // Push our model object onto the stack
             il.Emit(OpCodes.Ldarg_0);
 
-            foreach (string pathPart in path.Split('.')) {
-                type = this.GeneratePart(il, type, pathPart);
+            // Generate the IL to access each part of the dotted chain
+            string[] parts = path.Split('.');
+            for (int i = 0; i < parts.Length; i++ ) {
+                type = this.GeneratePart(il, type, parts[i], (i==parts.Length-1));
                 if (type == null)
                     break;
             }
 
+            // If the object to be returned is a value type (e.g. int, bool), it
+            // must be boxed, since the delegate returns an Object
             if (type != null && type.IsValueType && !typeof(T).IsValueType)
                 il.Emit(OpCodes.Box, type);
 
             il.Emit(OpCodes.Ret);
-
-            return (TypedAspectGetterDelegate)accessor.CreateDelegate(typeof(TypedAspectGetterDelegate));
         }
 
-        private Type GeneratePart(ILGenerator il, Type type, string pathPart)
+        private Type GeneratePart(ILGenerator il, Type type, string pathPart, bool isLastPart)
         {
-        	BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance |
-                BindingFlags.InvokeMethod | BindingFlags.GetProperty | BindingFlags.GetField;
+            // TODO: Generate check for null
 
-            MethodInfo methodInfo = type.GetMethod(pathPart);
-            if (methodInfo != null) {
-                il.Emit(OpCodes.Callvirt, methodInfo);
-                return methodInfo.ReturnType;
+            // Find the first member with the given nam that is a field, property, or parameter-less method
+            List<MemberInfo> infos = new List<MemberInfo>(type.GetMember(pathPart));
+            MemberInfo info = infos.Find(delegate(MemberInfo x) {
+                if (x.MemberType == MemberTypes.Field || x.MemberType == MemberTypes.Property)
+                    return true;
+                if (x.MemberType == MemberTypes.Method)
+                    return ((MethodInfo)x).GetParameters().Length == 0;
+                else
+                    return false;
+            });
+                        
+            // If we couldn't find anything with that name, pop the current result and return an error
+            if (info == null) {
+                il.Emit(OpCodes.Pop);
+                il.Emit(OpCodes.Ldstr, String.Format("'{0}' is not a parameter-less method, property or field of type '{1}'", pathPart, type.FullName));
+                return null;
             }
 
-            PropertyInfo propInfo = type.GetProperty(pathPart);
-            if (propInfo != null) {
-                il.Emit(OpCodes.Callvirt, propInfo.GetGetMethod());
-                return propInfo.PropertyType;
+            // Generate the correct IL to access the member. We remember the type of object that is going to be returned
+            // so that we can do a method lookup on it at the next iteration
+            Type resultType = null;
+            switch (info.MemberType) {
+                case MemberTypes.Method:
+                    MethodInfo mi = (MethodInfo)info;
+                    if (mi.IsVirtual)
+                        il.Emit(OpCodes.Callvirt, mi);
+                    else
+                        il.Emit(OpCodes.Call, mi);
+                    resultType = mi.ReturnType;
+                    break;
+                case MemberTypes.Property:
+                    PropertyInfo pi = (PropertyInfo)info;
+                    il.Emit(OpCodes.Call, pi.GetGetMethod());
+                    resultType = pi.PropertyType;
+                    break;
+                case MemberTypes.Field:
+                    FieldInfo fi = (FieldInfo)info;
+                    il.Emit(OpCodes.Ldfld, fi);
+                    resultType = fi.FieldType;
+                    break;
             }
 
-            FieldInfo fieldInfo = type.GetField(pathPart, flags);
-            if (fieldInfo != null) {
-                il.Emit(OpCodes.Ldfld, fieldInfo);
-                return fieldInfo.FieldType;
-            }
+            // If the method returned a value type, and something is going to call a method on that value,
+            // we need to load its address onto the stack, rather than the object itself.
+            if (resultType.IsValueType && !isLastPart) {
+                LocalBuilder lb = il.DeclareLocal(resultType);
+                il.Emit(OpCodes.Stloc, lb);
+                il.Emit(OpCodes.Ldloca, lb);
+            } 
 
-            il.Emit(OpCodes.Ldstr, String.Format(
-                "No method, property or field '{0}' found for type '{1}'",
-                pathPart, type.FullName));
-            return null;
+            return resultType;
         }
-
-        //private static Type GeneratePathIL(Type type, ILGenerator il, string[] path)
-        //{
-        //    foreach (string fieldOrProperty in path) {
-        //        PropertyInfo property = type.GetProperty(fieldOrProperty);
-                
-        //        if (property != null) {
-        //            il.Emit(OpCodes.Callvirt, property.GetGetMethod());
-        //            type = property.PropertyType;
-        //        } else {
-        //            FieldInfo field = type.GetField(fieldOrProperty);
-
-        //            if (field != null) {
-        //                il.Emit(OpCodes.Ldfld, field);
-        //                type = field.FieldType;
-        //            } else {
-        //                throw new InvalidOperationException(string.Format(
-        //                    "No field or property {0} found for type {1}",
-        //                    fieldOrProperty, type.FullName));
-        //            }
-        //        }
-        //    }
-
-        //    return type;
-        //}
 
         #endregion
     }
