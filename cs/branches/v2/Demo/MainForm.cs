@@ -867,6 +867,7 @@ namespace ObjectListViewDemo
             //this.listViewSimple.SelectedItem = this.listViewSimple.GetNextItem(this.listViewSimple.SelectedItem);
             Person person = new Person("Some One Else " + System.Environment.TickCount);
             this.listViewSimple.AddObject(person);
+            this.listViewSimple.EnsureModelVisible(person);
         }
 
         private void button6_Click(object sender, EventArgs e)
@@ -1586,7 +1587,7 @@ namespace ObjectListViewDemo
 
 	class Person
 	{
-        public bool? IsActive = null;
+        public bool? IsActive = true;
 
 		public Person(string name)
 		{
