@@ -88,7 +88,7 @@ namespace BrightIdeasSoftware
         {
             int index;
 
-            if (this.objectsToIndexMap.TryGetValue(model, out index))
+            if (model != null && this.objectsToIndexMap.TryGetValue(model, out index))
                 return index;
             else
                 return -1;

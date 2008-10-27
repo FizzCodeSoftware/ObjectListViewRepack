@@ -34,6 +34,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Text;
@@ -85,6 +86,8 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// This is the delegate that will be used to decide if a model object can be expanded.
         /// </summary>
+        [Browsable(false),
+        DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public CanExpandGetterDelegate CanExpandGetter
         {
             get { return this.TreeModel.CanExpandGetter; }
@@ -96,6 +99,8 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <remarks>This delegate will only be called if the CanExpand delegate has 
         /// returned true for the model object.</remarks>
+        [Browsable(false),
+        DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public ChildrenGetterDelegate ChildrenGetter
         {
             get { return this.TreeModel.ChildrenGetter; }
@@ -105,6 +110,8 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// The model objects that form the top level branches of the tree.
         /// </summary>
+        [Browsable(false),
+        DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public IEnumerable Roots
         {
             get { return this.TreeModel.InitialBranches; }
@@ -113,7 +120,10 @@ namespace BrightIdeasSoftware
                 // Make sure that column 0 is showing a tree
                 if (this.GetColumn(0).Renderer == null)
                     this.GetColumn(0).Renderer = this.TreeColumnRenderer;
-                this.TreeModel.InitialBranches = value;
+                if (value == null)
+                    this.TreeModel.InitialBranches = new ArrayList();
+                else
+                    this.TreeModel.InitialBranches = value;
                 this.UpdateVirtualListSize();
             }
         }
@@ -121,6 +131,8 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// The renderer that will be used to draw the tree structure
         /// </summary>
+        [Browsable(false),
+        DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public BaseRenderer TreeColumnRenderer
         {
             get { return treeRenderer; }
@@ -554,7 +566,7 @@ namespace BrightIdeasSoftware
             {
                 int idx;
 
-                if (this.mapObjectToIndex.TryGetValue(model, out idx))
+                if (model != null && this.mapObjectToIndex.TryGetValue(model, out idx))
                     return idx;
                 else
                     return -1;
@@ -604,7 +616,8 @@ namespace BrightIdeasSoftware
 
             public void SetObjects(IEnumerable collection)
             {
-                throw new InvalidOperationException("Objects cannot be removed to a Tree via this method.");
+                // We interpret a SetObjects() call as setting the roots of the tree
+                this.treeView.Roots = collection;
             }
 
             #endregion

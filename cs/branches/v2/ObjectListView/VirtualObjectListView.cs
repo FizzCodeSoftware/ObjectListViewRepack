@@ -5,6 +5,8 @@
  * Date: 27/09/2008 9:15 AM
  *
  * Change log:
+ * 2008-10-28   JPP  - Handle SetSelectedObjects(null)
+ * 2008-10-02   JPP  - MAJOR CHANGE: Use IVirtualListDataSource
  * 2008-09-27   JPP  - Separated from ObjectListView.cs
  * 
  * Copyright (C) 2006-2008 Phillip Piper
@@ -363,6 +365,9 @@ namespace BrightIdeasSoftware
 
             this.SelectedIndices.Clear();
 
+            if (modelObjects == null)
+                return;
+
             foreach (object modelObject in modelObjects) {
                 int index = this.DataSource.GetObjectIndex(modelObject);
                 if (index >= 0)
@@ -600,7 +605,7 @@ namespace BrightIdeasSoftware
 
             this.BeginUpdate();
             try {
-                ArrayList previousSelection = this.SelectedObjects;
+                IList previousSelection = this.SelectedObjects;
                 this.Sort(e.Column);
                 this.SelectedObjects = previousSelection;
             }
