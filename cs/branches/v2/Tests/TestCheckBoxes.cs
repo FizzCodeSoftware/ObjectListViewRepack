@@ -18,13 +18,13 @@ namespace BrightIdeasSoftware.Tests
     [TestFixture]
     public class TestOlvCheckBoxes
     {
-        [Test]
-        public void TestCheckedObject()
-        {
-            this.olv.SetObjects(PersonDb.All);
-            this.olv.CheckedObject = PersonDb.All[1];
-            Assert.AreEqual(PersonDb.All[1], this.olv.CheckedObject);
-        }
+        //[Test]
+        //public void TestCheckedObject()
+        //{
+        //    this.olv.SetObjects(PersonDb.All);
+        //    this.olv.CheckedObject = PersonDb.All[1];
+        //    Assert.AreEqual(PersonDb.All[1], this.olv.CheckedObject);
+        //}
         
         [Test]
         public void TestCheckedObjects()
