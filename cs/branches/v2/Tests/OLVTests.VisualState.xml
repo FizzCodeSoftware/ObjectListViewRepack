@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<VisualState xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" ShowCheckBoxes="false">
+  <TopNode>[0-1000]C:\jpp\code\cs\ObjectListView\trunk\Tests\OLVTests.nunit</TopNode>
+  <SelectedNode>[0-1006]BrightIdeasSoftware.Tests.TestAspectGeneration.TestChainedMethod</SelectedNode>
+  <ExcludeCategories>false</ExcludeCategories>
+  <Nodes>
+    <Node UniqueName="[0-1000]C:\jpp\code\cs\ObjectListView\trunk\Tests\OLVTests.nunit" Expanded="true">
+      <Nodes>
+        <Node UniqueName="[0-1007]C:\jpp\code\cs\ObjectListView\trunk\Tests\bin\Debug\Tests.exe" Expanded="true">
+          <Nodes>
+            <Node UniqueName="[0-1008]BrightIdeasSoftware" Expanded="true">
+              <Nodes>
+                <Node UniqueName="[0-1009]BrightIdeasSoftware.Tests" Expanded="true">
+                  <Nodes>
+                    <Node UniqueName="[0-1001]BrightIdeasSoftware.Tests.TestAspectGeneration" Expanded="true">
+                      <Nodes>
+                        <Node UniqueName="[0-1005]BrightIdeasSoftware.Tests.TestAspectGeneration.TestChainedField" />
+                        <Node UniqueName="[0-1006]BrightIdeasSoftware.Tests.TestAspectGeneration.TestChainedMethod" />
+                        <Node UniqueName="[0-1002]BrightIdeasSoftware.Tests.TestAspectGeneration.TestSimpleField" />
+                        <Node UniqueName="[0-1004]BrightIdeasSoftware.Tests.TestAspectGeneration.TestSimpleMethod" />
+                        <Node UniqueName="[0-1003]BrightIdeasSoftware.Tests.TestAspectGeneration.TestSimpleProperty" />
+                      </Nodes>
+                    </Node>
+                  </Nodes>
+                </Node>
+              </Nodes>
+            </Node>
+          </Nodes>
+        </Node>
+      </Nodes>
+    </Node>
+  </Nodes>
+</VisualState>

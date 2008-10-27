@@ -9,6 +9,7 @@
  */
 
 using System;
+using System.Collections.Generic;
 
 namespace BrightIdeasSoftware.Tests
 {
@@ -106,6 +107,8 @@ namespace BrightIdeasSoftware.Tests
         public bool CanTellJokes;
     }
 
+    // Model class for testing virtual and overridden methods
+
     public class Person2 : Person
     {
         public Person2(string name, string occupation, int culinaryRating, DateTime birthDate, double hourlyRate, bool canTellJokes, string photo, string comments)
@@ -122,6 +125,23 @@ namespace BrightIdeasSoftware.Tests
         {
             get { return base.CulinaryRating * 2; }
             set { base.CulinaryRating = value; }
+        }
+    }
+
+    public static class PersonDb
+    {
+        static PersonDb()
+        {
+            allPersons = new List<Person>(new Person[] {             
+                new Person("name", "occupation", 100, DateTime.Now, 1.0, true, "  photo  ", "comments"),
+                new Person2("name", "occupation", 100, DateTime.Now, 1.0, true, "  photo  ", "comments")
+            });
+        }
+        static private List<Person> allPersons;
+
+        static public List<Person> All
+        {
+            get { return allPersons; }
         }
     }
 }

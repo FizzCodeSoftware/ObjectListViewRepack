@@ -27,9 +27,14 @@ namespace BrightIdeasSoftware.Tests
 //			Application.EnableVisualStyles();
 //			Application.SetCompatibleTextRenderingDefault(false);
 //			Application.Run(new MainForm());
-            TestAspectGeneration t = new TestAspectGeneration();
+            MyGlobals g = new MyGlobals();
+            g.RunBeforeAnyTests();
+
+            TestOlvSelection t = new TestOlvSelection();
             t.Init();
-            t.TestOverriddenProperty();
+            t.TestSelectionEvents();
+
+            g.RunAfterAnyTests();
 		}
 		
 	}

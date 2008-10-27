@@ -42,7 +42,11 @@
     </Compile>
     <Compile Include="Person.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="SetupTestSuite.cs" />
     <Compile Include="TestAspectGeneration.cs" />
+    <Compile Include="TestBasics.cs" />
+    <Compile Include="TestCheckBoxes.cs" />
+    <Compile Include="TestSelection.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ObjectListView\ObjectListView.csproj">

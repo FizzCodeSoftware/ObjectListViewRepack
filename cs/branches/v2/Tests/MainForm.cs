@@ -13,9 +13,11 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace Tests
+using NUnit.Framework;
+
+namespace BrightIdeasSoftware.Tests
 {
-	/// <summary>
+    /// <summary>
 	/// Description of MainForm.
 	/// </summary>
 	public partial class MainForm : Form

@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!--This file represents the results of running a test suite-->
+<test-results name="C:\jpp\code\cs\ObjectListView\trunk\Tests\OLVTests.nunit" total="5" failures="1" not-run="0" date="2008-10-23" time="06:28:12">
+  <environment nunit-version="2.4.8.0" clr-version="2.0.50727.1433" os-version="Microsoft Windows NT 5.1.2600 Service Pack 2" platform="Win32NT" cwd="C:\jpp\code\cs\ObjectListView\trunk\Tests" machine-name="PPSWISH" user="Admin_2" user-domain="PPSWISH" />
+  <culture-info current-culture="en-AU" current-uiculture="en-US" />
+  <test-suite name="C:\jpp\code\cs\ObjectListView\trunk\Tests\OLVTests.nunit" success="False" time="1.578" asserts="0">
+    <results>
+      <test-suite name="C:\jpp\code\cs\ObjectListView\trunk\Tests\bin\Debug\Tests.exe" success="False" time="1.547" asserts="0">
+        <results>
+          <test-suite name="BrightIdeasSoftware" success="False" time="1.547" asserts="0">
+            <results>
+              <test-suite name="Tests" success="False" time="1.547" asserts="0">
+                <results>
+                  <test-suite name="TestAspectGeneration" success="False" time="1.531" asserts="0">
+                    <results>
+                      <test-case name="BrightIdeasSoftware.Tests.TestAspectGeneration.TestChainedField" executed="True" success="True" time="1.172" asserts="4" />
+                      <test-case name="BrightIdeasSoftware.Tests.TestAspectGeneration.TestChainedMethod" executed="True" success="False" time="0.266" asserts="3">
+                        <failure>
+                          <message><![CDATA[System.NullReferenceException : Object reference not set to an instance of an object.]]></message>
+                          <stack-trace><![CDATA[at (Person )
+at BrightIdeasSoftware.TypedColumn`1.<set_AspectGetter>b__0(Object x) in C:\jpp\code\cs\ObjectListView\trunk\ObjectListView\TypedObjectListView.cs:line 256
+at BrightIdeasSoftware.OLVColumn.GetValue(Object rowObject) in C:\jpp\code\cs\ObjectListView\trunk\ObjectListView\ObjectListView.cs:line 4801
+at BrightIdeasSoftware.Tests.TestAspectGeneration.TestChainedMethod() in C:\jpp\code\cs\ObjectListView\trunk\Tests\TestAspectGeneration.cs:line 87
+]]></stack-trace>
+                        </failure>
+                      </test-case>
+                      <test-case name="BrightIdeasSoftware.Tests.TestAspectGeneration.TestSimpleField" executed="True" success="True" time="0.000" asserts="4" />
+                      <test-case name="BrightIdeasSoftware.Tests.TestAspectGeneration.TestSimpleMethod" executed="True" success="True" time="0.031" asserts="4" />
+                      <test-case name="BrightIdeasSoftware.Tests.TestAspectGeneration.TestSimpleProperty" executed="True" success="True" time="0.016" asserts="4" />
+                    </results>
+                  </test-suite>
+                </results>
+              </test-suite>
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+    </results>
+  </test-suite>
+</test-results>
