@@ -5,6 +5,8 @@
  * Date: 9/10/2006 11:15 AM
  *
  * Change log:
+ * 2008-10-28  JPP  - SelectedObjects is now an IList, rather than an ArrayList. This allows
+ *                    it to accept generic list (eg List<File>).
  * 2008-10-09  JPP  - Support indeterminate checkbox values. 
  *                    CheckStateGetter now returns a bool? rather than a bool. 
  *                    CheckStatePutter does not return anything (BREAKING CHANGE).
@@ -346,6 +348,8 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// This property forces the ObjectListView to always group items by the given column.
         /// </summary>
+        [Browsable(false),
+        DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public OLVColumn AlwaysGroupByColumn
         {
             get { return alwaysGroupByColumn; }
@@ -358,6 +362,8 @@ namespace BrightIdeasSoftware
         /// those groups are sorted. If this property has the value SortOrder.None, then
         /// the sort order will toggle according to the users last header click.
         /// </summary>
+        [Browsable(false),
+        DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public SortOrder AlwaysGroupBySortOrder
         {
             get { return alwaysGroupBySortOrder; }
@@ -438,6 +444,8 @@ namespace BrightIdeasSoftware
         /// Return the model object of the row that is checked or null if no row is checked
         /// or more than one row is checked
         /// </summary>
+        [Browsable(false),
+        DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public Object CheckedObject
         {
             get {
@@ -715,7 +723,6 @@ namespace BrightIdeasSoftware
             }
         }
 
-
         /// <summary>
         /// What color should be used for the foreground of selected rows?
         /// </summary>
@@ -735,6 +742,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Return the color should be used for the foreground of selected rows or a reasonable default
         /// </summary>
+        [Browsable(false)]
         public Color HighlightForegroundColorOrDefault
         {
             get {
@@ -753,6 +761,30 @@ namespace BrightIdeasSoftware
         {
             get { return this.cellEditor != null; }
         }
+
+        /// <summary>
+        /// Which column did we last sort by
+        /// </summary>
+        [Browsable(false),
+        DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public OLVColumn LastSortColumn
+        {
+            get { return lastSortColumn; }
+            set { lastSortColumn = value; }
+        }
+        private OLVColumn lastSortColumn;
+
+        /// <summary>
+        /// Which direction did we last sort
+        /// </summary>
+        [Browsable(false),
+        DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public SortOrder LastSortOrder
+        {
+            get { return lastSortOrder; }
+            set { lastSortOrder = value; }
+        }
+        private SortOrder lastSortOrder;
 
         /// <summary>
         /// Get/set the collection of objects that this list will show
@@ -775,7 +807,7 @@ namespace BrightIdeasSoftware
             {
                 this.BeginUpdate();
                 try {
-                    ArrayList previousSelection = this.SelectedObjects;
+                    IList previousSelection = this.SelectedObjects;
                     this.SetObjects(value);
                     this.SelectedObjects = previousSelection;
                 }
@@ -785,38 +817,6 @@ namespace BrightIdeasSoftware
             }
         }
         private IEnumerable objects;
-
-        /// <summary>
-        /// Take ownership of the 'objects' collection. This separats our collection from the source.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// This method
-        /// separates the 'objects' instance variable from its source, so that any AddObject/RemoveObject
-        /// calls will modify our collection and not the original colleciton.
-        /// </para>
-        /// <para>
-        /// This method has the intentional side-effect of converting our list of objects to an ArrayList.
-        /// </para>
-        /// </remarks>
-        virtual protected void TakeOwnershipOfObjects()
-        {
-            if (this.isOwnerOfObjects)
-                return;
-
-            this.isOwnerOfObjects = true;
-
-            if (this.objects == null)
-                this.objects = new ArrayList();
-            else if (this.objects is ICollection)
-                this.objects = new ArrayList((ICollection)this.objects);
-            else {
-                ArrayList newObjects = new ArrayList();
-                foreach (object x in this.objects)
-                    newObjects.Add(x);
-                this.objects = newObjects;
-            }
-        }
 
         /// <summary>
         /// Specify the height of each row in the control in pixels.
@@ -973,7 +973,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         [Browsable(false),
          DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public ArrayList SelectedObjects
+        public IList SelectedObjects
         {
             get { return this.GetSelectedObjects(); }
             set { this.SelectObjects(value); }
@@ -1072,6 +1072,44 @@ namespace BrightIdeasSoftware
         private bool sortGroupItemsByPrimaryColumn = true;
 
         /// <summary>
+        /// Get or set the index of the top item of this listview
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// This property only works when the listview is in Details view and not showing groups.
+        /// </para>
+        /// <para>
+        /// The reason that it does not work when showing groups is that, when groups are enabled,
+        /// the Windows message LVM_GETTOPINDEX always returns 0, regardless of the
+        /// scroll position.
+        /// </para>
+        /// </remarks>
+        [Browsable(false),
+        DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public int TopItemIndex
+        {
+            get
+            {
+                if (this.View == View.Details && this.TopItem != null)
+                    return this.TopItem.Index;
+                else
+                    return -1;
+            }
+            set
+            {
+                int newTopIndex = Math.Min(value, this.GetItemCount() - 1);
+                if (this.View == View.Details && newTopIndex >= 0) {
+                    this.TopItem = this.Items[newTopIndex];
+
+                    // Setting the TopItem sometimes gives off by one errors,
+                    // that (bizarrely) are correct on a second attempt
+                    if (this.TopItem != null && this.TopItem.Index != newTopIndex)
+                        this.TopItem = this.GetItem(newTopIndex);
+                }
+            }
+        }
+
+        /// <summary>
         /// When resizing a column by dragging its divider, should any space filling columns be
         /// resized at each mouse move? If this is false, the filling columns will be
         /// updated when the mouse is released.
@@ -1109,7 +1147,6 @@ namespace BrightIdeasSoftware
             set { useAlternatingBackColors = value; }
         }
         private bool useAlternatingBackColors;
-
 
         /// <summary>
         /// Get/set the style of view that this listview is using
@@ -1230,36 +1267,6 @@ namespace BrightIdeasSoftware
         #region List commands
 
         /// <summary>
-        /// Set the collection of objects that will be shown in this list view.
-        /// </summary>
-        /// <remark>This method can safely be called from background threads.</remark>
-        /// <remarks>The list is updated immediately</remarks>
-        /// <param name="collection">The objects to be displayed</param>
-        virtual public void SetObjects(IEnumerable collection)
-        {
-            if (this.InvokeRequired) {
-                this.Invoke((MethodInvoker)delegate { this.SetObjects(collection); });
-                return;
-            }
-
-            // Give the world a chance to cancel or change the assigned collection
-            ItemsChangingEventArgs args = new ItemsChangingEventArgs(this.objects, collection);
-            this.OnItemsChanging(args);
-            if (args.Cancelled)
-                return;
-            collection = args.NewObjects;
-
-            // If we own the current list and they change to another list, we don't own it anymore
-            if (this.isOwnerOfObjects && this.objects != collection)
-                this.isOwnerOfObjects = false;
-            this.objects = collection;
-            this.BuildList(false);
-
-            // Tell the world that the list has changed
-            this.OnItemsChanged(new ItemsChangedEventArgs());
-        }
-
-        /// <summary>
         /// Add the given model object to this control.
         /// </summary>
         /// <param name="modelObject">The model object to be displayed</param>
@@ -1304,9 +1311,9 @@ namespace BrightIdeasSoftware
                         itemList.Add(lvi);
                     }
                 }
+                this.ListViewItemSorter = null;
                 this.Items.AddRange(itemList.ToArray());
-                if (this.lastSortColumn != null)
-                    this.Sort(this.lastSortColumn);
+                this.Sort(this.lastSortColumn, this.lastSortOrder);
 
                 foreach (OLVListItem lvi in itemList) {
                     this.SetSubItemImages(lvi.Index, lvi);
@@ -1318,255 +1325,6 @@ namespace BrightIdeasSoftware
             finally {
                 this.EndUpdate();
             }
-        }
-        
-        /// <summary>
-        /// Setup the list so it will draw selected rows using custom colours.
-        /// </summary>
-        /// <remarks>
-        /// This method makes the list owner drawn, and ensures that all columns have at
-        /// least a BaseRender installed.
-        /// </remarks>
-        public void EnableCustomSelectionColors()
-        {
-            this.OwnerDraw = true;
-
-            foreach (OLVColumn column in this.AllColumns) {
-                if (column.RendererDelegate == null)
-                    column.Renderer = new BaseRenderer();
-            }
-        }
-
-        /// <summary>
-        /// Remove the given model object from the ListView
-        /// </summary>
-        /// <param name="modelObject">The model to be removed</param>
-        /// <remarks>See RemoveObjects() for more details</remarks>
-        public void RemoveObject(object modelObject)
-        {
-            this.RemoveObjects(new object[] { modelObject });
-        }
-
-        /// <summary>
-        /// Remove all of the given objects from the control
-        /// </summary>
-        /// <param name="modelObjects">Collection of objects to be removed</param>
-        /// <remarks>
-        /// <para>Nulls and model objects that are not in the ListView are silently ignored.</para>
-        /// </remarks>
-        virtual public void RemoveObjects(ICollection modelObjects)
-        {
-            if (modelObjects == null)
-                return;
-
-            this.BeginUpdate();
-            try {
-                // Give the world a chance to cancel or change the added objects
-                ItemsRemovingEventArgs args = new ItemsRemovingEventArgs(modelObjects);
-                this.OnItemsRemoving(args);
-                if (args.Cancelled)
-                    return;
-                modelObjects = args.ObjectsToRemove;
-                
-                this.TakeOwnershipOfObjects();
-                ArrayList ourObjects = (ArrayList)this.Objects;
-                foreach (object modelObject in modelObjects) {
-                    if (modelObject != null) {
-                        ourObjects.Remove(modelObject);
-                        int i = this.IndexOf(modelObject);
-                        if (i >= 0)
-                            this.Items.RemoveAt(i);
-                    }
-                }
-
-                // Tell the world that the list has changed
-                this.OnItemsChanged(new ItemsChangedEventArgs());
-            }
-            finally {
-                this.EndUpdate();
-            }
-        }
-
-        /// <summary>
-        /// Update the list to reflect the contents of the given collection, without affecting
-        /// the scrolling position, selection or sort order.
-        /// </summary>
-        /// <param name="collection">The objects to be displayed</param>
-        /// <remarks>
-        /// <para>This method is about twice as slow as SetObjects().</para>
-        /// <para>This method is experimental -- it may disappear in later versions of the code.</para>
-        /// <para>There has to be a better way to do this! JPP 15/1/2008</para>
-        /// <para>In most situations, if you need this functionality, use a FastObjectListView instead. JPP 2/2/2008</para>
-        /// </remarks>
-        [Obsolete("Use a FastObjectListView instead of this method.", false)]
-        virtual public void IncrementalUpdate(IEnumerable collection)
-        {
-            if (this.InvokeRequired) {
-                this.Invoke((MethodInvoker)delegate { this.IncrementalUpdate(collection); });
-                return;
-            }
-
-            this.BeginUpdate();
-
-            this.ListViewItemSorter = null;
-            ArrayList previousSelection = this.SelectedObjects;
-
-            // Replace existing rows, creating new listviewitems if we get to the end of the list
-            List<OLVListItem> newItems = new List<OLVListItem>();
-            int rowIndex = 0;
-            int itemCount = this.Items.Count;
-            foreach (object model in collection) {
-                if (rowIndex < itemCount) {
-                    OLVListItem lvi = this.GetItem(rowIndex);
-                    lvi.RowObject = model;
-                    this.RefreshItem(lvi);
-                } else {
-                    OLVListItem lvi = new OLVListItem(model);
-                    this.FillInValues(lvi, model);
-                    newItems.Add(lvi);
-                }
-                rowIndex++;
-            }
-
-            // Delete any excess rows
-            int numRowsToDelete = itemCount - rowIndex;
-            for (int i = 0; i < numRowsToDelete; i++)
-                this.Items.RemoveAt(rowIndex);
-
-            this.Items.AddRange(newItems.ToArray());
-            this.Sort(this.lastSortColumn);
-
-            SetAllSubItemImages();
-
-            this.SelectedObjects = previousSelection;
-
-            this.EndUpdate();
-
-            this.objects = collection;
-        }
-
-        /// <summary>
-        /// Remove all items from this list
-        /// </summary>
-        /// <remark>This method can safely be called from background threads.</remark>
-        virtual public void ClearObjects()
-        {
-            if (this.InvokeRequired)
-                this.Invoke(new MethodInvoker(ClearObjects));
-            else
-                this.Items.Clear();
-        }
-
-        /// <summary>
-        /// Build/rebuild all the list view items in the list
-        /// </summary>
-        virtual public void BuildList()
-        {
-            this.BuildList(true);
-        }
-
-        /// <summary>
-        /// Build/rebuild all the list view items in the list
-        /// </summary>
-        /// <param name="shouldPreserveState">If this is true, the control will try to preserve the selection
-        /// and the scroll position (see Remarks)
-        /// </param>
-        /// <remarks>
-        /// <para>
-        /// Use this method in situations were the contents of the list is basically the same
-        /// as previously.
-        /// </para>
-        /// <para>
-        /// Due to limitations in .NET's ListView, the scroll position is only preserved if
-        /// the control is in Details view AND it is not showing groups.
-        /// </para>
-        /// </remarks>
-        virtual public void BuildList(bool shouldPreserveState)
-        {
-            if (this.Frozen)
-                return;
-
-            ArrayList previousSelection = new ArrayList();
-            int previousTopIndex = this.TopItemIndex;
-            if (shouldPreserveState && this.objects != null)
-                previousSelection = this.SelectedObjects;
-
-            this.BeginUpdate();
-            try {
-                this.Items.Clear();
-                this.ListViewItemSorter = null;
-
-                if (this.objects != null) {
-                    // Build a list of all our items and then display them. (Building
-                    // a list and then doing one AddRange is about 10-15% faster than individual adds)
-                    List<OLVListItem> itemList = new List<OLVListItem>();
-                    foreach (object rowObject in this.objects) {
-                        OLVListItem lvi = new OLVListItem(rowObject);
-                        this.FillInValues(lvi, rowObject);
-                        itemList.Add(lvi);
-                    }
-                    this.Items.AddRange(itemList.ToArray());
-                    this.SetAllSubItemImages();
-                    this.Sort(this.lastSortColumn);
-
-                    if (shouldPreserveState)
-                        this.SelectedObjects = previousSelection;
-                }
-            }
-            finally {
-                this.EndUpdate();
-            }
-
-            // We can only restore the scroll position after the EndUpdate() because
-            // of caching that the ListView does internally during a BeginUpdate/EndUpdate pair.
-            if (shouldPreserveState)
-                this.TopItemIndex = previousTopIndex;
-        }
-
-        /// <summary>
-        /// Get or set the index of the top item of this listview
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// This property only works when the listview is in Details view and not showing groups.
-        /// </para>
-        /// <para>
-        /// The reason that it does not work when showing groups is that, when groups are enabled,
-        /// the Windows message LVM_GETTOPINDEX always returns 0, regardless of the
-        /// scroll position.
-        /// </para>
-        /// </remarks>
-        [Browsable(false),
-        DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public int TopItemIndex
-        {
-            get
-            {
-                if (this.View == View.Details && this.TopItem != null)
-                    return this.TopItem.Index;
-                else
-                    return -1;
-            }
-            set
-            {
-                int newTopIndex = Math.Min(value, this.GetItemCount() - 1);
-                if (this.View == View.Details && newTopIndex >= 0) {
-                    this.TopItem = this.Items[newTopIndex];
-
-                    // Setting the TopItem sometimes gives off by one errors,
-                    // that (bizarrely) are correct on a second attempt
-                    if (this.TopItem != null && this.TopItem.Index != newTopIndex)
-                        this.TopItem = this.GetItem(newTopIndex);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Sort the items by the last sort column
-        /// </summary>
-        new public void Sort()
-        {
-            this.Sort(this.lastSortColumn);
         }
 
         /// <summary>
@@ -1667,16 +1425,69 @@ namespace BrightIdeasSoftware
         }
 
         /// <summary>
-        /// Pause (or unpause) all animations in the list
+        /// Build/rebuild all the list view items in the list
         /// </summary>
-        /// <param name="isPause">true to pause, false to unpause</param>
-        public void PauseAnimations(bool isPause)
+        virtual public void BuildList()
         {
-            for (int i = 0; i < this.Columns.Count; i++) {
-                OLVColumn col = this.GetColumn(i);
-                if (col.Renderer is ImageRenderer)
-                    ((ImageRenderer)col.Renderer).Paused = isPause;
+            this.BuildList(true);
+        }
+
+        /// <summary>
+        /// Build/rebuild all the list view items in the list
+        /// </summary>
+        /// <param name="shouldPreserveState">If this is true, the control will try to preserve the selection
+        /// and the scroll position (see Remarks)
+        /// </param>
+        /// <remarks>
+        /// <para>
+        /// Use this method in situations were the contents of the list is basically the same
+        /// as previously.
+        /// </para>
+        /// <para>
+        /// Due to limitations in .NET's ListView, the scroll position is only preserved if
+        /// the control is in Details view AND it is not showing groups.
+        /// </para>
+        /// </remarks>
+        virtual public void BuildList(bool shouldPreserveState)
+        {
+            if (this.Frozen)
+                return;
+
+            IList previousSelection = new ArrayList();
+            int previousTopIndex = this.TopItemIndex;
+            if (shouldPreserveState && this.objects != null)
+                previousSelection = this.SelectedObjects;
+
+            this.BeginUpdate();
+            try {
+                this.Items.Clear();
+                this.ListViewItemSorter = null;
+
+                if (this.objects != null) {
+                    // Build a list of all our items and then display them. (Building
+                    // a list and then doing one AddRange is about 10-15% faster than individual adds)
+                    List<OLVListItem> itemList = new List<OLVListItem>();
+                    foreach (object rowObject in this.objects) {
+                        OLVListItem lvi = new OLVListItem(rowObject);
+                        this.FillInValues(lvi, rowObject);
+                        itemList.Add(lvi);
+                    }
+                    this.Items.AddRange(itemList.ToArray());
+                    this.SetAllSubItemImages();
+                    this.Sort(this.lastSortColumn);
+
+                    if (shouldPreserveState)
+                        this.SelectedObjects = previousSelection;
+                }
             }
+            finally {
+                this.EndUpdate();
+            }
+
+            // We can only restore the scroll position after the EndUpdate() because
+            // of caching that the ListView does internally during a BeginUpdate/EndUpdate pair.
+            if (shouldPreserveState)
+                this.TopItemIndex = previousTopIndex;
         }
 
         /// <summary>
@@ -1702,7 +1513,7 @@ namespace BrightIdeasSoftware
         public void ChangeToFilteredColumns(View view)
         {
             // Store the state
-            ArrayList previousSelection = this.SelectedObjects;
+            IList previousSelection = this.SelectedObjects;
             int previousTopIndex = this.TopItemIndex;
 
             this.Freeze();
@@ -1727,11 +1538,15 @@ namespace BrightIdeasSoftware
         }
 
         /// <summary>
-        /// Rebuild the columns based upon its current view and column visibility settings
+        /// Remove all items from this list
         /// </summary>
-        public void RebuildColumns()
+        /// <remark>This method can safely be called from background threads.</remark>
+        virtual public void ClearObjects()
         {
-            this.ChangeToFilteredColumns(this.View);
+            if (this.InvokeRequired)
+                this.Invoke(new MethodInvoker(ClearObjects));
+            else
+                this.Items.Clear();
         }
 
         /// <summary>
@@ -1786,8 +1601,6 @@ namespace BrightIdeasSoftware
             Clipboard.SetDataObject(dataObject);
         }
 
-
-
         /// <summary>
         /// Convert the fragment of HTML into the Clipboards HTML format.
         /// </summary>
@@ -1823,6 +1636,205 @@ namespace BrightIdeasSoftware
 
             return String.Format(MARKER_BLOCK, prefixLength, prefixLength + html.Length, startFragment, endFragment, source, html);
         }
+
+        /// <summary>
+        /// Setup the list so it will draw selected rows using custom colours.
+        /// </summary>
+        /// <remarks>
+        /// This method makes the list owner drawn, and ensures that all columns have at
+        /// least a BaseRender installed.
+        /// </remarks>
+        public void EnableCustomSelectionColors()
+        {
+            this.OwnerDraw = true;
+
+            foreach (OLVColumn column in this.AllColumns) {
+                if (column.RendererDelegate == null)
+                    column.Renderer = new BaseRenderer();
+            }
+        }
+
+        /// <summary>
+        /// Ensure that the given model object is visible
+        /// </summary>
+        /// <param name="modelObject">The model object to be revealed</param>
+        public void EnsureModelVisible(Object modelObject)
+        {
+            int idx = this.IndexOf(modelObject);
+            if (idx >= 0)
+                this.EnsureVisible(idx);
+        }
+
+        /// <summary>
+        /// Update the list to reflect the contents of the given collection, without affecting
+        /// the scrolling position, selection or sort order.
+        /// </summary>
+        /// <param name="collection">The objects to be displayed</param>
+        /// <remarks>
+        /// <para>This method is about twice as slow as SetObjects().</para>
+        /// <para>This method is experimental -- it may disappear in later versions of the code.</para>
+        /// <para>There has to be a better way to do this! JPP 15/1/2008</para>
+        /// <para>In most situations, if you need this functionality, use a FastObjectListView instead. JPP 2/2/2008</para>
+        /// </remarks>
+        [Obsolete("Use a FastObjectListView instead of this method.", false)]
+        virtual public void IncrementalUpdate(IEnumerable collection)
+        {
+            if (this.InvokeRequired) {
+                this.Invoke((MethodInvoker)delegate { this.IncrementalUpdate(collection); });
+                return;
+            }
+
+            this.BeginUpdate();
+
+            this.ListViewItemSorter = null;
+            IList previousSelection = this.SelectedObjects;
+
+            // Replace existing rows, creating new listviewitems if we get to the end of the list
+            List<OLVListItem> newItems = new List<OLVListItem>();
+            int rowIndex = 0;
+            int itemCount = this.Items.Count;
+            foreach (object model in collection) {
+                if (rowIndex < itemCount) {
+                    OLVListItem lvi = this.GetItem(rowIndex);
+                    lvi.RowObject = model;
+                    this.RefreshItem(lvi);
+                } else {
+                    OLVListItem lvi = new OLVListItem(model);
+                    this.FillInValues(lvi, model);
+                    newItems.Add(lvi);
+                }
+                rowIndex++;
+            }
+
+            // Delete any excess rows
+            int numRowsToDelete = itemCount - rowIndex;
+            for (int i = 0; i < numRowsToDelete; i++)
+                this.Items.RemoveAt(rowIndex);
+
+            this.Items.AddRange(newItems.ToArray());
+            this.Sort(this.lastSortColumn);
+
+            SetAllSubItemImages();
+
+            this.SelectedObjects = previousSelection;
+
+            this.EndUpdate();
+
+            this.objects = collection;
+        }
+
+        /// <summary>
+        /// Remove the given model object from the ListView
+        /// </summary>
+        /// <param name="modelObject">The model to be removed</param>
+        /// <remarks>See RemoveObjects() for more details</remarks>
+        public void RemoveObject(object modelObject)
+        {
+            this.RemoveObjects(new object[] { modelObject });
+        }
+
+        /// <summary>
+        /// Pause (or unpause) all animations in the list
+        /// </summary>
+        /// <param name="isPause">true to pause, false to unpause</param>
+        public void PauseAnimations(bool isPause)
+        {
+            for (int i = 0; i < this.Columns.Count; i++) {
+                OLVColumn col = this.GetColumn(i);
+                if (col.Renderer is ImageRenderer)
+                    ((ImageRenderer)col.Renderer).Paused = isPause;
+            }
+        }
+
+        /// <summary>
+        /// Rebuild the columns based upon its current view and column visibility settings
+        /// </summary>
+        public void RebuildColumns()
+        {
+            this.ChangeToFilteredColumns(this.View);
+        }
+
+        /// <summary>
+        /// Remove all of the given objects from the control
+        /// </summary>
+        /// <param name="modelObjects">Collection of objects to be removed</param>
+        /// <remarks>
+        /// <para>Nulls and model objects that are not in the ListView are silently ignored.</para>
+        /// </remarks>
+        virtual public void RemoveObjects(ICollection modelObjects)
+        {
+            if (modelObjects == null)
+                return;
+
+            this.BeginUpdate();
+            try {
+                // Give the world a chance to cancel or change the added objects
+                ItemsRemovingEventArgs args = new ItemsRemovingEventArgs(modelObjects);
+                this.OnItemsRemoving(args);
+                if (args.Cancelled)
+                    return;
+                modelObjects = args.ObjectsToRemove;
+                
+                this.TakeOwnershipOfObjects();
+                ArrayList ourObjects = (ArrayList)this.Objects;
+                foreach (object modelObject in modelObjects) {
+                    if (modelObject != null) {
+                        ourObjects.Remove(modelObject);
+                        int i = this.IndexOf(modelObject);
+                        if (i >= 0)
+                            this.Items.RemoveAt(i);
+                    }
+                }
+
+                // Tell the world that the list has changed
+                this.OnItemsChanged(new ItemsChangedEventArgs());
+            }
+            finally {
+                this.EndUpdate();
+            }
+        }
+
+        /// <summary>
+        /// Set the collection of objects that will be shown in this list view.
+        /// </summary>
+        /// <remark>This method can safely be called from background threads.</remark>
+        /// <remarks>The list is updated immediately</remarks>
+        /// <param name="collection">The objects to be displayed</param>
+        virtual public void SetObjects(IEnumerable collection)
+        {
+            if (this.InvokeRequired) {
+                this.Invoke((MethodInvoker)delegate { this.SetObjects(collection); });
+                return;
+            }
+
+            // Give the world a chance to cancel or change the assigned collection
+            ItemsChangingEventArgs args = new ItemsChangingEventArgs(this.objects, collection);
+            this.OnItemsChanging(args);
+            if (args.Cancelled)
+                return;
+            collection = args.NewObjects;
+
+            // If we own the current list and they change to another list, we don't own it anymore
+            if (this.isOwnerOfObjects && this.objects != collection)
+                this.isOwnerOfObjects = false;
+            this.objects = collection;
+            this.BuildList(false);
+
+            // Tell the world that the list has changed
+            this.OnItemsChanged(new ItemsChangedEventArgs());
+        }
+
+        /// <summary>
+        /// Sort the items by the last sort column
+        /// </summary>
+        new public void Sort()
+        {
+            this.Sort(this.lastSortColumn);
+        }
+
+        #endregion
+
+        #region Save/Restore State
 
         /// <summary>
         /// Return a byte array that represents the current state of the ObjectListView, such
@@ -2208,16 +2220,17 @@ namespace BrightIdeasSoftware
         /// <returns>bool to indicate if the msg has been handled</returns>
         unsafe protected bool HandleReflectNotify(ref Message m)
         {
-            const int LVM_ITEMCHANGED = -101;
-            const int LVM_ITEMCHANGING = -100;
+            const int LVN_ITEMCHANGED = -101;
+            const int LVN_ITEMCHANGING = -100;
+            const int LVIF_STATE = 8;
 
             bool isMsgHandled = false;
             NativeMethods.NMHDR nmhdr = (NativeMethods.NMHDR)m.GetLParam(typeof(NativeMethods.NMHDR));
 
             switch (nmhdr.code) {
-                case LVM_ITEMCHANGED:
+                case LVN_ITEMCHANGED:
                     NativeMethods.NMLISTVIEW* nmlistviewPtr2 = (NativeMethods.NMLISTVIEW*)m.LParam;
-                    if ((nmlistviewPtr2->uChanged & 8) != 0) {
+                    if ((nmlistviewPtr2->uChanged & LVIF_STATE) != 0) {
                         CheckState currentValue = this.CalculateState(nmlistviewPtr2->uOldState);
                         CheckState newCheckValue = this.CalculateState(nmlistviewPtr2->uNewState);
                         if (currentValue != newCheckValue) {
@@ -2231,10 +2244,10 @@ namespace BrightIdeasSoftware
                     }
                     break;
 
-                case LVM_ITEMCHANGING:
+                case LVN_ITEMCHANGING:
                     // Change the CheckBox handling to cope with indeterminate state
                     NativeMethods.NMLISTVIEW* nmlistviewPtr = (NativeMethods.NMLISTVIEW*)m.LParam;
-                    if ((nmlistviewPtr->uChanged & 8) != 0) {
+                    if ((nmlistviewPtr->uChanged & LVIF_STATE) != 0) {
                         CheckState currentValue = this.CalculateState(nmlistviewPtr->uOldState);
                         CheckState newCheckValue = this.CalculateState(nmlistviewPtr->uNewState);
                         if (currentValue != newCheckValue) {
@@ -2254,9 +2267,9 @@ namespace BrightIdeasSoftware
                                     });
                                 }
                             }
+                            //isMsgHandled = true;
                         }
                     }
-                    isMsgHandled = true;
                     break;
 
                 default:
@@ -2872,6 +2885,9 @@ namespace BrightIdeasSoftware
         {
             this.SelectedItems.Clear();
 
+            if (modelObjects == null)
+            	return;
+            
             foreach (object modelObject in modelObjects) {
                 OLVListItem olvi = this.ModelToItem(modelObject);
                 if (olvi != null)
@@ -3242,6 +3258,21 @@ namespace BrightIdeasSoftware
         #region Utilities
 
         /// <summary>
+        /// For some reason, UseItemStyleForSubItems doesn't work for the colors
+        /// when owner drawing the list, so we have to specifically give each subitem
+        /// the desired colors
+        /// </summary>
+        /// <param name="olvi">The item whose subitems are to be corrected</param>
+        protected void CorrectSubItemColors(ListViewItem olvi)
+        {
+            if (this.OwnerDraw && olvi.UseItemStyleForSubItems)
+                foreach (ListViewItem.ListViewSubItem si in olvi.SubItems) {
+                    si.BackColor = olvi.BackColor;
+                    si.ForeColor = olvi.ForeColor;
+                }
+        }
+
+        /// <summary>
         /// Fill in the given OLVListItem with values of the given row
         /// </summary>
         /// <param name="lvi">the OLVListItem that is to be stuff with values</param>
@@ -3273,45 +3304,33 @@ namespace BrightIdeasSoftware
         }
 
         /// <summary>
-        /// Setup all subitem images on all rows
+        /// Make sure the ListView has the extended style that says to display subitem images.
         /// </summary>
-        protected void SetAllSubItemImages()
+        /// <remarks>This method must be called after any .NET call that update the extended styles
+        /// since they seem to erase this setting.</remarks>
+        protected void ForceSubItemImagesExStyle()
         {
-            if (!this.ShowImagesOnSubItems)
-                return;
-
-            this.ForceSubItemImagesExStyle();
-
-            for (int rowIndex = 0; rowIndex < this.GetItemCount(); rowIndex++)
-                SetSubItemImages(rowIndex, this.GetItem(rowIndex));
+            NativeMethods.ForceSubItemImagesExStyle(this);
         }
 
         /// <summary>
-        /// Tell the underlying list control which images to show against the subitems
+        /// Convert the given image selector to an index into our image list.
+        /// Return -1 if that's not possible
         /// </summary>
-        /// <param name="rowIndex">the index at which the item occurs</param>
-        /// <param name="item">the item whose subitems are to be set</param>
-        protected void SetSubItemImages(int rowIndex, OLVListItem item)
+        /// <param name="imageSelector"></param>
+        /// <returns>Index of the image in the imageList, or -1</returns>
+        public int GetActualImageIndex(Object imageSelector)
         {
-            this.SetSubItemImages(rowIndex, item, false);
-        }
+            if (imageSelector == null)
+                return -1;
 
-        /// <summary>
-        /// Tell the underlying list control which images to show against the subitems
-        /// </summary>
-        /// <param name="rowIndex">the index at which the item occurs</param>
-        /// <param name="item">the item whose subitems are to be set</param>
-        /// <param name="shouldClearImages">will existing images be cleared if no new image is provided?</param>
-        protected void SetSubItemImages(int rowIndex, OLVListItem item, bool shouldClearImages)
-        {
-            if (!this.ShowImagesOnSubItems)
-                return;
+            if (imageSelector is Int32)
+                return (int)imageSelector;
 
-            for (int i = 1; i < item.SubItems.Count; i++) {
-                int imageIndex = this.GetActualImageIndex(((OLVListSubItem)item.SubItems[i]).ImageSelector);
-                if (shouldClearImages || imageIndex != -1)
-                    this.SetSubItemImage(rowIndex, i, imageIndex);
-            }
+            if (imageSelector is String && this.SmallImageList != null)
+                return this.SmallImageList.Images.IndexOfKey((String)imageSelector);
+
+            return -1;
         }
 
         /// <summary>
@@ -3351,48 +3370,17 @@ namespace BrightIdeasSoftware
         }
 
         /// <summary>
-        /// For some reason, UseItemStyleForSubItems doesn't work for the colors
-        /// when owner drawing the list, so we have to specifically give each subitem
-        /// the desired colors
+        /// Setup all subitem images on all rows
         /// </summary>
-        /// <param name="olvi">The item whose subitems are to be corrected</param>
-        protected void CorrectSubItemColors(ListViewItem olvi)
+        protected void SetAllSubItemImages()
         {
-            if (this.OwnerDraw && olvi.UseItemStyleForSubItems)
-                foreach (ListViewItem.ListViewSubItem si in olvi.SubItems) {
-                    si.BackColor = olvi.BackColor;
-                    si.ForeColor = olvi.ForeColor;
-                }
-        }
+            if (!this.ShowImagesOnSubItems)
+                return;
 
-        /// <summary>
-        /// Convert the given image selector to an index into our image list.
-        /// Return -1 if that's not possible
-        /// </summary>
-        /// <param name="imageSelector"></param>
-        /// <returns>Index of the image in the imageList, or -1</returns>
-        public int GetActualImageIndex(Object imageSelector)
-        {
-            if (imageSelector == null)
-                return -1;
+            this.ForceSubItemImagesExStyle();
 
-            if (imageSelector is Int32)
-                return (int)imageSelector;
-
-            if (imageSelector is String && this.SmallImageList != null)
-                return this.SmallImageList.Images.IndexOfKey((String)imageSelector);
-
-            return -1;
-        }
-
-        /// <summary>
-        /// Make sure the ListView has the extended style that says to display subitem images.
-        /// </summary>
-        /// <remarks>This method must be called after any .NET call that update the extended styles
-        /// since they seem to erase this setting.</remarks>
-        protected void ForceSubItemImagesExStyle()
-        {
-            NativeMethods.ForceSubItemImagesExStyle(this);
+            for (int rowIndex = 0; rowIndex < this.GetItemCount(); rowIndex++)
+                SetSubItemImages(rowIndex, this.GetItem(rowIndex));
         }
 
         /// <summary>
@@ -3404,6 +3392,66 @@ namespace BrightIdeasSoftware
         protected void SetSubItemImage(int itemIndex, int subItemIndex, int imageIndex)
         {
             NativeMethods.SetSubItemImage(this, itemIndex, subItemIndex, imageIndex);
+        }
+
+        /// <summary>
+        /// Tell the underlying list control which images to show against the subitems
+        /// </summary>
+        /// <param name="rowIndex">the index at which the item occurs</param>
+        /// <param name="item">the item whose subitems are to be set</param>
+        protected void SetSubItemImages(int rowIndex, OLVListItem item)
+        {
+            this.SetSubItemImages(rowIndex, item, false);
+        }
+
+        /// <summary>
+        /// Tell the underlying list control which images to show against the subitems
+        /// </summary>
+        /// <param name="rowIndex">the index at which the item occurs</param>
+        /// <param name="item">the item whose subitems are to be set</param>
+        /// <param name="shouldClearImages">will existing images be cleared if no new image is provided?</param>
+        protected void SetSubItemImages(int rowIndex, OLVListItem item, bool shouldClearImages)
+        {
+            if (!this.ShowImagesOnSubItems)
+                return;
+
+            for (int i = 1; i < item.SubItems.Count; i++) {
+                int imageIndex = this.GetActualImageIndex(((OLVListSubItem)item.SubItems[i]).ImageSelector);
+                if (shouldClearImages || imageIndex != -1)
+                    this.SetSubItemImage(rowIndex, i, imageIndex);
+            }
+        }
+
+        /// <summary>
+        /// Take ownership of the 'objects' collection. This separats our collection from the source.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// This method
+        /// separates the 'objects' instance variable from its source, so that any AddObject/RemoveObject
+        /// calls will modify our collection and not the original colleciton.
+        /// </para>
+        /// <para>
+        /// This method has the intentional side-effect of converting our list of objects to an ArrayList.
+        /// </para>
+        /// </remarks>
+        virtual protected void TakeOwnershipOfObjects()
+        {
+            if (this.isOwnerOfObjects)
+                return;
+
+            this.isOwnerOfObjects = true;
+
+            if (this.objects == null)
+                this.objects = new ArrayList();
+            else if (this.objects is ICollection)
+                this.objects = new ArrayList((ICollection)this.objects);
+            else {
+                ArrayList newObjects = new ArrayList();
+                foreach (object x in this.objects)
+                    newObjects.Add(x);
+                this.objects = newObjects;
+            }
         }
 
         #endregion
@@ -3558,6 +3606,12 @@ namespace BrightIdeasSoftware
         /// <param name="e"></param>
         protected override void OnDrawSubItem(DrawListViewSubItemEventArgs e)
         {
+            // Don't try to do owner drawing at design time
+            if (this.DesignMode) {
+                e.DrawDefault = true;
+                return;
+            }
+            
             // Calculate where the subitem should be drawn
             // It should be as simple as 'e.Bounds', but it isn't :-(
 
@@ -4181,27 +4235,6 @@ namespace BrightIdeasSoftware
         }
 
         #endregion
-
-
-        /// <summary>
-        /// Which column did we last sort by
-        /// </summary>
-        public OLVColumn LastSortColumn
-        {
-            get { return lastSortColumn; }
-            set { lastSortColumn = value; }
-        }
-        private OLVColumn lastSortColumn;
-
-        /// <summary>
-        /// Which direction did we last sort
-        /// </summary>
-        public SortOrder LastSortOrder
-        {
-            get { return lastSortOrder; }
-            set { lastSortOrder = value; }
-        }
-        private SortOrder lastSortOrder;
 
         private Rectangle lastUpdateRectangle; // remember the update rect from the last WM_PAINT msg
         private bool isOwnerOfObjects; // does this ObjectListView own the Objects collection?
@@ -5064,12 +5097,12 @@ namespace BrightIdeasSoftware
         /// DisplayIndex is the index of the row where this item is displayed. For flat lists,
         /// this is the same as ListViewItem.Index, but for grouped views, it is different.
         /// </summary>
+        [Obsolete("This property is no longer maintained", true)]
         public int DisplayIndex
         {
-            get { return displayIndex; }
-            set { displayIndex = value; }
+            get { return 0; }
+            set {  }
         }
-        private int displayIndex;
 
         /// <summary>
         /// Get or set the image that should be shown against this item
