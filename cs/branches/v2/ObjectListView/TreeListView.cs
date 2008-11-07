@@ -5,6 +5,9 @@
  * Date: 23/09/2008 11:15 AM
  *
  * Change log:
+ * 2008-11-05  JPP  - Added ExpandAll() and CollapseAll() commands
+ *                  - CanExpand is no longer cached
+ *                  - Renamed InitialBranches to RootModels since it deals with model objects
  * 2008-09-23  JPP  Initial version
  *
  * TO DO:
@@ -110,20 +113,21 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// The model objects that form the top level branches of the tree.
         /// </summary>
+        /// <remarks>Setting this does <b>NOT</b> reset the state of the control.
+        /// In particular, it does not collapse branches.</remarks>
         [Browsable(false),
         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public IEnumerable Roots
         {
-            get { return this.TreeModel.InitialBranches; }
-            set
-            {
+            get { return this.TreeModel.RootObjects; }
+            set {
                 // Make sure that column 0 is showing a tree
                 if (this.GetColumn(0).Renderer == null)
                     this.GetColumn(0).Renderer = this.TreeColumnRenderer;
                 if (value == null)
-                    this.TreeModel.InitialBranches = new ArrayList();
+                    this.TreeModel.RootObjects = new ArrayList();
                 else
-                    this.TreeModel.InitialBranches = value;
+                    this.TreeModel.RootObjects = value;
                 this.UpdateVirtualListSize();
             }
         }
@@ -180,12 +184,37 @@ namespace BrightIdeasSoftware
         }
 
         /// <summary>
+        /// Collapse all subtrees within this control
+        /// </summary>
+        public void CollapseAll()
+        {
+            int idx = this.TreeModel.CollapseAll();
+            if (idx >= 0) {
+                this.UpdateVirtualListSize();
+                this.RedrawItems(idx, this.GetItemCount() - 1, false);
+            }
+        }
+
+        /// <summary>
         /// Expand the subtree underneath the given model object
         /// </summary>
         /// <param name="model"></param>
         public void Expand(Object model)
         {
             int idx = this.TreeModel.Expand(model);
+            if (idx >= 0) {
+                this.UpdateVirtualListSize();
+                this.RedrawItems(idx, this.GetItemCount() - 1, false);
+            }
+        }
+
+        /// <summary>
+        /// Expand all the branches within this tree recursively.
+        /// </summary>
+        /// <remarks>Be careful: this method could take a long time for large trees.</remarks>
+        public void ExpandAll()
+        {
+            int idx = this.TreeModel.ExpandAll();
             if (idx >= 0) {
                 this.UpdateVirtualListSize();
                 this.RedrawItems(idx, this.GetItemCount() - 1, false);
@@ -417,9 +446,9 @@ namespace BrightIdeasSoftware
             // Properties
 
             /// <summary>
-            /// Return the top level branches in the tree
+            /// Get or return the top level model objects in the tree
             /// </summary>
-            public IEnumerable InitialBranches
+            public IEnumerable RootObjects
             {
                 get { return this.trunk.Children; }
                 set { 
@@ -476,6 +505,21 @@ namespace BrightIdeasSoftware
             }
 
             /// <summary>
+            /// Collapse all branches in this tree
+            /// </summary>
+            /// <returns>Return the index of the first root that was not collapsed</returns>
+            public int CollapseAll()
+            {
+                int idx = 0;
+                foreach (Branch br in this.trunk.ChildBranches) {
+                    if (br.IsExpanded)
+                        br.Collapse();
+                }
+                this.RebuildList();
+                return 0;
+            }
+
+            /// <summary>
             /// Expand the subtree underneath the given model object
             /// </summary>
             /// <param name="model">The model to be expanded. If the model isn't in the tree,
@@ -496,6 +540,17 @@ namespace BrightIdeasSoftware
                 this.objectList.InsertRange(idx + 1, br.Flatten());
                 this.RebuildObjectMap(idx + 1);
                 return idx;
+            }
+
+            /// <summary>
+            /// Expand all branches in this tree
+            /// </summary>
+            /// <returns>Return the index of the first branch that was expanded</returns>
+            public int ExpandAll()
+            {
+                this.trunk.ExpandAll();
+                this.Sort(this.lastSortColumn, this.lastSortOrder);
+                return 0;
             }
 
             /// <summary>
@@ -572,11 +627,11 @@ namespace BrightIdeasSoftware
                     return -1;
             }
 
-            public void PrepareCache(int from, int to)
+            public void PrepareCache(int first, int last)
             {
             }
 
-            public int SearchText(string value, int from, int to, OLVColumn column)
+            public int SearchText(string value, int first, int last, OLVColumn column)
             {
                 return -1;
             }
@@ -650,6 +705,9 @@ namespace BrightIdeasSoftware
                 this.ParentBranch = parent;
                 this.Tree = tree;
                 this.Model = model;
+
+                if (parent != null)
+                    this.Level = parent.Level + 1;
             }
 
             //------------------------------------------------------------------------------------------
@@ -660,8 +718,7 @@ namespace BrightIdeasSoftware
             /// </summary>
             public IList<Branch> Ancestors
             {
-                get
-                {
+                get {
                     List<Branch> ancestors = new List<Branch>();
                     if (this.ParentBranch != null)
                         this.ParentBranch.PushAncestors(ancestors);
@@ -678,6 +735,18 @@ namespace BrightIdeasSoftware
                 }
             }
 
+            /// <summary>
+            /// Can this branch be expanded?
+            /// </summary>
+            public bool CanExpand
+            {
+                get {
+                    if (this.Tree.CanExpandGetter == null || this.Model == null)
+                        return false;
+                    else
+                        return this.Tree.CanExpandGetter(this.Model);
+                }
+            }
             /// <summary>
             /// Get/set the model objects that are beneath this branch
             /// </summary>
@@ -709,9 +778,6 @@ namespace BrightIdeasSoftware
             private Branch MakeBranch(object model)
             {
                 Branch br = new Branch(this, this.Tree, model);
-                br.Level = this.Level + 1;
-                if (this.Tree.CanExpandGetter != null)
-                    br.CanExpand = this.Tree.CanExpandGetter(model);
                 this.Tree.RegisterBranch(br);
                 return br;
             }
@@ -782,7 +848,9 @@ namespace BrightIdeasSoftware
             /// </summary>
             public void Expand()
             {
-                // THINK: Should we ignore this command if CanExpand is false?
+                if (!this.CanExpand)
+                    return;
+
                 // THINK: Should we cache the children or fetch them each time? If we cache, we need a "DiscardCache" ability
 
                 this.IsExpanded = true;
@@ -793,6 +861,16 @@ namespace BrightIdeasSoftware
                     this.Children = this.Tree.ChildrenGetter(this.Model);
 
                 this.alreadyHasChildren = true;
+            }
+
+            /// <summary>
+            /// Expand this branch recursively
+            /// </summary>
+            public void ExpandAll()
+            {
+                this.Expand();
+                foreach (Branch br in this.ChildBranches)
+                    br.ExpandAll();
             }
 
             /// <summary>
@@ -848,7 +926,7 @@ namespace BrightIdeasSoftware
             public Tree Tree;
             public Branch ParentBranch;
             public List<Branch> ChildBranches = new List<Branch>();
-            public bool CanExpand = false;
+            //public bool CanExpand = false;
             public bool IsExpanded = false;
             public int Level = 0;
 
@@ -887,8 +965,7 @@ namespace BrightIdeasSoftware
             /// </summary>
             protected Branch Branch
             {
-                get
-                {
+                get {
                     return this.TreeListView.TreeModel.GetBranch(this.RowObject);
                 }
             }
@@ -898,8 +975,7 @@ namespace BrightIdeasSoftware
             /// </summary>
             public TreeListView TreeListView
             {
-                get
-                {
+                get {
                     return (TreeListView)this.ListView;
                 }
             }
