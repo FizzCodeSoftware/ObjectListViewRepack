@@ -33,48 +33,17 @@ using System.Windows.Forms;
 
 namespace BrightIdeasSoftware
 {
+    /// <summary>
+    /// The callbacks for CellEditing events
+    /// </summary>
+    /// <remarks>
+    /// We could replace this with EventHandler<CellEditEventArgs> but that would break all
+    /// cell editing event code from v1.x.
+    /// </remarks>
+    public delegate void CellEditEventHandler(object sender, CellEditEventArgs e);
+    
     partial class ObjectListView
     {
-        //-----------------------------------------------------------------------------------
-        #region Event delegates
-
-        /// <summary>
-        /// The callbacks for AfterSorting events
-        /// </summary>
-        public delegate void AfterSortingEventHandler(object sender, AfterSortingEventArgs e);
-
-        /// <summary>
-        /// The callbacks for BeforeSorting events
-        /// </summary>
-        public delegate void BeforeSortingEventHandler(object sender, BeforeSortingEventArgs e);
-
-        /// <summary>
-        /// The callbacks for CellEditing events
-        /// </summary>
-        public delegate void CellEditEventHandler(object sender, CellEditEventArgs e);
-
-        /// <summary>
-        /// The callbacks for ItemsAdding events
-        /// </summary>
-        public delegate void ItemsAddingEventHandler(object sender, ItemsAddingEventArgs e);
-
-        /// <summary>
-        /// The callbacks for ItemsChanged events
-        /// </summary>
-        public delegate void ItemsChangedEventHandler(object sender, ItemsChangedEventArgs e);
-
-        /// <summary>
-        /// The callbacks for ItemsChanging events
-        /// </summary>
-        public delegate void ItemsChangingEventHandler(object sender, ItemsChangingEventArgs e);
-
-        /// <summary>
-        /// The callbacks for ItemsRemoving events
-        /// </summary>
-        public delegate void ItemsRemovingEventHandler(object sender, ItemsRemovingEventArgs e);
-
-        #endregion
-
         //-----------------------------------------------------------------------------------
         #region Events
 
@@ -82,7 +51,7 @@ namespace BrightIdeasSoftware
         /// Triggered after a ObjectListView has been sorted
         /// </summary>
         [Category("Behavior")]
-        public event AfterSortingEventHandler AfterSorting;
+        public event EventHandler<AfterSortingEventArgs> AfterSorting;
 
         /// <summary>
         /// Triggered before a ObjectListView is sorted
@@ -92,7 +61,16 @@ namespace BrightIdeasSoftware
         /// Changing ColumnToSort or SortOrder will change the subsequent sort.
         /// </remarks>
         [Category("Behavior")]
-        public event BeforeSortingEventHandler BeforeSorting;
+        public event EventHandler<BeforeSortingEventArgs> BeforeSorting;
+
+        /// <summary>
+        /// Triggered when a cell is about to finish being edited.
+        /// </summary>
+        /// <remarks>If Cancel is already true, the user is cancelling the edit operation.
+        /// Set Cancel to true to prevent the value from the cell being written into the model.
+        /// You cannot prevent the editing from finishing.</remarks>
+        [Category("Behavior")]
+        public event CellEditEventHandler CellEditFinishing;
 
         /// <summary>
         /// Triggered when a cell is about to be edited.
@@ -112,31 +90,16 @@ namespace BrightIdeasSoftware
         public event CellEditEventHandler CellEditValidating;
 
         /// <summary>
-        /// Triggered when a cell is about to finish being edited.
-        /// </summary>
-        /// <remarks>If Cancel is already true, the user is cancelling the edit operation.
-        /// Set Cancel to true to prevent the value from the cell being written into the model.
-        /// You cannot prevent the editing from finishing.</remarks>
-        [Category("Behavior")]
-        public event CellEditEventHandler CellEditFinishing;
-
-        /// <summary>
         /// Some new objects are about to be added to an ObjectListView.
         /// </summary>
         [Category("Behavior")]
-        public event ItemsAddingEventHandler ItemsAdding;
+        public event EventHandler<ItemsAddingEventArgs> ItemsAdding;
 
         /// <summary>
         /// The contents of the ObjectListView has changed.
         /// </summary>
         [Category("Behavior")]
-        public event ItemsChangedEventHandler ItemsChanged;
-
-        /// <summary>
-        /// Some objects are about to be removed from an ObjectListView.
-        /// </summary>
-        [Category("Behavior")]
-        public event ItemsRemovingEventHandler ItemsRemoving;
+        public event EventHandler<ItemsChangedEventArgs> ItemsChanged;
 
         /// <summary>
         /// The contents of the ObjectListView is about to change via a SetObjects call
@@ -145,7 +108,13 @@ namespace BrightIdeasSoftware
         /// <para>Set Cancelled to true to prevent the contents of the list changing. This does not work with virtual lists.</para>
         /// </remarks>
         [Category("Behavior")]
-        public event ItemsChangingEventHandler ItemsChanging;
+        public event EventHandler<ItemsChangingEventArgs> ItemsChanging;
+
+        /// <summary>
+        /// Some objects are about to be removed from an ObjectListView.
+        /// </summary>
+        [Category("Behavior")]
+        public event EventHandler<ItemsRemovingEventArgs> ItemsRemoving;
 
         #endregion
 
@@ -242,214 +211,234 @@ namespace BrightIdeasSoftware
         }
 
         #endregion
-
-        //-----------------------------------------------------------------------------------
-        #region Event Parameter Blocks
-
-        /// <summary>
-        /// Let the world know that a cell edit operation is beginning or ending
-        /// </summary>
-        public class CellEditEventArgs : EventArgs
-        {
-            /// <summary>
-            /// Create an event args
-            /// </summary>
-            /// <param name="column"></param>
-            /// <param name="c"></param>
-            /// <param name="r"></param>
-            /// <param name="item"></param>
-            /// <param name="subItemIndex"></param>
-            public CellEditEventArgs(OLVColumn column, Control c, Rectangle r, OLVListItem item, int subItemIndex)
-            {
-                this.Cancel = false;
-                this.Control = c;
-                this.column = column;
-                this.cellBounds = r;
-                this.listViewItem = item;
-                this.rowObject = item.RowObject;
-                this.subItemIndex = subItemIndex;
-                this.value = column.GetValue(item.RowObject);
-            }
-
-            /// <summary>
-            /// Change this to true to cancel the cell editing operation.
-            /// </summary>
-            /// <remarks>
-            /// <para>During the CellEditStarting event, setting this to true will prevent the cell from being edited.</para>
-            /// <para>During the CellEditFinishing event, if this value is already true, this indicates that the user has
-            /// cancelled the edit operation and that the handler should perform cleanup only. Setting this to true,
-            /// will prevent the ObjectListView from trying to write the new value into the model object.</para>
-            /// </remarks>
-            public bool Cancel = false;
-
-            /// <summary>
-            /// During the CellEditStarting event, this can be modified to be the control that you want
-            /// to edit the value. You must fully configure the control before returning from the event,
-            /// including its bounds and the value it is showing.
-            /// During the CellEditFinishing event, you can use this to get the value that the user
-            /// entered and commit that value to the model. Changing the control during the finishing
-            /// event has no effect.
-            /// </summary>
-            public Control Control = null;
-
-            /// <summary>
-            /// The column of the cell that is going to be or has been edited.
-            /// </summary>
-            public OLVColumn Column
-            {
-                get { return this.column; }
-            }
-            private OLVColumn column;
-
-            /// <summary>
-            /// The model object of the row of the cell that is going to be or has been edited.
-            /// </summary>
-            public Object RowObject
-            {
-                get { return this.rowObject; }
-            }
-            private Object rowObject;
-
-            /// <summary>
-            /// The listview item of the cell that is going to be or has been edited.
-            /// </summary>
-            public OLVListItem ListViewItem
-            {
-                get { return this.listViewItem; }
-            }
-            private OLVListItem listViewItem;
-
-            /// <summary>
-            /// The index of the cell that is going to be or has been edited.
-            /// </summary>
-            public int SubItemIndex
-            {
-                get { return this.subItemIndex; }
-            }
-            private int subItemIndex;
-
-            /// <summary>
-            /// The data value of the cell before the edit operation began.
-            /// </summary>
-            public Object Value
-            {
-                get { return this.value; }
-            }
-            private Object value;
-
-            /// <summary>
-            /// The bounds of the cell that is going to be or has been edited.
-            /// </summary>
-            public Rectangle CellBounds
-            {
-                get { return this.cellBounds; }
-            }
-            private Rectangle cellBounds;
-        }
-
-        public class CancellableEvent : EventArgs
-        {
-            /// <summary>
-            /// Has this event been cancelled by the event handler?
-            /// </summary>
-            public bool Cancelled;
-        }
-
-        public class BeforeSortingEventArgs : CancellableEvent
-        {
-            public BeforeSortingEventArgs(OLVColumn column, SortOrder order)
-            {
-                this.ColumnToSort = column;
-                this.SortOrder = order;
-            }
-
-            public OLVColumn ColumnToSort;
-            public SortOrder SortOrder;
-        }
-
-        public class AfterSortingEventArgs : EventArgs
-        {
-            public AfterSortingEventArgs(OLVColumn column, SortOrder order)
-            {
-                this.ColumnToSort = column;
-                this.SortOrder = order;
-            }
-
-            public readonly OLVColumn ColumnToSort;
-            public readonly SortOrder SortOrder;
-        }
-
-        /// <summary>
-        /// This event is triggered after the items in the list have been changed,
-        /// either through SetObjects, AddObjects or RemoveObjects.
-        /// </summary>
-        public class ItemsChangedEventArgs : EventArgs
-        {
-            public ItemsChangedEventArgs()
-            {
-            }
-
-            /// <summary>
-            /// Constructor for this event when used by a virtual list
-            /// </summary>
-            /// <param name="oldObjectCount"></param>
-            /// <param name="newObjectCount"></param>
-            public ItemsChangedEventArgs(int oldObjectCount, int newObjectCount)
-            {
-                this.OldObjectCount = oldObjectCount;
-                this.NewObjectCount = newObjectCount;
-            }
-
-            public readonly int OldObjectCount;
-            public readonly int NewObjectCount;          
-        }
-
-        /// <summary>
-        /// This event is triggered by AddObjects before any change has been made to the list.
-        /// </summary>
-        public class ItemsAddingEventArgs : CancellableEvent
-        {
-            public ItemsAddingEventArgs(ICollection objectsToAdd)
-            {
-                this.ObjectsToAdd = objectsToAdd;
-            }
-
-            public ICollection ObjectsToAdd;
-        }
-
-        /// <summary>
-        /// This event is triggered by SetObjects before any change has been made to the list.
-        /// </summary>
-        /// <remarks>
-        /// When used with a virtual list, OldObjects will always be null.
-        /// </remarks>
-        public class ItemsChangingEventArgs : CancellableEvent
-        {
-            public ItemsChangingEventArgs(IEnumerable oldObjects, IEnumerable newObjects)
-            {
-                this.OldObjects = oldObjects;
-                this.NewObjects = newObjects;
-            }
-
-            public readonly IEnumerable OldObjects;
-            public IEnumerable NewObjects;
-        }
-
-        /// <summary>
-        /// This event is triggered by RemoveObjects before any change has been made to the list.
-        /// </summary>
-        public class ItemsRemovingEventArgs : CancellableEvent
-        {
-            public ItemsRemovingEventArgs(ICollection objectsToRemove)
-            {
-                this.ObjectsToRemove = objectsToRemove;
-            }
-
-            public ICollection ObjectsToRemove;
-        }
-
-        #endregion
-
     }
 
+    //-----------------------------------------------------------------------------------
+    #region Event Parameter Blocks
+
+    /// <summary>
+    /// Let the world know that a cell edit operation is beginning or ending
+    /// </summary>
+    public class CellEditEventArgs : EventArgs
+    {
+        /// <summary>
+        /// Create an event args
+        /// </summary>
+        /// <param name="column"></param>
+        /// <param name="control"></param>
+        /// <param name="r"></param>
+        /// <param name="item"></param>
+        /// <param name="subItemIndex"></param>
+        public CellEditEventArgs(OLVColumn column, Control control, Rectangle r, OLVListItem item, int subItemIndex)
+        {
+            this.Control = control;
+            this.column = column;
+            this.cellBounds = r;
+            this.listViewItem = item;
+            this.rowObject = item.RowObject;
+            this.subItemIndex = subItemIndex;
+            this.value = column.GetValue(item.RowObject);
+        }
+
+        /// <summary>
+        /// Change this to true to cancel the cell editing operation.
+        /// </summary>
+        /// <remarks>
+        /// <para>During the CellEditStarting event, setting this to true will prevent the cell from being edited.</para>
+        /// <para>During the CellEditFinishing event, if this value is already true, this indicates that the user has
+        /// cancelled the edit operation and that the handler should perform cleanup only. Setting this to true,
+        /// will prevent the ObjectListView from trying to write the new value into the model object.</para>
+        /// </remarks>
+        public bool Cancel;
+
+        /// <summary>
+        /// During the CellEditStarting event, this can be modified to be the control that you want
+        /// to edit the value. You must fully configure the control before returning from the event,
+        /// including its bounds and the value it is showing.
+        /// During the CellEditFinishing event, you can use this to get the value that the user
+        /// entered and commit that value to the model. Changing the control during the finishing
+        /// event has no effect.
+        /// </summary>
+        public Control Control;
+
+        /// <summary>
+        /// The column of the cell that is going to be or has been edited.
+        /// </summary>
+        public OLVColumn Column
+        {
+            get { return this.column; }
+        }
+        private OLVColumn column;
+
+        /// <summary>
+        /// The model object of the row of the cell that is going to be or has been edited.
+        /// </summary>
+        public Object RowObject
+        {
+            get { return this.rowObject; }
+        }
+        private Object rowObject;
+
+        /// <summary>
+        /// The listview item of the cell that is going to be or has been edited.
+        /// </summary>
+        public OLVListItem ListViewItem
+        {
+            get { return this.listViewItem; }
+        }
+        private OLVListItem listViewItem;
+
+        /// <summary>
+        /// The index of the cell that is going to be or has been edited.
+        /// </summary>
+        public int SubItemIndex
+        {
+            get { return this.subItemIndex; }
+        }
+        private int subItemIndex;
+
+        /// <summary>
+        /// The data value of the cell before the edit operation began.
+        /// </summary>
+        public Object Value
+        {
+            get { return this.value; }
+        }
+        private Object value;
+
+        /// <summary>
+        /// The bounds of the cell that is going to be or has been edited.
+        /// </summary>
+        public Rectangle CellBounds
+        {
+            get { return this.cellBounds; }
+        }
+        private Rectangle cellBounds;
+    }
+
+    public class CancellableEventArgs : EventArgs
+    {
+        /// <summary>
+        /// Has this event been cancelled by the event handler?
+        /// </summary>
+        public bool Canceled;
+    }
+
+    public class BeforeSortingEventArgs : CancellableEventArgs
+    {
+        public BeforeSortingEventArgs(OLVColumn column, SortOrder order)
+        {
+            this.ColumnToSort = column;
+            this.SortOrder = order;
+        }
+
+        public OLVColumn ColumnToSort;
+        public SortOrder SortOrder;
+    }
+
+    public class AfterSortingEventArgs : EventArgs
+    {
+        public AfterSortingEventArgs(OLVColumn column, SortOrder order)
+        {
+            this.columnToSort = column;
+            this.sortOrder = order;
+        }
+
+        public OLVColumn ColumnToSort
+        {
+            get { return columnToSort; }
+        }
+        private OLVColumn columnToSort;
+
+        public SortOrder SortOrder
+        {
+            get { return sortOrder; }
+        }
+        private SortOrder sortOrder;
+    }
+
+    /// <summary>
+    /// This event is triggered after the items in the list have been changed,
+    /// either through SetObjects, AddObjects or RemoveObjects.
+    /// </summary>
+    public class ItemsChangedEventArgs : EventArgs
+    {
+        public ItemsChangedEventArgs()
+        {
+        }
+
+        /// <summary>
+        /// Constructor for this event when used by a virtual list
+        /// </summary>
+        /// <param name="oldObjectCount"></param>
+        /// <param name="newObjectCount"></param>
+        public ItemsChangedEventArgs(int oldObjectCount, int newObjectCount)
+        {
+            this.oldObjectCount = oldObjectCount;
+            this.newObjectCount = newObjectCount;
+        }
+
+        public int OldObjectCount
+        {
+            get { return oldObjectCount; }
+        }
+        private int oldObjectCount;
+
+        public int NewObjectCount
+        {
+            get { return newObjectCount; }
+        }
+        private int newObjectCount;
+    }
+
+    /// <summary>
+    /// This event is triggered by AddObjects before any change has been made to the list.
+    /// </summary>
+    public class ItemsAddingEventArgs : CancellableEventArgs
+    {
+        public ItemsAddingEventArgs(ICollection objectsToAdd)
+        {
+            this.ObjectsToAdd = objectsToAdd;
+        }
+
+        public ICollection ObjectsToAdd;
+    }
+
+    /// <summary>
+    /// This event is triggered by SetObjects before any change has been made to the list.
+    /// </summary>
+    /// <remarks>
+    /// When used with a virtual list, OldObjects will always be null.
+    /// </remarks>
+    public class ItemsChangingEventArgs : CancellableEventArgs
+    {
+        public ItemsChangingEventArgs(IEnumerable oldObjects, IEnumerable newObjects)
+        {
+            this.oldObjects = oldObjects;
+            this.NewObjects = newObjects;
+        }
+
+        public IEnumerable OldObjects
+        {
+            get { return oldObjects; }
+        }
+        private IEnumerable oldObjects;
+
+        public IEnumerable NewObjects;
+    }
+
+    /// <summary>
+    /// This event is triggered by RemoveObjects before any change has been made to the list.
+    /// </summary>
+    public class ItemsRemovingEventArgs : CancellableEventArgs
+    {
+        public ItemsRemovingEventArgs(ICollection objectsToRemove)
+        {
+            this.ObjectsToRemove = objectsToRemove;
+        }
+
+        public ICollection ObjectsToRemove;
+    }
+
+    #endregion
 }
