@@ -137,11 +137,12 @@ namespace ObjectListViewDemo
 
             this.comboBox6.SelectedIndex = 0;
 
-            tlist.CheckStateGetter = delegate(Person x) {
+            tlist.BooleanCheckStateGetter = delegate(Person x) {
                 return x.IsActive;
             };
-            tlist.CheckStatePutter = delegate(Person x, CheckState newValue) {
-                x.IsActive = (newValue == CheckState.Checked);
+            tlist.BooleanCheckStatePutter = delegate(Person x, bool newValue) {
+                x.IsActive = newValue;
+                return newValue;
             };
 			// Just one line of code make everything happen.
 			this.listViewSimple.SetObjects(list);
@@ -451,11 +452,12 @@ namespace ObjectListViewDemo
 
 		void InitializeVirtualListExample ()
 		{
-            this.listViewVirtual.CheckStateGetter = delegate(object x) {
+            this.listViewVirtual.BooleanCheckStateGetter = delegate(object x) {
                 return ((Person)x).IsActive;
             };
-            this.listViewVirtual.CheckStatePutter = delegate(object x, CheckState newValue) {
-                ((Person)x).IsActive = (newValue == CheckState.Checked);
+            this.listViewVirtual.BooleanCheckStatePutter = delegate(object x, bool newValue) {
+                ((Person)x).IsActive = newValue;
+                return newValue;
             };
             this.listViewVirtual.VirtualListSize = 10000000;
 			this.listViewVirtual.RowGetter = delegate (int i) {
@@ -1305,7 +1307,7 @@ namespace ObjectListViewDemo
 
         #region Cell editing example
 
-        private void listViewComplex_CellEditStarting(object sender, ObjectListView.CellEditEventArgs e)
+        private void listViewComplex_CellEditStarting(object sender, CellEditEventArgs e)
         {
             // We only want to mess with the Cooking Skill column
             if (e.Column.Text != "Cooking skill")
@@ -1328,7 +1330,7 @@ namespace ObjectListViewDemo
             ((Person)cb.Tag).CulinaryRating = cb.SelectedIndex * 10;
         }
 
-        private void listViewComplex_CellEditValidating(object sender, ObjectListView.CellEditEventArgs e)
+        private void listViewComplex_CellEditValidating(object sender, CellEditEventArgs e)
         {
             // Disallow professions from starting with "a" or "z" -- just to be arbitrary
             if (e.Column.Text == "Occupation") {
@@ -1352,7 +1354,7 @@ namespace ObjectListViewDemo
 
         }
 
-        private void listViewComplex_CellEditFinishing(object sender, ObjectListView.CellEditEventArgs e)
+        private void listViewComplex_CellEditFinishing(object sender, CellEditEventArgs e)
         {
             // We only want to mess with the Cooking Skill column
             if (e.Column.Text != "Cooking skill")
@@ -1405,11 +1407,12 @@ namespace ObjectListViewDemo
 
         private void InitializeFastListExample(List<Person> list)
         {
-            this.olvFastList.CheckStateGetter = delegate(object x) {
+            this.olvFastList.BooleanCheckStateGetter = delegate(object x) {
                 return ((Person)x).IsActive;
             };
-            this.olvFastList.CheckStatePutter = delegate(object x, CheckState newValue) {
-                ((Person)x).IsActive = (newValue == CheckState.Checked);
+            this.olvFastList.BooleanCheckStatePutter = delegate(object x, bool newValue) {
+                ((Person)x).IsActive = newValue;
+                return newValue;
             };
             this.olvColumn18.AspectGetter = delegate(object x) { return ((Person)x).Name; };
 
@@ -1587,7 +1590,7 @@ namespace ObjectListViewDemo
 
 	class Person
 	{
-        public bool? IsActive = true;
+        public bool IsActive = true;
 
 		public Person(string name)
 		{

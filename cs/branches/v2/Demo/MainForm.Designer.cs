@@ -495,9 +495,7 @@ namespace ObjectListViewDemo
             this.listViewSimple.AllColumns.Add(this.columnHeader15);
             this.listViewSimple.AllColumns.Add(this.columnHeader16);
             this.listViewSimple.AllColumns.Add(this.olvColumn34);
-            this.listViewSimple.AlternateRowBackColor = System.Drawing.Color.Empty;
-            this.listViewSimple.AlwaysGroupByColumn = null;
-            this.listViewSimple.AlwaysGroupBySortOrder = System.Windows.Forms.SortOrder.None;
+            this.listViewSimple.AlternateRowBackColor = System.Drawing.Color.Pink;
             this.listViewSimple.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
@@ -516,13 +514,12 @@ namespace ObjectListViewDemo
             this.listViewSimple.HideSelection = false;
             this.listViewSimple.HighlightBackgroundColor = System.Drawing.Color.Empty;
             this.listViewSimple.HighlightForegroundColor = System.Drawing.Color.Empty;
-            this.listViewSimple.LastSortColumn = null;
-            this.listViewSimple.LastSortOrder = System.Windows.Forms.SortOrder.None;
             this.listViewSimple.Location = new System.Drawing.Point(6, 55);
             this.listViewSimple.Name = "listViewSimple";
             this.listViewSimple.ShowGroups = false;
             this.listViewSimple.Size = new System.Drawing.Size(774, 394);
             this.listViewSimple.TabIndex = 0;
+            this.listViewSimple.UseAlternatingBackColors = true;
             this.listViewSimple.UseCompatibleStateImageBehavior = false;
             this.listViewSimple.View = System.Windows.Forms.View.Details;
             this.listViewSimple.SelectedIndexChanged += new System.EventHandler(this.ListViewSelectedIndexChanged);
@@ -797,8 +794,6 @@ namespace ObjectListViewDemo
             this.listViewComplex.AllColumns.Add(this.olvJokeColumn);
             this.listViewComplex.AllowColumnReorder = true;
             this.listViewComplex.AlternateRowBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(255)))), ((int)(((byte)(192)))));
-            this.listViewComplex.AlwaysGroupByColumn = null;
-            this.listViewComplex.AlwaysGroupBySortOrder = System.Windows.Forms.SortOrder.None;
             this.listViewComplex.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
@@ -822,8 +817,6 @@ namespace ObjectListViewDemo
             this.listViewComplex.HighlightBackgroundColor = System.Drawing.Color.Empty;
             this.listViewComplex.HighlightForegroundColor = System.Drawing.Color.Empty;
             this.listViewComplex.LargeImageList = this.imageList2;
-            this.listViewComplex.LastSortColumn = null;
-            this.listViewComplex.LastSortOrder = System.Windows.Forms.SortOrder.None;
             this.listViewComplex.Location = new System.Drawing.Point(6, 48);
             this.listViewComplex.Name = "listViewComplex";
             this.listViewComplex.ShowGroups = false;
@@ -835,10 +828,10 @@ namespace ObjectListViewDemo
             this.listViewComplex.UseAlternatingBackColors = true;
             this.listViewComplex.UseCompatibleStateImageBehavior = false;
             this.listViewComplex.View = System.Windows.Forms.View.Details;
-            this.listViewComplex.CellEditFinishing += new BrightIdeasSoftware.ObjectListView.CellEditEventHandler(this.listViewComplex_CellEditFinishing);
+            this.listViewComplex.CellEditFinishing += new BrightIdeasSoftware.CellEditEventHandler(this.listViewComplex_CellEditFinishing);
+            this.listViewComplex.CellEditStarting += new BrightIdeasSoftware.CellEditEventHandler(this.listViewComplex_CellEditStarting);
+            this.listViewComplex.CellEditValidating += new BrightIdeasSoftware.CellEditEventHandler(this.listViewComplex_CellEditValidating);
             this.listViewComplex.SelectedIndexChanged += new System.EventHandler(this.ListViewSelectedIndexChanged);
-            this.listViewComplex.CellEditValidating += new BrightIdeasSoftware.ObjectListView.CellEditEventHandler(this.listViewComplex_CellEditValidating);
-            this.listViewComplex.CellEditStarting += new BrightIdeasSoftware.ObjectListView.CellEditEventHandler(this.listViewComplex_CellEditStarting);
             // 
             // personColumn
             // 
@@ -1091,8 +1084,6 @@ namespace ObjectListViewDemo
             this.listViewDataSet.AllColumns.Add(this.olvColumnGif);
             this.listViewDataSet.AllowColumnReorder = true;
             this.listViewDataSet.AlternateRowBackColor = System.Drawing.Color.Empty;
-            this.listViewDataSet.AlwaysGroupByColumn = null;
-            this.listViewDataSet.AlwaysGroupBySortOrder = System.Windows.Forms.SortOrder.None;
             this.listViewDataSet.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
@@ -1114,8 +1105,6 @@ namespace ObjectListViewDemo
             this.listViewDataSet.HighlightBackgroundColor = System.Drawing.Color.Crimson;
             this.listViewDataSet.HighlightForegroundColor = System.Drawing.Color.DarkGreen;
             this.listViewDataSet.LargeImageList = this.imageList2;
-            this.listViewDataSet.LastSortColumn = null;
-            this.listViewDataSet.LastSortOrder = System.Windows.Forms.SortOrder.None;
             this.listViewDataSet.Location = new System.Drawing.Point(6, 19);
             this.listViewDataSet.Name = "listViewDataSet";
             this.listViewDataSet.ShowGroups = false;
@@ -1369,8 +1358,6 @@ namespace ObjectListViewDemo
             this.listViewVirtual.AllColumns.Add(this.olvColumn10);
             this.listViewVirtual.AllowColumnReorder = true;
             this.listViewVirtual.AlternateRowBackColor = System.Drawing.Color.Empty;
-            this.listViewVirtual.AlwaysGroupByColumn = null;
-            this.listViewVirtual.AlwaysGroupBySortOrder = System.Windows.Forms.SortOrder.None;
             this.listViewVirtual.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
@@ -1391,8 +1378,6 @@ namespace ObjectListViewDemo
             this.listViewVirtual.HighlightBackgroundColor = System.Drawing.Color.Empty;
             this.listViewVirtual.HighlightForegroundColor = System.Drawing.Color.Empty;
             this.listViewVirtual.LargeImageList = this.imageList2;
-            this.listViewVirtual.LastSortColumn = null;
-            this.listViewVirtual.LastSortOrder = System.Windows.Forms.SortOrder.None;
             this.listViewVirtual.Location = new System.Drawing.Point(6, 48);
             this.listViewVirtual.Name = "listViewVirtual";
             this.listViewVirtual.ShowGroups = false;
@@ -1642,8 +1627,6 @@ namespace ObjectListViewDemo
             this.listViewFiles.AllColumns.Add(this.treeColumnFileExtension);
             this.listViewFiles.AllowColumnReorder = true;
             this.listViewFiles.AlternateRowBackColor = System.Drawing.Color.Empty;
-            this.listViewFiles.AlwaysGroupByColumn = null;
-            this.listViewFiles.AlwaysGroupBySortOrder = System.Windows.Forms.SortOrder.None;
             this.listViewFiles.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
@@ -1660,8 +1643,6 @@ namespace ObjectListViewDemo
             this.listViewFiles.HighlightBackgroundColor = System.Drawing.Color.Empty;
             this.listViewFiles.HighlightForegroundColor = System.Drawing.Color.Empty;
             this.listViewFiles.LargeImageList = this.imageList2;
-            this.listViewFiles.LastSortColumn = null;
-            this.listViewFiles.LastSortOrder = System.Windows.Forms.SortOrder.None;
             this.listViewFiles.Location = new System.Drawing.Point(6, 83);
             this.listViewFiles.Name = "listViewFiles";
             this.listViewFiles.ShowGroups = false;
@@ -2376,8 +2357,6 @@ namespace ObjectListViewDemo
             this.olvFastList.AllColumns.Add(this.olvColumn33);
             this.olvFastList.AllowColumnReorder = true;
             this.olvFastList.AlternateRowBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(255)))), ((int)(((byte)(192)))));
-            this.olvFastList.AlwaysGroupByColumn = null;
-            this.olvFastList.AlwaysGroupBySortOrder = System.Windows.Forms.SortOrder.None;
             this.olvFastList.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
@@ -2400,8 +2379,6 @@ namespace ObjectListViewDemo
             this.olvFastList.HighlightBackgroundColor = System.Drawing.Color.Empty;
             this.olvFastList.HighlightForegroundColor = System.Drawing.Color.Empty;
             this.olvFastList.LargeImageList = this.imageList2;
-            this.olvFastList.LastSortColumn = null;
-            this.olvFastList.LastSortOrder = System.Windows.Forms.SortOrder.None;
             this.olvFastList.Location = new System.Drawing.Point(6, 47);
             this.olvFastList.Name = "olvFastList";
             this.olvFastList.RightToLeft = System.Windows.Forms.RightToLeft.No;
@@ -2606,13 +2583,9 @@ namespace ObjectListViewDemo
             this.treeListView.AllColumns.Add(this.treeColumnFileExtension);
             this.treeListView.AllowColumnReorder = true;
             this.treeListView.AlternateRowBackColor = System.Drawing.Color.Empty;
-            this.treeListView.AlwaysGroupByColumn = null;
-            this.treeListView.AlwaysGroupBySortOrder = System.Windows.Forms.SortOrder.None;
             this.treeListView.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
-            this.treeListView.CanExpandGetter = null;
-            this.treeListView.ChildrenGetter = null;
             this.treeListView.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.treeColumnName,
             this.treeColumnCreated,
@@ -2626,11 +2599,9 @@ namespace ObjectListViewDemo
             this.treeListView.HighlightBackgroundColor = System.Drawing.Color.Empty;
             this.treeListView.HighlightForegroundColor = System.Drawing.Color.Empty;
             this.treeListView.LargeImageList = this.imageList2;
-            this.treeListView.LastSortColumn = this.treeColumnName;
-            this.treeListView.LastSortOrder = System.Windows.Forms.SortOrder.None;
             this.treeListView.Location = new System.Drawing.Point(6, 83);
             this.treeListView.Name = "treeListView";
-            this.treeListView.Roots = ((System.Collections.IEnumerable)(resources.GetObject("treeListView.Roots")));
+            this.treeListView.OwnerDraw = true;
             this.treeListView.ShowGroups = false;
             this.treeListView.Size = new System.Drawing.Size(774, 367);
             this.treeListView.SmallImageList = this.imageList1;
@@ -2942,8 +2913,6 @@ namespace ObjectListViewDemo
             this.objectListView1.AllColumns.Add(this.treeColumnFileExtension);
             this.objectListView1.AllowColumnReorder = true;
             this.objectListView1.AlternateRowBackColor = System.Drawing.Color.Empty;
-            this.objectListView1.AlwaysGroupByColumn = null;
-            this.objectListView1.AlwaysGroupBySortOrder = System.Windows.Forms.SortOrder.None;
             this.objectListView1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
@@ -2960,8 +2929,6 @@ namespace ObjectListViewDemo
             this.objectListView1.HighlightBackgroundColor = System.Drawing.Color.Empty;
             this.objectListView1.HighlightForegroundColor = System.Drawing.Color.Empty;
             this.objectListView1.LargeImageList = this.imageList2;
-            this.objectListView1.LastSortColumn = null;
-            this.objectListView1.LastSortOrder = System.Windows.Forms.SortOrder.None;
             this.objectListView1.Location = new System.Drawing.Point(6, 83);
             this.objectListView1.Name = "objectListView1";
             this.objectListView1.ShowGroups = false;
