@@ -5,6 +5,7 @@
  * Date: 27/09/2008 9:15 AM
  *
  * Change log:
+ * 2008-11-05   JPP  - Rewrote handling of check boxes
  * 2008-10-28   JPP  - Handle SetSelectedObjects(null)
  * 2008-10-02   JPP  - MAJOR CHANGE: Use IVirtualListDataSource
  * 2008-09-27   JPP  - Separated from ObjectListView.cs
@@ -49,26 +50,15 @@ namespace BrightIdeasSoftware
     /// In any case, you really do not want to keep state information for 10 million animations!</para>
     /// <para>
     /// Although it isn't documented, .NET virtual lists cannot have checkboxes. This class codes around this limitation,
-    /// but you must use the functions provided by this class. If you call the normal "CheckedItems", it will throw an
-    /// exception. If you use CheckedObjects and its friends (declared in ObjectListView), you should not have any trouble.
-    /// The only exception is the "CheckBoxes" property itself. Once this is set, trying to unset it will throw an exception,
-    /// since the list is a virtual list.
+    /// but you must use the functions provided by ObjectListView: CheckedObjects, CheckObject(), UncheckObject() and their friends. 
     /// </para>
     /// <para>
-    /// As of v2.0, a VirtualObjectListView cannot have CheckStateGetters. To check an object, you must use the CheckObjects
-    /// property. 
+    /// If you use the normal check box properties (CheckedItems or CheckedIndicies), they will throw an exception, since the
+    /// list is in virtual mode, and .NET "knows" it can't handle checkboxes in virtual mode.
+    /// The "CheckBoxes" property itself can be set once, but trying to unset it later will throw an exception.
     /// </para>
-    /// <para>
-    /// The reason for this is that we never want to iterate
-    /// all the contents of a virtual list. If we allow CheckStateGetters, then whenever the CheckedObjects property is fetched,
-    /// we have to iterate the whole list calling the check state getter for each object, to find out which objects are checked.
-    /// If CheckStateGetters are not allowed, then we know that a row is unchecked until it is included in a CheckObjects
-    /// assignment.
-    /// </para>
-    /// <para>
-    /// To complete the symmetry, CheckStatePutters are also
-    /// ignored, even though it is possible to support them.
-    /// </para>
+    /// <para>Due to the limits of the underlying Windows control, virtual lists do not trigger ItemCheck/ItemChecked events. 
+    /// Use a CheckStatePutter instead.</para>
     /// </remarks>
     public class VirtualObjectListView : ObjectListView
     {
@@ -84,12 +74,13 @@ namespace BrightIdeasSoftware
             this.CacheVirtualItems += new CacheVirtualItemsEventHandler(this.HandleCacheVirtualItems);
             this.RetrieveVirtualItem += new RetrieveVirtualItemEventHandler(this.HandleRetrieveVirtualItem);
             this.SearchForVirtualItem += new SearchForVirtualItemEventHandler(this.HandleSearchForVirtualItem);
-
+            
+            // At the moment, we don't need to handle this event. But we'll keep this comment to remind us about it.
+            //this.VirtualItemsSelectionRangeChanged += new ListViewVirtualItemsSelectionRangeChangedEventHandler(VirtualObjectListView_VirtualItemsSelectionRangeChanged);
+            
             this.DataSource = new VirtualListVersion1DataSource(this);
-
-            this.CheckStateGetter = this.VirtualList_CheckStateGetter;
-            this.CheckStatePutter = this.VirtualList_CheckStatePutter;
         }
+
 
         #region Public Properties
 
@@ -111,40 +102,47 @@ namespace BrightIdeasSoftware
         /// the number of objects to be checked.
         /// </para>
         /// <para>
-        /// If the ListView is not currently showing CheckBoxes, this property does nothing.
+        /// If the ListView is not currently showing CheckBoxes, this property does nothing. It does
+        /// not remember any check box settings made.
         /// </para>
         /// </remarks>
         [Browsable(false),
          DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         override public IList CheckedObjects
         {
-            get
-            {
+            get {
                 ArrayList objects = new ArrayList();
-                if (this.CheckBoxes) {
-                    foreach (KeyValuePair<Object, CheckState> kvp in this.checkStateMap) {
-                        if (kvp.Value == CheckState.Checked)
-                            objects.Add(kvp.Key);
-                    }
+
+                if (!this.CheckBoxes)
+                    return objects;
+
+                if (this.CheckStateGetter != null)
+                    return base.CheckedObjects;
+
+                foreach (KeyValuePair<Object, CheckState> kvp in this.checkStateMap) {
+                    if (kvp.Value == CheckState.Checked)
+                        objects.Add(kvp.Key);
                 }
                 return objects;
             }
-            set
-            {
-                if (this.CheckBoxes) 
+            set {
+                if (!this.CheckBoxes) 
                     return;
 
-                // Uncheck all objects
-                IList oldChecked = this.CheckedObjects;
-                this.checkStateMap = new Dictionary<object, CheckState>();
-                this.RefreshObjects(oldChecked);
+                if (value == null)
+                    value = new ArrayList();
 
-                // Check new objects
-                if (value != null) {
-                    foreach (Object x in value)
-                        this.checkStateMap[x] = CheckState.Checked;
-                    this.RefreshObjects(value);
+                Object[] keys = new Object[this.checkStateMap.Count];
+                this.checkStateMap.Keys.CopyTo(keys, 0);
+                foreach (Object key in keys) {
+                    if (value.Contains(key)) 
+                        this.SetObjectCheckedness(key, CheckState.Checked);
+                    else
+                        this.SetObjectCheckedness(key, CheckState.Unchecked);
                 }
+
+                foreach (Object x in value)
+                    this.SetObjectCheckedness(x, CheckState.Checked);
             }
         }
 
@@ -212,16 +210,6 @@ namespace BrightIdeasSoftware
         }
 
         /// <summary>
-        /// Return the item at the given index
-        /// </summary>
-        /// <param name="index">Index of the item to be returned</param>
-        /// <returns>An OLVListItem</returns>
-        override public OLVListItem GetItem(int index)
-        {
-            return (OLVListItem)this.Items[index];
-        }
-
-        /// <summary>
         /// Return the model object at the given index
         /// </summary>
         /// <param name="index">Index of the model object to be returned</param>
@@ -230,6 +218,24 @@ namespace BrightIdeasSoftware
         {
             if (this.DataSource != null)
                 return this.DataSource.GetNthObject(index);
+            else
+                return null;
+        }
+
+        /// <summary>
+        /// Return the OLVListItem that displays the given model object
+        /// </summary>
+        /// <param name="modelObject">The modelObject whose item is to be found</param>
+        /// <returns>The OLVListItem that displays the model, or null</returns>
+        /// <remarks>This method has O(n) performance.</remarks>
+        override public OLVListItem ModelToItem(object modelObject)
+        {
+            if (this.DataSource == null || modelObject == null)
+                return null;
+
+            int idx = this.DataSource.GetObjectIndex(modelObject);
+            if (idx >= 0)
+                return this.GetItem(idx);
             else
                 return null;
         }
@@ -256,7 +262,7 @@ namespace BrightIdeasSoftware
             // Give the world a chance to cancel or change the added objects
             ItemsAddingEventArgs args = new ItemsAddingEventArgs(modelObjects);
             this.OnItemsAdding(args);
-            if (args.Cancelled)
+            if (args.Canceled)
                 return;
 
             this.DataSource.AddObjects(args.ObjectsToAdd);
@@ -316,7 +322,7 @@ namespace BrightIdeasSoftware
             // Give the world a chance to cancel or change the removed objects
             ItemsRemovingEventArgs args = new ItemsRemovingEventArgs(modelObjects);
             this.OnItemsRemoving(args);
-            if (args.Cancelled)
+            if (args.Canceled)
                 return;
 
             this.DataSource.RemoveObjects(args.ObjectsToRemove);
@@ -396,7 +402,7 @@ namespace BrightIdeasSoftware
                 // Give the world a chance to cancel or change the assigned collection
                 ItemsChangingEventArgs args = new ItemsChangingEventArgs(null, collection);
                 this.OnItemsChanging(args);
-                if (args.Cancelled)
+                if (args.Canceled)
                     return;
 
                 this.DataSource.SetObjects(args.NewObjects);
@@ -421,33 +427,29 @@ namespace BrightIdeasSoftware
             this.Invalidate();
         }
 
-        protected bool? VirtualList_CheckStateGetter(Object modelObject)
-        {
-            CheckState state;
-
-            if (!this.checkStateMap.TryGetValue(modelObject, out state))
-                return false;
-
-            switch (state) {
-                case CheckState.Checked:    return true;
-                case CheckState.Unchecked:  return false;
-                default:                    return null;
-            }
-        }
-
-        protected void VirtualList_CheckStatePutter(Object modelObject, CheckState newState)
-        {
-            this.checkStateMap[modelObject] = newState;
-        }
-
-        private Dictionary<Object, CheckState> checkStateMap = new Dictionary<object, CheckState>();
-
         /// <summary>
         /// Clear any cached info this list may have been using
         /// </summary>
         public void ClearCachedInfo()
         {
             this.lastRetrieveVirtualItemIndex = -1;
+        }
+
+        /// <summary>
+        /// Get the checkedness of an object from the model. Returning null means the
+        /// model does know and the value from the control will be used.
+        /// </summary>
+        /// <param name="modelObject"></param>
+        /// <returns></returns>
+        protected override CheckState? GetCheckState(object modelObject)
+        {
+            if (this.CheckStateGetter != null)
+                return base.GetCheckState(modelObject);
+
+            CheckState state = CheckState.Unchecked;
+            if (modelObject != null)
+                this.checkStateMap.TryGetValue(modelObject, out state);
+            return state;
         }
 
         /// <summary>
@@ -470,6 +472,21 @@ namespace BrightIdeasSoftware
 
             this.SetSubItemImages(itemIndex, olvi);
             return olvi;
+        }
+
+        /// <summary>
+        /// Record the change of checkstate for the given object in the model.
+        /// This does not update the UI -- only the model
+        /// </summary>
+        /// <param name="modelObject"></param>
+        /// <param name="state"></param>
+        /// <returns>The check state that was recorded and that should be used to update
+        /// the control.</returns>
+        protected override CheckState PutCheckState(object modelObject, CheckState state)
+        {
+            state = base.PutCheckState(modelObject, state);
+            this.checkStateMap[modelObject] = state;
+            return state;
         }
 
         /// <summary>
@@ -614,7 +631,6 @@ namespace BrightIdeasSoftware
             }
         }
 
-
         /// <summary>
         /// Handle a RetrieveVirtualItem
         /// </summary>
@@ -675,34 +691,6 @@ namespace BrightIdeasSoftware
         }
 
         /// <summary>
-        /// This is a useful default implementation of SearchText method 
-        /// </summary>
-        /// <param name="value"></param>
-        /// <param name="from"></param>
-        /// <param name="to"></param>
-        /// <param name="column"></param>
-        /// <param name="source"></param>
-        /// <returns></returns>
-        public int DefaultSearchText(string value, int from, int to, OLVColumn column, IVirtualListDataSource source)
-        {
-            if (from <= to) {
-                for (int i = from; i <= to; i++) {
-                    string data = column.GetStringValue(source.GetNthObject(i));
-                    if (data.StartsWith(value, StringComparison.CurrentCultureIgnoreCase))
-                        return i;
-                }
-            } else {
-                for (int i = from; i >= to; i--) {
-                    string data = column.GetStringValue(source.GetNthObject(i));
-                    if (data.StartsWith(value, StringComparison.CurrentCultureIgnoreCase))
-                        return i;
-                }
-            }
-
-            return -1;
-        }
-
-        /// <summary>
         /// Handle a mouse down event
         /// </summary>
         /// <param name="e"></param>
@@ -710,19 +698,19 @@ namespace BrightIdeasSoftware
         {
             base.OnMouseDown(e);
 
-            // Did the user click the state icon? If so and check boxes are enable, toggle
-            // the clicked row. If the given row is selected, all selected rows are given
-            // the same checkedness.
+            if (!this.CheckBoxes)
+                return;
+
+            // Did the user click the state icon? If so, toggle the clicked row. 
+            // If the given row is selected, all selected rows are given the same checkedness.
             ListViewHitTestInfo htInfo = this.HitTest(e.Location);
-            if (this.CheckBoxes && (htInfo.Location & ListViewHitTestLocations.StateImage) != 0) {
+            if ((htInfo.Location & ListViewHitTestLocations.StateImage) != 0) {
                 OLVListItem clickedItem = (OLVListItem)htInfo.Item;
-                this.ChangeCheckItem(clickedItem, clickedItem.Checked, !clickedItem.Checked);
+                this.ToggleCheckObject(clickedItem.RowObject);
                 if (clickedItem.Selected) {
-                    foreach (int i in this.SelectedIndices) {
-                        OLVListItem olvi = this.GetItem(i);
-                        if (olvi.Checked != clickedItem.Checked)
-                            this.ChangeCheckItem(olvi, olvi.Checked, clickedItem.Checked);
-                    }
+                    CheckState state = this.ModelToItem(clickedItem.RowObject).CheckState;
+                    foreach (Object x in this.SelectedObjects)
+                        this.SetObjectCheckedness(x, state);
                 }
             }
         }
@@ -731,8 +719,9 @@ namespace BrightIdeasSoftware
 
         #region Variable declaractions
 
-        private int lastRetrieveVirtualItemIndex = -1;
+        private Dictionary<Object, CheckState> checkStateMap = new Dictionary<object, CheckState>();
         private OLVListItem lastRetrieveVirtualItem;
+        private int lastRetrieveVirtualItemIndex = -1;
 
         #endregion
     }
@@ -768,20 +757,20 @@ namespace BrightIdeasSoftware
         /// The ListView is about to request the given range of items. Do
         /// whatever caching seems appropriate.
         /// </summary>
-        /// <param name="from"></param>
-        /// <param name="to"></param>
-        void PrepareCache(int from, int to);
+        /// <param name="first"></param>
+        /// <param name="last"></param>
+        void PrepareCache(int first, int last);
 
         /// <summary>
         /// Find the first row that "matches" the given text in the given range.
         /// </summary>
         /// <param name="value">The text typed by the user</param>
-        /// <param name="from">Start searching from this index. This may be greater than the 'to' parameter, 
+        /// <param name="first">Start searching from this index. This may be greater than the 'to' parameter, 
         /// in which case the search should descend</param>
-        /// <param name="to">Do not search beyond this index. This may be less than the 'from' parameter.</param>
+        /// <param name="last">Do not search beyond this index. This may be less than the 'from' parameter.</param>
         /// <param name="column">The column that should be considered when looking for a match.</param>
         /// <returns>Return the index of row that was matched, or -1 if no match was found</returns>
-        int SearchText(string value, int from, int to, OLVColumn column);
+        int SearchText(string value, int first, int last, OLVColumn column);
 
         /// <summary>
         /// Sort the model objects in the data source.
@@ -847,7 +836,7 @@ namespace BrightIdeasSoftware
         {
         }
 
-        virtual public int SearchText(string value, int from, int to, OLVColumn column)
+        virtual public int SearchText(string value, int first, int last, OLVColumn column)
         {
             return -1;
         }
@@ -866,6 +855,35 @@ namespace BrightIdeasSoftware
 
         virtual public void SetObjects(IEnumerable collection)
         {
+        }
+
+        /// <summary>
+        /// This is a useful default implementation of SearchText method, intended to be called
+        /// by implementors of IVirtualListDataSource.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="first"></param>
+        /// <param name="last"></param>
+        /// <param name="column"></param>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        static public int DefaultSearchText(string value, int first, int last, OLVColumn column, IVirtualListDataSource source)
+        {
+            if (first <= last) {
+                for (int i = first; i <= last; i++) {
+                    string data = column.GetStringValue(source.GetNthObject(i));
+                    if (data.StartsWith(value, StringComparison.CurrentCultureIgnoreCase))
+                        return i;
+                }
+            } else {
+                for (int i = first; i >= last; i--) {
+                    string data = column.GetStringValue(source.GetNthObject(i));
+                    if (data.StartsWith(value, StringComparison.CurrentCultureIgnoreCase))
+                        return i;
+                }
+            }
+
+            return -1;
         }
     }
 
@@ -902,9 +920,9 @@ namespace BrightIdeasSoftware
                 return this.RowGetter(n);
         }
 
-        public override int SearchText(string value, int from, int to, OLVColumn column)
+        public override int SearchText(string value, int first, int last, OLVColumn column)
         {
-            return this.listView.DefaultSearchText(value, from, to, column, this);
+            return DefaultSearchText(value, first, last, column, this);
         }
 
         #endregion
