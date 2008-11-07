@@ -59,8 +59,7 @@ namespace BrightIdeasSoftware
         public Object DataSource
         {
             get { return dataSource; }
-            set
-            {
+            set {
                 //THINK: Should we only assign it if it is changed?
                 //if (dataSource != value) {
                 dataSource = value;
@@ -80,8 +79,7 @@ namespace BrightIdeasSoftware
         public string DataMember
         {
             get { return dataMember; }
-            set
-            {
+            set {
                 if (dataMember != value) {
                     dataMember = value;
                     RebindDataSource();
