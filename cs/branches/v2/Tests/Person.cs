@@ -101,6 +101,15 @@ namespace BrightIdeasSoftware.Tests
             hourlyRate = value;
         }
 
+        // Allow tests on trees
+        public IList<Person> Children
+        {       
+            get { return children; }
+            set { children = value; }
+        }
+        private IList<Person> children = new List<Person>();
+	
+        
 		// Allows tests for fields.
         public string Photo;
         public string Comments;
@@ -134,8 +143,16 @@ namespace BrightIdeasSoftware.Tests
         {
             allPersons = new List<Person>(new Person[] {             
                 new Person("name", "occupation", 100, DateTime.Now, 1.0, true, "  photo  ", "comments"),
-                new Person2("name", "occupation", 100, DateTime.Now, 1.0, true, "  photo  ", "comments")
+                new Person2("name", "occupation", 100, DateTime.Now, 1.0, true, "  photo  ", "comments"),
+                new Person("name3", "occupation3", 300, DateTime.Now, 3.0, true, "  photo3  ", "comments3"),
+                new Person("name4", "occupation4", 400, DateTime.Now, 4.0, true, "  photo4  ", "comments4"),
+                new Person2("name5", "occupation5", 500, DateTime.Now, 5.0, true, "  photo5  ", "comments5"),
+                new Person("name6", "occupation6", 600, DateTime.Now, 6.0, true, "  photo6  ", "comments6"),
             });
+            allPersons[0].Children.Add(allPersons[2]);
+            allPersons[0].Children.Add(allPersons[3]);
+            allPersons[1].Children.Add(allPersons[4]);
+            allPersons[1].Children.Add(allPersons[5]);
         }
         static private List<Person> allPersons;
 

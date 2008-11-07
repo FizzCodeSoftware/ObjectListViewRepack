@@ -18,11 +18,16 @@ namespace BrightIdeasSoftware.Tests
     [TestFixture]
     public class TestOlvSelection
     {
+        [SetUp]
+        public void InitEachTest()
+        {
+            this.olv.SetObjects(PersonDb.All);
+            this.olv.SelectedObjects = null;
+        }
+
         [Test]
         public void TestSelectedObject()
         {
-            this.olv.SetObjects(PersonDb.All);
-            this.olv.SelectedObject = null;
             Assert.IsNull(this.olv.SelectedObject);
             this.olv.SelectedObject = PersonDb.All[1];
             Assert.AreEqual(PersonDb.All[1], this.olv.SelectedObject);
@@ -31,17 +36,37 @@ namespace BrightIdeasSoftware.Tests
         [Test]
         public void TestSelectedObjects()
         {
-            this.olv.SetObjects(PersonDb.All);
-            this.olv.SelectedObjects = null;
             Assert.IsEmpty(this.olv.SelectedObjects);
             this.olv.SelectedObjects = PersonDb.All;
             Assert.AreEqual(PersonDb.All, this.olv.SelectedObjects);
+            this.olv.SelectedObjects = null;
+            Assert.IsEmpty(this.olv.SelectedObjects);
+        }
+
+        [Test]
+        public void TestSelectAll()
+        {
+            this.olv.SelectAll();
+            Assert.AreEqual(PersonDb.All, this.olv.SelectedObjects);
+        }
+
+        [Test]
+        public void TestDeselectAll()
+        {
+            this.olv.SelectedObject = PersonDb.All[1];
+            Assert.IsNotEmpty(this.olv.SelectedObjects);
+            this.olv.DeselectAll();
+            Assert.IsEmpty(this.olv.SelectedObjects);
+
+            this.olv.SelectAll();
+            Assert.IsNotEmpty(this.olv.SelectedObjects);
+            this.olv.DeselectAll();
+            Assert.IsEmpty(this.olv.SelectedObjects);
         }
 
         [Test]
         public void TestSelectionEvents()
         {
-            this.olv.SetObjects(PersonDb.All);
             countSelectedIndexChanged = 0;
             countSelectionChanged = 0;
             this.olv.SelectedIndexChanged += new EventHandler(olv_SelectedIndexChanged);
@@ -52,8 +77,13 @@ namespace BrightIdeasSoftware.Tests
             // Force an idle cycle so the selection changed event is processed
             Application.RaiseIdle(new EventArgs());
 
-            // We should get two selectedIndex event for each object, but only one selection changed
-            Assert.AreEqual(PersonDb.All.Count * 2, countSelectedIndexChanged);
+            // On a virtual list, deselecting everything only triggers one event, but on
+            // normal lists, there should two selectedIndex events for each object.
+            // Regardless of anything, there should be only one selection changed event.
+            if (this.olv.VirtualMode)
+                Assert.AreEqual(PersonDb.All.Count+1, countSelectedIndexChanged);
+            else
+                Assert.AreEqual(PersonDb.All.Count*2, countSelectedIndexChanged);
             Assert.AreEqual(1, countSelectionChanged);
 
             // Cleanup
@@ -74,7 +104,7 @@ namespace BrightIdeasSoftware.Tests
         int countSelectionChanged;
 
         [TestFixtureSetUp]
-        virtual public void Init()
+        public void Init()
         {
             this.olv = MyGlobals.mainForm.objectListView1;
         }
@@ -85,7 +115,7 @@ namespace BrightIdeasSoftware.Tests
     public class TestFastOlvSelection : TestOlvSelection
     {
         [TestFixtureSetUp]
-        override public void Init()
+        new public void Init()
         {
             this.olv = MyGlobals.mainForm.fastObjectListView1;
         }
@@ -95,7 +125,7 @@ namespace BrightIdeasSoftware.Tests
     public class TestTreeListViewSelection : TestOlvSelection
     {
         [TestFixtureSetUp]
-        override public void Init()
+        new public void Init()
         {
             this.olv = MyGlobals.mainForm.treeListView1;
         }

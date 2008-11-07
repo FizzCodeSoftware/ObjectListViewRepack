@@ -63,6 +63,7 @@ namespace BrightIdeasSoftware.Tests
             this.objectListView1.HighlightForegroundColor = System.Drawing.Color.Empty;
             this.objectListView1.Location = new System.Drawing.Point(13, 13);
             this.objectListView1.Name = "objectListView1";
+            this.objectListView1.ShowGroups = false;
             this.objectListView1.Size = new System.Drawing.Size(819, 167);
             this.objectListView1.TabIndex = 0;
             this.objectListView1.UseCompatibleStateImageBehavior = false;

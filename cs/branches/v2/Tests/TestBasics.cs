@@ -9,6 +9,7 @@
  */
 
 using System;
+using System.Drawing;
 using System.Windows.Forms;
 using NUnit.Framework;
 using NUnit.Framework.SyntaxHelpers;
@@ -27,8 +28,31 @@ namespace BrightIdeasSoftware.Tests
             Assert.AreEqual(0, this.olv.GetItemCount());
         }
 
+        [Test]
+        public void TestGetModelObject()
+        {
+            this.olv.SetObjects(PersonDb.All);
+            for (int i = 0; i < PersonDb.All.Count; i++)
+                Assert.AreEqual(PersonDb.All[i], this.olv.GetModelObject(i));
+        }
+
+        [Test]
+        public void TestAlternateBackColors()
+        {
+            this.olv.UseAlternatingBackColors = true;
+            this.olv.AlternateRowBackColor = Color.Pink;
+
+            this.olv.SetObjects(PersonDb.All);
+            for (int i = 0; i < this.olv.GetItemCount(); i++) {
+                if ((i % 2) == 0)
+                    Assert.AreEqual(this.olv.BackColor, this.olv.GetItem(i).BackColor);
+                else
+                    Assert.AreEqual(this.olv.AlternateRowBackColor, this.olv.GetItem(i).BackColor);
+            }
+        }
+
         [TestFixtureSetUp]
-        virtual public void Init()
+        public void Init()
         {
             this.olv = MyGlobals.mainForm.objectListView1;
         }
@@ -39,7 +63,7 @@ namespace BrightIdeasSoftware.Tests
     public class TestFastOlvBasics : TestOlvBasics
     {
         [TestFixtureSetUp]
-        override public void Init()
+        new public void Init()
         {
             this.olv = MyGlobals.mainForm.fastObjectListView1;
         }
@@ -49,7 +73,7 @@ namespace BrightIdeasSoftware.Tests
     public class TestTreeListViewBasics : TestOlvBasics
     {
         [TestFixtureSetUp]
-        override public void Init()
+        new public void Init()
         {
             this.olv = MyGlobals.mainForm.treeListView1;
         }
