@@ -5,6 +5,7 @@
  * Date: 27/09/2008 9:15 AM
  *
  * Change log:
+ * 2008-11-05   JPP  - Added CheckState handling methods
  * 2008-10-24   JPP  - Generate dynamic methods MkII. This one handles value types
  * 2008-10-21   JPP  - Generate dynamic methods
  * 2008-09-27   JPP  - Separated from ObjectListView.cs
@@ -94,8 +95,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         public IList<T> CheckedObjects
         {
-            get
-            {
+            get {
                 IList checkedObjects = this.olv.CheckedObjects;
                 List<T> objects = new List<T>(checkedObjects.Count);
                 foreach (object x in checkedObjects)
@@ -131,8 +131,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         public IList<T> SelectedObjects
         {
-            get
-            {
+            get {
                 List<T> objects = new List<T>(this.olv.SelectedIndices.Count);
                 foreach (int index in this.olv.SelectedIndices)
                     objects.Add((T)this.olv.GetModelObject(index));
@@ -178,13 +177,12 @@ namespace BrightIdeasSoftware
         //--------------------------------------------------------------------------------------
         // Delegates
 
-        public delegate bool? TypedCheckStateGetterDelegate(T rowObject);
+        public delegate CheckState TypedCheckStateGetterDelegate(T rowObject);
 
         public TypedCheckStateGetterDelegate CheckStateGetter
         {
             get { return checkStateGetter; }
-            set
-            {
+            set {
                 this.checkStateGetter = value;
                 if (value == null)
                     this.olv.CheckStateGetter = null;
@@ -196,23 +194,50 @@ namespace BrightIdeasSoftware
         }
         private TypedCheckStateGetterDelegate checkStateGetter;
 
-        public delegate void TypedCheckStatePutterDelegate(T rowObject, CheckState newValue);
+        public delegate bool TypedBooleanCheckStateGetterDelegate(T rowObject);
+
+        public TypedBooleanCheckStateGetterDelegate BooleanCheckStateGetter
+        {
+            set {
+                if (value == null)
+                    this.olv.BooleanCheckStateGetter = null;
+                else
+                    this.olv.BooleanCheckStateGetter = delegate(object x) {
+                        return value((T)x);
+                    };
+            }
+        }
+
+        public delegate CheckState TypedCheckStatePutterDelegate(T rowObject, CheckState newValue);
 
         public TypedCheckStatePutterDelegate CheckStatePutter
         {
             get { return checkStatePutter; }
-            set
-            {
+            set {
                 this.checkStatePutter = value;
                 if (value == null)
                     this.olv.CheckStatePutter = null;
                 else
                     this.olv.CheckStatePutter = delegate(object x, CheckState newValue) {
-                        this.checkStatePutter((T)x, newValue);
+                        return this.checkStatePutter((T)x, newValue);
                     };
             }
         }
         private TypedCheckStatePutterDelegate checkStatePutter;
+
+        public delegate bool TypedBooleanCheckStatePutterDelegate(T rowObject, bool newValue);
+
+        public TypedBooleanCheckStatePutterDelegate BooleanCheckStatePutter
+        {
+            set {
+                if (value == null)
+                    this.olv.BooleanCheckStatePutter = null;
+                else
+                    this.olv.BooleanCheckStatePutter = delegate(object x, bool newValue) {
+                        return value((T)x, newValue);
+                    };
+            }
+        }
 
         //--------------------------------------------------------------------------------------
         // Commands
@@ -247,8 +272,7 @@ namespace BrightIdeasSoftware
         public TypedAspectGetterDelegate AspectGetter
         {
             get { return this.aspectGetter; }
-            set
-            {
+            set {
                 this.aspectGetter = value;
                 if (value == null)
                     this.column.AspectGetter = null;
@@ -263,8 +287,7 @@ namespace BrightIdeasSoftware
         public TypedAspectPutterDelegate AspectPutter
         {
             get { return aspectPutter; }
-            set
-            {
+            set {
                 this.aspectPutter = value;
                 if (value == null)
                     this.column.AspectPutter = null;
@@ -279,8 +302,7 @@ namespace BrightIdeasSoftware
         public TypedImageGetterDelegate ImageGetter
         {
             get { return imageGetter; }
-            set
-            {
+            set {
                 this.imageGetter = value;
                 if (value == null)
                     this.column.ImageGetter = null;
@@ -295,8 +317,7 @@ namespace BrightIdeasSoftware
         public TypedGroupKeyGetterDelegate GroupKeyGetter
         {
             get { return groupKeyGetter; }
-            set
-            {
+            set {
                 this.groupKeyGetter = value;
                 if (value == null)
                     this.column.GroupKeyGetter = null;
