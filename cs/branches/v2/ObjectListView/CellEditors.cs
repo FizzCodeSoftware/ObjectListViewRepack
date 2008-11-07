@@ -37,7 +37,7 @@ namespace BrightIdeasSoftware
     /// <summary>
     /// This editor shows and auto completes values from the given listview column.
     /// </summary>
-    internal class AutoCompleteCellEditor : ComboBox
+    public class AutoCompleteCellEditor : ComboBox
     {
         public AutoCompleteCellEditor(ObjectListView lv, OLVColumn column)
         {
@@ -123,8 +123,7 @@ namespace BrightIdeasSoftware
         public bool Value
         {
             get { return this.SelectedIndex == 1; }
-            set
-            {
+            set {
                 if (value)
                     this.SelectedIndex = 1;
                 else
