@@ -94,9 +94,9 @@ namespace BrightIdeasSoftware
                 return -1;
         }
 
-        override public int SearchText(string value, int from, int to, OLVColumn column)
+        override public int SearchText(string value, int first, int last, OLVColumn column)
         {
-            return this.listView.DefaultSearchText(value, from, to, column, this);
+            return DefaultSearchText(value, first, last, column, this);
         }
 
         override public void Sort(OLVColumn column, SortOrder sortOrder)
@@ -184,7 +184,6 @@ namespace BrightIdeasSoftware
         {
             this.column = col;
             this.sortOrder = order;
-            this.secondComparer = null;
         }
 
         public ModelObjectComparer(OLVColumn col, SortOrder order, OLVColumn col2, SortOrder order2)
@@ -229,8 +228,9 @@ namespace BrightIdeasSoftware
         public int CompareValues(object x, object y)
         {
             // Force case insensitive compares on strings
-            if (x is String)
-                return String.Compare((String)x, (String)y, true);
+            String xStr = x as String;
+            if (xStr != null)
+                return String.Compare(xStr, (String)y, true);
             else {
                 IComparable comparable = x as IComparable;
                 if (comparable != null)
