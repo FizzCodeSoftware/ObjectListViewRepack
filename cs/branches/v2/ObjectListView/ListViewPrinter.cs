@@ -209,8 +209,7 @@ namespace BrightIdeasSoftware
         [Browsable(false)]
         public int PageNumber
         {
-            get
-            {
+            get {
                 return this.pageNumber;
             }
         }
@@ -222,8 +221,7 @@ namespace BrightIdeasSoftware
         [Browsable(false)]
         public bool IsShowingGroups
         {
-            get
-            {
+            get {
                 return (this.ListView != null && this.ListView.ShowGroups && !this.IsPrintSelectionOnly && this.ListView.Groups.Count > 0);
             }
         }
@@ -266,8 +264,7 @@ namespace BrightIdeasSoftware
         DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
         public BlockFormat GroupHeaderFormat
         {
-            get
-            {
+            get {
                 // The group header format cannot be null
                 if (groupHeaderFormat == null)
                     groupHeaderFormat = BlockFormat.GroupHeader();
@@ -286,16 +283,14 @@ namespace BrightIdeasSoftware
         DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
         public BlockFormat CellFormat
         {
-            get
-            {
+            get {
                 // The cell format cannot be null
                 if (cellFormat == null)
                     cellFormat = BlockFormat.DefaultCell();
 
                 return cellFormat;
             }
-            set
-            {
+            set {
                 cellFormat = value;
             }
         }
@@ -343,16 +338,14 @@ namespace BrightIdeasSoftware
         [Browsable(false)]
         public Color ListGridColor
         {
-            get
-            {
+            get {
                 Pen p = this.ListGridPen;
                 if (p == null)
                     return Color.Empty;
                 else
                     return p.Color;
             }
-            set
-            {
+            set {
                 this.ListGridPen = new Pen(new SolidBrush(value), 0.5f);
             }
         }
@@ -377,8 +370,7 @@ namespace BrightIdeasSoftware
         public String Header
         {
             get { return header; }
-            set
-            {
+            set {
                 header = value;
                 if (!String.IsNullOrEmpty(header))
                     header = header.Replace("\\t", "\t");
@@ -397,8 +389,7 @@ namespace BrightIdeasSoftware
         public String Footer
         {
             get { return footer; }
-            set
-            {
+            set {
                 footer = value;
                 if (!String.IsNullOrEmpty(footer))
                     footer = footer.Replace("\\t", "\t");
@@ -441,8 +432,7 @@ namespace BrightIdeasSoftware
         [Browsable(false)]
         public Font WatermarkFontOrDefault
         {
-            get
-            {
+            get {
                 if (this.WatermarkFont == null)
                     return new Font("Tahoma", 72);
                 else
@@ -469,8 +459,7 @@ namespace BrightIdeasSoftware
         [Browsable(false)]
         public Color WatermarkColorOrDefault
         {
-            get
-            {
+            get {
                 if (this.WatermarkColor == Color.Empty)
                     return Color.Gray;
                 else
@@ -1305,8 +1294,7 @@ namespace BrightIdeasSoftware
         [Browsable(false)]
         public Font FontOrDefault
         {
-            get
-            {
+            get {
                 if (this.Font == null)
                     return new Font("Ms Sans Serif", 12);
                 else
@@ -1332,8 +1320,7 @@ namespace BrightIdeasSoftware
         [Browsable(false)]
         public Brush TextBrushOrDefault
         {
-            get
-            {
+            get {
                 if (this.TextBrush == null)
                     return Brushes.Black;
                 else
@@ -1350,15 +1337,13 @@ namespace BrightIdeasSoftware
         DefaultValue(typeof(Color), "Empty")]
         public Color TextColor
         {
-            get
-            {
+            get {
                 if (this.TextBrush == null || !(this.TextBrush is SolidBrush))
                     return Color.Empty;
                 else
                     return ((SolidBrush)this.TextBrush).Color;
             }
-            set
-            {
+            set {
                 if (value.IsEmpty)
                     this.TextBrush = null;
                 else
@@ -1381,15 +1366,13 @@ namespace BrightIdeasSoftware
         DefaultValue(typeof(Color), "Empty")]
         public Color BackgroundColor
         {
-            get
-            {
+            get {
                 if (this.BackgroundBrush == null || !(this.BackgroundBrush is SolidBrush))
                     return Color.Empty;
                 else
                     return ((SolidBrush)this.BackgroundBrush).Color;
             }
-            set
-            {
+            set {
                 this.BackgroundBrush = new SolidBrush(value);
             }
         }
