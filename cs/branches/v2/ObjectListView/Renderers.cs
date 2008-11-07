@@ -126,8 +126,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         public Object Aspect
         {
-            get
-            {
+            get {
                 if (aspect == null)
                     aspect = column.GetValue(this.rowObject);
                 return aspect;
@@ -182,8 +181,7 @@ namespace BrightIdeasSoftware
         /// <returns>The font of the subitem</returns>
         public Font Font
         {
-            get
-            {
+            get {
                 if (this.font == null) {
                     if (this.ListItem.UseItemStyleForSubItems)
                         return this.ListItem.Font;
@@ -192,8 +190,7 @@ namespace BrightIdeasSoftware
                 } else
                     return this.font;
             }
-            set
-            {
+            set {
                 this.font = value;
             }
         }
@@ -204,8 +201,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         public Brush TextBrush
         {
-            get
-            {
+            get {
                 if (textBrush == null)
                     return new SolidBrush(this.GetForegroundColor());
                 else
@@ -299,9 +295,10 @@ namespace BrightIdeasSoftware
                         return il.Images[index];
                 }
 
-                if (imageSelector is String) {
-                    if (il.Images.ContainsKey((String)imageSelector))
-                        return il.Images[(String)imageSelector];
+                String str = imageSelector as String;
+                if (str != null) {
+                    if (il.Images.ContainsKey(str))
+                        return il.Images[str];
                     else
                         return null;
                 }
@@ -840,15 +837,18 @@ namespace BrightIdeasSoftware
                 }
             } else if (this.Aspect is Int32) {
                 image = this.GetImage(this.Aspect);
-            } else if (this.Aspect is String && ((String)this.Aspect) != "") {
-                try {
-                    image = Image.FromFile((String)this.Aspect);
-                }
-                catch (FileNotFoundException) {
-                    image = this.GetImage(this.Aspect);
-                }
-                catch (OutOfMemoryException) {
-                    image = this.GetImage(this.Aspect);
+            } else {
+                String str = this.Aspect as String;
+                if (!String.IsNullOrEmpty(str)) {
+                    try {
+                        image = Image.FromFile(str);
+                    }
+                    catch (FileNotFoundException) {
+                        image = this.GetImage(this.Aspect);
+                    }
+                    catch (OutOfMemoryException) {
+                        image = this.GetImage(this.Aspect);
+                    }
                 }
             }
 
@@ -870,8 +870,7 @@ namespace BrightIdeasSoftware
         public bool Paused
         {
             get { return isPaused; }
-            set
-            {
+            set {
                 if (isPaused != value) {
                     isPaused = value;
                     if (isPaused) {
@@ -1003,10 +1002,7 @@ namespace BrightIdeasSoftware
             /// </summary>
             public AnimationState()
             {
-                this.currentFrame = 0;
-                this.frameCount = 0;
                 this.imageDuration = new List<int>();
-                this.image = null;
             }
 
             /// <summary>
@@ -1047,8 +1043,7 @@ namespace BrightIdeasSoftware
             /// </summary>
             public bool IsValid
             {
-                get
-                {
+                get {
                     return (this.image != null && this.frameCount > 0);
                 }
             }
@@ -1110,42 +1105,42 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Make a BarRenderer using a custom bar scheme
         /// </summary>
-        public BarRenderer(Pen aPen, Brush aBrush)
+        public BarRenderer(Pen pen, Brush brush)
             : this()
         {
-            this.Pen = aPen;
-            this.Brush = aBrush;
+            this.Pen = pen;
+            this.Brush = brush;
             this.UseStandardBar = false;
         }
 
         /// <summary>
         /// Make a BarRenderer using a custom bar scheme
         /// </summary>
-        public BarRenderer(int minimum, int maximum, Pen aPen, Brush aBrush)
+        public BarRenderer(int minimum, int maximum, Pen pen, Brush brush)
             : this(minimum, maximum)
         {
-            this.Pen = aPen;
-            this.Brush = aBrush;
+            this.Pen = pen;
+            this.Brush = brush;
             this.UseStandardBar = false;
         }
 
         /// <summary>
         /// Make a BarRenderer that uses a horizontal gradient
         /// </summary>
-        public BarRenderer(Pen aPen, Color start, Color end)
+        public BarRenderer(Pen pen, Color start, Color end)
             : this()
         {
-            this.Pen = aPen;
+            this.Pen = pen;
             this.SetGradient(start, end);
         }
 
         /// <summary>
         /// Make a BarRenderer that uses a horizontal gradient
         /// </summary>
-        public BarRenderer(int minimum, int maximum, Pen aPen, Color start, Color end)
+        public BarRenderer(int minimum, int maximum, Pen pen, Color start, Color end)
             : this(minimum, maximum)
         {
-            this.Pen = aPen;
+            this.Pen = pen;
             this.SetGradient(start, end);
         }
 
