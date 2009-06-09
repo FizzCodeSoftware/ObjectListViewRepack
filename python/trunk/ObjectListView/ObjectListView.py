@@ -8,6 +8,9 @@
 # License:      wxWindows license
 #----------------------------------------------------------------------------
 # Change log:
+# 2009-06-09  JPP   - AutoSizeColumns() now updates space filling columns
+#                   - FastObjectListView.RepopulateList() now uses Freeze/Thaw
+#                   - Fixed bug with virtual lists being clearws when scrolled vertically
 # 2008-12-16  JPP   - Removed flicker from RefreshObject() on FastObjectListView and GroupListView
 # 2008-12-01  JPP   - Handle wierd toggle check box on selection when there is no selection
 #                   - Fixed bug in RefreshObjects() when the list is empty
@@ -569,6 +572,7 @@ class ObjectListView(wx.ListCtrl):
                 if colWidth != boundedWidth:
                     self.SetColumnWidth(iCol, boundedWidth)
 
+        self._ResizeSpaceFillingColumns()
 
     def Check(self, modelObject):
         """
@@ -863,6 +867,11 @@ class ObjectListView(wx.ListCtrl):
         # Calculate how much free space is available in the control
         totalFixedWidth = sum(self.GetColumnWidth(i) for (i, x) in enumerate(self.columns)
                               if not x.isSpaceFilling)
+        #if wx.Platform == "__WXGTK__":
+        #    clientSize = self.MainWindow.GetClientSizeTuple()[0]
+        #else:
+        #    clientSize = self.GetClientSizeTuple()[0]
+        #freeSpace = max(0, clientSize - totalFixedWidth)
         freeSpace = max(0, self.GetClientSizeTuple()[0] - totalFixedWidth)
 
         # Calculate the total number of slices the free space will be divided into
@@ -2483,14 +2492,18 @@ class FastObjectListView(AbstractVirtualObjectListView):
         Completely rebuild the contents of the list control
         """
         self.lastGetObjectIndex = -1
-        self._SortObjects()
-        self._BuildInnerList()
-        self.SetItemCount(len(self.innerList))
-        self.RefreshObjects()
+        self.Freeze()
+        try:
+            self._SortObjects()
+            self._BuildInnerList()
+            wx.ListCtrl.DeleteAllItems(self)
+            self.SetItemCount(len(self.innerList))
+            self.RefreshObjects()
 
-        # Auto-resize once all the data has been added
-        self.AutoSizeColumns()
-
+            # Auto-resize once all the data has been added
+            self.AutoSizeColumns()
+        finally:
+            self.Thaw()
 
     def RefreshObjects(self, aList=None):
         """
