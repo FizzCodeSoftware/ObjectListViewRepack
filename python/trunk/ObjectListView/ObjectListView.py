@@ -8,6 +8,11 @@
 # License:      wxWindows license
 #----------------------------------------------------------------------------
 # Change log:
+# 2008-12-16  JPP   - Removed flicker from RefreshObject() on FastObjectListView and GroupListView
+# 2008-12-01  JPP   - Handle wierd toggle check box on selection when there is no selection
+#                   - Fixed bug in RefreshObjects() when the list is empty
+# 2008-11-30  JPP   - Fixed missing variable bug in CancelCellEdit()
+# v1.2
 # 2008/09/02  JPP   - Added BatchedUpdate adaptor
 #                   - Improved speed of selecting and refreshing by keeping a map
 #                     of objects to indicies
@@ -1521,6 +1526,8 @@ class ObjectListView(wx.ListCtrl):
         Toggles the checkedness of the selected modelObjects.
         """
         selection = self.GetSelectedObjects()
+        if not selection:
+            return
         newValue = not self.IsChecked(selection[0])
         for x in selection:
             self.SetCheckState(x, newValue)
@@ -2127,8 +2134,9 @@ class ObjectListView(wx.ListCtrl):
         """
         # Tell the world that the user cancelled the edit
         (rowIndex, subItemIndex) = self.cellBeingEdited
+        rowModel = self.GetObjectAt(rowIndex)
         evt = OLVEvent.CellEditFinishingEvent(self, rowIndex, subItemIndex,
-                                              self.GetObjectAt(rowIndex),
+                                              rowModel,
                                               self.cellEditor.GetValue(),
                                               self.cellEditor,
                                               True)
@@ -2225,7 +2233,7 @@ class AbstractVirtualObjectListView(ObjectListView):
         Refresh the display of the given modelObject
         """
         # We only have a hammer so everything looks like a nail
-        self.RefreshObjects()
+        self.RefreshObjects([modelObject])
 
 
     def RefreshObjects(self, aList=None):
@@ -2234,7 +2242,7 @@ class AbstractVirtualObjectListView(ObjectListView):
         """
         # We can only refresh everything
         self.lastGetObjectIndex = -1
-        self.RefreshItems(0, self.GetItemCount()-1)
+        self.RefreshItems(0, max(0, self.GetItemCount()-1))
         #self.Refresh()
 
 
