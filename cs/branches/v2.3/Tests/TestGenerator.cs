@@ -121,15 +121,20 @@ namespace BrightIdeasSoftware.Tests
         }
         protected ObjectListView olv;
 
+        [SetUp]
+        public void InitEachTest() {
+            this.olv.Clear();
+        }
+
         [Test]
         public void TestEmpty() {
-            IList<OLVColumn> columns = Generator.BuildColumns(typeof(GeneratorTestModelEmpty));
+            IList<OLVColumn> columns = Generator.GenerateColumns(typeof(GeneratorTestModelEmpty));
             Assert.AreEqual(0, columns.Count);
         }
 
         [Test]
         public void TestBasics() {
-            IList<OLVColumn> columns = Generator.BuildColumns(typeof(GeneratorTestModel1));
+            IList<OLVColumn> columns = Generator.GenerateColumns(typeof(GeneratorTestModel1));
             Assert.AreEqual(2, columns.Count);
             Assert.AreEqual("OLVPrimaryColumn", columns[0].AspectName);
             Assert.AreEqual("AspectToStringFormat", columns[0].AspectToStringFormat);
@@ -178,7 +183,7 @@ namespace BrightIdeasSoftware.Tests
 
         [Test]
         public void TestSorting() {
-            IList<OLVColumn> columns = Generator.BuildColumns(typeof(GeneratorTestModelSorting));
+            IList<OLVColumn> columns = Generator.GenerateColumns(typeof(GeneratorTestModelSorting));
             Assert.AreEqual(4, columns.Count);
             Assert.AreEqual("OLVShouldBeFirst", columns[0].AspectName);
             Assert.AreEqual("OLVSecondaryColumn", columns[1].AspectName);
@@ -189,14 +194,14 @@ namespace BrightIdeasSoftware.Tests
         [Test]
         public void TestBuilding() {
             Assert.AreEqual(0, this.olv.Columns.Count);
-            Generator.BuildColumns(this.olv, typeof(GeneratorTestModelSorting));
+            Generator.GenerateColumns(this.olv, typeof(GeneratorTestModelSorting));
             Assert.AreEqual(3, this.olv.Columns.Count);
             Assert.AreEqual(4, this.olv.AllColumns.Count);
         }
 
         [Test]
         public void TestGroupies() {
-            IList<OLVColumn> columns = Generator.BuildColumns(typeof(GeneratorTestModelGroupies));
+            IList<OLVColumn> columns = Generator.GenerateColumns(typeof(GeneratorTestModelGroupies));
             Assert.AreEqual(1, columns.Count);
             GeneratorTestModelGroupies model = new GeneratorTestModelGroupies();
             model.OLVGroupy = 5;
@@ -204,6 +209,27 @@ namespace BrightIdeasSoftware.Tests
             model.OLVGroupy = 35;
             Assert.AreEqual(3, columns[0].GetGroupKey(model));
             Assert.AreEqual("Above thirty", columns[0].ConvertGroupKeyToTitle(3));
+        }
+
+        [Test]
+        public void TestEmptyCollection() {
+            this.olv.Columns.Add(new OLVColumn("not used", "NoAttribute"));
+            Assert.AreNotEqual(0, this.olv.Columns.Count);
+            ArrayList models = new ArrayList();
+            Generator.GenerateColumns(this.olv, models);
+            Assert.AreEqual(0, this.olv.Columns.Count);
+        }
+
+        [Test]
+        public void TestNonEmptyCollection() {
+            this.olv.Columns.Add(new OLVColumn("not used", "NoAttribute"));
+            Assert.AreEqual(1, this.olv.Columns.Count);
+            ArrayList models = new ArrayList();
+            models.Add(new GeneratorTestModelSorting());
+            models.Add(new GeneratorTestModelSorting());
+            Generator.GenerateColumns(this.olv, models);
+            Assert.AreEqual(4, this.olv.AllColumns.Count);
+            Assert.AreEqual(3, this.olv.Columns.Count);
         }
     }
 }

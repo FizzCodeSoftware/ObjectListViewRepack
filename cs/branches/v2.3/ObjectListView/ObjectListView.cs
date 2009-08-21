@@ -5,7 +5,8 @@
  * Date: 9/10/2006 11:15 AM
  *
  * Change log
- * 2009-08-19  JPP  - Added SelectedRowDecoration
+ * 2009-08-19  JPP  - Added ability to show basic column commands when header is right clicked
+ *                  - Added SelectedRowDecoration, UseTranslucentSelection and UseTranslucentHotItem.
  *                  - Added PrimarySortColumn and PrimarySortOrder
  * 2009-08-15  JPP  - Correct problems with standard hit test and subitems
  * 2009-08-14  JPP  - Support Decorations
@@ -1401,11 +1402,7 @@ namespace BrightIdeasSoftware
          DefaultValue(128)]
         public int OverlayTransparency {
             get { return this.overlayTransparency; }
-            set {
-                this.overlayTransparency = Math.Min(255, Math.Max(0, value));
-                if (this.glassPanel != null)
-                    this.glassPanel.UpdateTransparency();
-            }
+            set { this.overlayTransparency = Math.Min(255, Math.Max(0, value)); }
         }
         private int overlayTransparency = 128;
 
@@ -1659,6 +1656,19 @@ namespace BrightIdeasSoftware
             get { return this.GetSelectedObjects(); }
             set { this.SelectObjects(value); }
         }
+
+        /// <summary>
+        /// When the user right clicks on the column headers, should a menu be presented which will allow
+        /// them to choose common tasks to perform on the listview?
+        /// </summary>
+        [Category("Behavior - ObjectListView"),
+        Description("When the user right clicks on the column headers, should a menu be presented which will allow them to perform common tasks on the listview?"),
+        DefaultValue(false)]
+        public virtual bool ShowCommandMenuOnRightClick {
+            get { return showCommandMenuOnRightClick; }
+            set { showCommandMenuOnRightClick = value; }
+        }
+        private bool showCommandMenuOnRightClick = true;
 
         /// <summary>
         /// Should the list view show a bitmap in the column header to show the sort direction?
@@ -4483,10 +4493,17 @@ namespace BrightIdeasSoftware
             ColumnClickEventArgs eventArgs = new ColumnClickEventArgs(columnIndex);
             this.OnColumnRightClick(eventArgs);
 
-            if (this.SelectColumnsOnRightClick)
-                this.ShowColumnSelectMenu(Cursor.Position);
+            if (this.ShowCommandMenuOnRightClick) {
+                this.ShowColumnCommandMenu(columnIndex, Cursor.Position);
+                return true;
+            }
 
-            return this.SelectColumnsOnRightClick;
+            if (this.SelectColumnsOnRightClick) {
+                this.ShowColumnSelectMenu(Cursor.Position);
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -4506,6 +4523,63 @@ namespace BrightIdeasSoftware
         protected virtual void ShowColumnSelectMenu(Point pt) {
             ToolStripDropDown m = this.MakeColumnSelectMenu(new ContextMenuStrip());
             m.Show(pt);
+        }
+
+        /// <summary>
+        /// Show a popup menu at the given point which will allow the user to choose which columns
+        /// are visible on this listview
+        /// </summary>
+        /// <param name="pt">Where should the menu be placed</param>
+        protected virtual void ShowColumnCommandMenu(int columnIndex, Point pt) {
+            ToolStripDropDown m = this.MakeColumnCommandMenu(new ContextMenuStrip(), columnIndex);
+            if (this.ShowCommandMenuOnRightClick) {
+                if (m.Items.Count > 0)
+                    m.Items.Add(new ToolStripSeparator());
+                this.MakeColumnSelectMenu(m);
+            }
+            m.Show(pt);
+        }
+        
+        /// <summary>
+        /// Append the column selection menu items to the given menu strip.
+        /// </summary>
+        /// <param name="strip">The menu to which the items will be added.</param>
+        /// <returns>Return the menu to which the items were added</returns>
+        public virtual ToolStripDropDown MakeColumnCommandMenu(ToolStripDropDown strip, int columnIndex) {
+            //TODO: Embed some resources so we can put images against these commands
+            OLVColumn column = this.GetColumn(columnIndex);
+            if (column == null)
+                return strip;
+
+            strip.Items.Add(String.Format("Sort ascending by '{0}'", column.Text), null, (EventHandler)delegate(object sender, EventArgs args) {
+                this.Sort(column, SortOrder.Ascending);
+            });
+            strip.Items.Add(String.Format("Sort descending by '{0}'", column.Text), null, (EventHandler)delegate(object sender, EventArgs args) {
+                this.Sort(column, SortOrder.Descending);
+            });
+            if (!this.VirtualMode) {
+                strip.Items.Add(String.Format("Group by '{0}'", column.Text), null, (EventHandler)delegate(object sender, EventArgs args) {
+                    this.ShowGroups = true;
+                    this.PrimarySortColumn = column;
+                    this.PrimarySortOrder = SortOrder.Ascending;
+                    this.BuildList();
+                });
+            }
+            if (this.ShowGroups) {
+                strip.Items.Add("Turn off groups", null, (EventHandler)delegate(object sender, EventArgs args) {
+                    this.ShowGroups = false;
+                    this.BuildList();
+                });
+            } else {
+                strip.Items.Add("Unsort", null, (EventHandler)delegate(object sender, EventArgs args) {
+                    this.ShowGroups = false;
+                    this.PrimarySortColumn = null;
+                    this.PrimarySortOrder = SortOrder.None;
+                    this.BuildList();
+                });
+            }
+
+            return strip;
         }
 
         /// <summary>
@@ -4542,16 +4616,21 @@ namespace BrightIdeasSoftware
         }
 
         private void ColumnSelectMenu_ItemClicked(object sender, ToolStripItemClickedEventArgs e) {
-            ToolStripMenuItem mi = (ToolStripMenuItem)e.ClickedItem;
-            OLVColumn col = (OLVColumn)mi.Tag;
-            mi.Checked = !mi.Checked;
-            col.IsVisible = mi.Checked;
+            this.lastMenuItemClicked = (ToolStripMenuItem)e.ClickedItem;
+            OLVColumn col = this.lastMenuItemClicked.Tag as OLVColumn;
+            if (col == null)
+                return;
+            this.lastMenuItemClicked.Checked = !this.lastMenuItemClicked.Checked;
+            col.IsVisible = this.lastMenuItemClicked.Checked;
             this.BeginInvoke(new MethodInvoker(this.RebuildColumns));
         }
+        ToolStripMenuItem lastMenuItemClicked;
 
         private void ColumnSelectMenu_Closing(object sender, ToolStripDropDownClosingEventArgs e) {
             e.Cancel = (this.SelectColumnsMenuStaysOpen &&
-                e.CloseReason == ToolStripDropDownCloseReason.ItemClicked);
+                e.CloseReason == ToolStripDropDownCloseReason.ItemClicked &&
+                this.lastMenuItemClicked != null &&
+                this.lastMenuItemClicked.Tag is OLVColumn);
         }
 
         /// <summary>
@@ -5696,7 +5775,8 @@ namespace BrightIdeasSoftware
             // Show the URL in the tooltip if it's different to the text
             if (columnIndex >= 0) {
                 OLVListSubItem si = this.GetSubItem(rowIndex, columnIndex);
-                if (si != null && !String.IsNullOrEmpty(si.Url) && si.Url != si.Text)
+                if (si != null && !String.IsNullOrEmpty(si.Url) && si.Url != si.Text && 
+                    this.HotCellHitLocation == HitTestLocation.Text)
                     return si.Url;
             }
 
@@ -6055,6 +6135,10 @@ namespace BrightIdeasSoftware
                 buffer = BufferedGraphicsManager.Current.Allocate(e.Graphics, r);
                 g = buffer.Graphics;
             }
+
+            // Default to high quality drawing
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+            g.SmoothingMode = SmoothingMode.HighQuality;
 
             // Finally, give the renderer a chance to draw something
             e.DrawDefault = !renderer.RenderSubItem(e, g, r, ((OLVListItem)e.Item).RowObject);
@@ -6851,7 +6935,6 @@ namespace BrightIdeasSoftware
             int newHotRow = hti.RowIndex;
             int newHotColumn = hti.ColumnIndex;
             HitTestLocation newHotCellHitLocation = hti.HitTestLocation;
-            System.Diagnostics.Debug.WriteLine(newHotCellHitLocation);
 
             // In non-details view, we treat any hit on a row as if it were a hit
             // on column 0 -- which (effectively) it is!
@@ -7104,7 +7187,7 @@ namespace BrightIdeasSoftware
             if (overlay == null)
                 return;
             this.Overlays.Add(overlay);
-            this.RefreshOverlays();
+            this.Invalidate();
         }
 
         /// <summary>
@@ -7129,16 +7212,20 @@ namespace BrightIdeasSoftware
 
             // Draw our item and subitem decorations
             foreach (OLVListItem olvi in drawnItems) {
-                if (olvi.Decoration != null) {
-                    olvi.Decoration.ListItem = olvi;
-                    olvi.Decoration.SubItem = null;
-                    olvi.Decoration.Draw(this, g, contentRectangle);
+                if (olvi.HasDecoration) {
+                    foreach (IDecoration d in olvi.Decorations) {
+                        d.ListItem = olvi;
+                        d.SubItem = null;
+                        d.Draw(this, g, contentRectangle);
+                    }
                 }
                 foreach (OLVListSubItem subItem in olvi.SubItems) {
-                    if (subItem.Decoration != null) {
-                        subItem.Decoration.ListItem = olvi;
-                        subItem.Decoration.SubItem = subItem;
-                        subItem.Decoration.Draw(this, g, contentRectangle);
+                    if (subItem.HasDecoration) {
+                        foreach (IDecoration d in subItem.Decorations) {
+                            d.ListItem = olvi;
+                            d.SubItem = subItem;
+                            d.Draw(this, g, contentRectangle);
+                        }
                     }
                 }
                 if (this.SelectedRowDecoration != null && olvi.Selected) {
@@ -7166,21 +7253,12 @@ namespace BrightIdeasSoftware
                 hotItemDecoration.Draw(this, g, contentRectangle);
             }
 
-            // If we are in design mode, we don't want to use the glass panel,
+            // If we are in design mode, we don't want to use the glass panels,
             // so we draw the background overlays here
             if (this.DesignMode) {
-                this.DrawBackgroundOverlays(g);
-            }
-        }
-
-        /// <summary>
-        /// Draw the overlays
-        /// </summary>
-        /// <param name="g"></param>
-        internal void DrawBackgroundOverlays(Graphics g) {
-            Rectangle contentRectangle = this.ContentRectangle;
-            foreach (IOverlay overlay in this.Overlays) {
-                overlay.Draw(this, g, contentRectangle);
+                foreach (IOverlay overlay in this.Overlays) {
+                    overlay.Draw(this, g, contentRectangle);
+                }
             }
         }
 
@@ -7208,8 +7286,9 @@ namespace BrightIdeasSoftware
         /// the next time the ObjectListView redraws.
         /// </remarks>
         public virtual void HideOverlays() {
-            if (this.glassPanel != null)
-                this.glassPanel.HideGlass();
+            foreach (GlassPanelForm glassPanel in this.glassPanels) {
+                glassPanel.HideGlass();
+            }
         }
 
         /// <summary>
@@ -7230,33 +7309,45 @@ namespace BrightIdeasSoftware
         /// </summary>
         protected virtual void InitializeStandardOverlays() {
             this.OverlayImage = new ImageOverlay();
-            this.Overlays.Add(this.OverlayImage);
+            this.AddOverlay(this.OverlayImage);
             this.OverlayText = new TextOverlay();
-            this.Overlays.Add(this.OverlayText);
+            this.AddOverlay(this.OverlayText);
         }
 
         /// <summary>
         /// Make sure that any overlays are visible.
         /// </summary>
         public virtual void ShowOverlays() {
-            // If we are in design mode or there are no overlays, don't use a glass panel
+            // If we are in design mode or there are no overlays, don't use glass panels
             if (this.DesignMode || !this.HasOverlays)
                 return;
 
-            if (this.glassPanel == null) {
-                this.glassPanel = new GlassPanelForm();
-                this.glassPanel.Bind(this);
+            // Make sure that each overlay has its own glass panels
+            if (this.Overlays.Count != this.glassPanels.Count) {
+                foreach (IOverlay overlay in this.Overlays) {
+                    GlassPanelForm glassPanel = this.FindGlassPanelForOverlay(overlay);
+                    if (glassPanel == null) {
+                        glassPanel = new GlassPanelForm();
+                        glassPanel.Bind(this, overlay);
+                        this.glassPanels.Add(glassPanel);
+                    }
+                }
             }
+            foreach (GlassPanelForm glassPanel in this.glassPanels) {
+                glassPanel.ShowGlass();
+            }
+        }
 
-            this.glassPanel.ShowGlass();
+        private GlassPanelForm FindGlassPanelForOverlay(IOverlay overlay) {
+            return this.glassPanels.Find(delegate(GlassPanelForm x) { return x.Overlay == overlay; });
         }
 
         /// <summary>
         /// Refresh the display of the overlays
         /// </summary>
         public virtual void RefreshOverlays() {
-            if (this.glassPanel != null) {
-                this.glassPanel.Invalidate();
+            foreach (GlassPanelForm glassPanel in this.glassPanels) {
+                glassPanel.Invalidate();
             }
         }
 
@@ -7279,7 +7370,12 @@ namespace BrightIdeasSoftware
             if (overlay == null)
                 return;
             this.Overlays.Remove(overlay);
-            this.RefreshOverlays();
+            GlassPanelForm glassPanel = this.FindGlassPanelForOverlay(overlay);
+            if (glassPanel != null) {
+                this.glassPanels.Remove(glassPanel);
+                glassPanel.Unbind();
+                glassPanel.Dispose();
+            }
         }
 
         #endregion
@@ -7294,7 +7390,8 @@ namespace BrightIdeasSoftware
         private ImageOverlay imageOverlay; // the image overlay that is controlled by IDE settings
         private TextOverlay textOverlay; // the text overlay that is controlled by IDE settings
         private bool isMarqueSelecting; // Is a margque selection in progress?
-        private GlassPanelForm glassPanel; // The transparent panel that draws overlays
+
+        private List<GlassPanelForm> glassPanels = new List<GlassPanelForm>(); // The transparent panel that draws overlays
 
         #endregion
     }
@@ -8358,13 +8455,43 @@ namespace BrightIdeasSoftware
         private CheckState checkState;
 
         /// <summary>
+        /// Gets if this item has any decorations set for it.
+        /// </summary>
+        public bool HasDecoration {
+            get {
+                return this.decorations != null && this.decorations.Count > 0;
+            }
+        }
+
+        /// <summary>
         /// Gets or sets the decoration that will be drawn over this item
         /// </summary>
+        /// <remarks>Setting this replaces all other decorations</remarks>
         public IDecoration Decoration {
-            get { return this.decoration; }
-            set { this.decoration = value; }
+            get {
+                if (this.HasDecoration)
+                    return this.Decorations[0];
+                else
+                    return null;
+            }
+            set {
+                this.Decorations.Clear();
+                if (value != null)
+                    this.Decorations.Add(value);
+            }
         }
-        private IDecoration decoration;
+
+        /// <summary>
+        /// Gets the collection of decorations that will be drawn over this item
+        /// </summary>
+        public IList<IDecoration> Decorations {
+            get {
+                if (this.decorations == null)
+                    this.decorations = new List<IDecoration>();
+                return this.decorations;
+            }
+        }
+        private IList<IDecoration> decorations;
 
         /// <summary>
         /// Get or set the image that should be shown against this item
@@ -8463,13 +8590,43 @@ namespace BrightIdeasSoftware
         #region Properties
 
         /// <summary>
-        /// Gets or sets the decoration that will be drawn over this cell
+        /// Gets if this subitem has any decorations set for it.
         /// </summary>
-        public IDecoration Decoration {
-            get { return this.decoration; }
-            set { this.decoration = value; }
+        public bool HasDecoration {
+            get {
+                return this.decorations != null && this.decorations.Count > 0;
+            }
         }
-        private IDecoration decoration;
+
+        /// <summary>
+        /// Gets or sets the decoration that will be drawn over this item
+        /// </summary>
+        /// <remarks>Setting this replaces all other decorations</remarks>
+        public IDecoration Decoration {
+            get {
+                if (this.HasDecoration)
+                    return this.Decorations[0];
+                else
+                    return null;
+            }
+            set {
+                this.Decorations.Clear();
+                if (value != null)
+                    this.Decorations.Add(value);
+            }
+        }
+
+        /// <summary>
+        /// Gets the collection of decorations that will be drawn over this item
+        /// </summary>
+        public IList<IDecoration> Decorations {
+            get {
+                if (this.decorations == null)
+                    this.decorations = new List<IDecoration>();
+                return this.decorations; 
+            }
+        }
+        private IList<IDecoration> decorations;
 
         /// <summary>
         /// Get or set the image that should be shown against this item

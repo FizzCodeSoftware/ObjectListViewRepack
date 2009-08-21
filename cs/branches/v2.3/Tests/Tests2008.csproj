@@ -66,6 +66,7 @@
     <Compile Include="Person.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="SetupTestSuite.cs" />
+    <Compile Include="TestAdornments.cs" />
     <Compile Include="TestBasics.cs">
       <SubType>Code</SubType>
     </Compile>

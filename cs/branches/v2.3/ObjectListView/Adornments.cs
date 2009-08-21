@@ -1,4 +1,33 @@
-﻿using System;
+﻿/*
+ * Adornments - Adornments are the basis for overlays and decorations -- things that can be rendered over the top of a ListView
+ *
+ * Author: Phillip Piper
+ * Date: 16/08/2009 1:02 AM
+ *
+ * Change log:
+ * 2009-08-17   JPP  - Initial version
+ *
+ * To do:
+ *
+ * Copyright (C) 2009 Phillip Piper
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * If you wish to use this code in a closed source application, please contact phillip_piper@bigfoot.com.
+ */
+
+using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -12,6 +41,17 @@ namespace BrightIdeasSoftware
     public class GraphicAdornment
     {
         #region Public properties
+
+        /// <summary>
+        /// Gets or sets the corner of the adornment that will be positioned at the reference corner
+        /// </summary>
+        [Browsable(false),
+         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public ContentAlignment AdornmentCorner {
+            get { return this.adornmentCorner; }
+            set { this.adornmentCorner = value; }
+        }
+        private ContentAlignment adornmentCorner = ContentAlignment.MiddleCenter;
 
         /// <summary>
         /// Gets or sets location within the reference rectange where the adornment will be drawn
@@ -32,28 +72,6 @@ namespace BrightIdeasSoftware
         private ContentAlignment alignment = ContentAlignment.BottomRight;
 
         /// <summary>
-        /// Gets or sets the point of the reference rectangle to which the adornment will be aligned.
-        /// </summary>
-        [Browsable(false),
-         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public ContentAlignment ReferenceCorner {
-            get { return this.referenceCorner; }
-            set { this.referenceCorner = value; }
-        }
-        private ContentAlignment referenceCorner = ContentAlignment.MiddleCenter;
-
-        /// <summary>
-        /// Gets or sets the corner of the adornment that will be positioned at the reference corner
-        /// </summary>
-        [Browsable(false),
-         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public ContentAlignment AdornmentCorner {
-            get { return this.adornmentCorner; }
-            set { this.adornmentCorner = value; }
-        }
-        private ContentAlignment adornmentCorner = ContentAlignment.MiddleCenter;
-
-        /// <summary>
         /// Gets or sets the offset by which the position of the adornment will be adjusted
         /// </summary>
         [Category("Appearance - ObjectListView"),
@@ -63,6 +81,17 @@ namespace BrightIdeasSoftware
             set { this.offset = value; }
         }
         private Size offset = new Size();
+
+        /// <summary>
+        /// Gets or sets the point of the reference rectangle to which the adornment will be aligned.
+        /// </summary>
+        [Browsable(false),
+         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public ContentAlignment ReferenceCorner {
+            get { return this.referenceCorner; }
+            set { this.referenceCorner = value; }
+        }
+        private ContentAlignment referenceCorner = ContentAlignment.MiddleCenter;
 
         /// <summary>
         /// Gets or sets the degree of rotation by which the adornment will be transformed.
@@ -79,23 +108,59 @@ namespace BrightIdeasSoftware
         private int rotation;
 
         /// <summary>
-        /// Gets or sets the transparency of the adornment. 
+        /// Gets or sets the transparency of the overlay. 
         /// 0 is completely transparent, 255 is completely opaque.
         /// </summary>
         [Category("Appearance - ObjectListView"),
-         Description("How transparent should adornment be? 0 is completely transparent, 255 is completely opaque"),
-         DefaultValue(128)]
+         Description("The transparency of this adornment. 0 is completely transparent, 255 is completely opaque."),
+         DefaultValue(255),
+         NotifyParentProperty(true)]
         public int Transparency {
             get { return this.transparency; }
-            set {
-                this.transparency = Math.Min(255, Math.Max(0, value));
-            }
+            set { this.transparency = Math.Min(255, Math.Max(0, value)); }
         }
-        private int transparency = 128;
+        private int transparency = 255;
 
         #endregion
 
         #region Calculations
+
+        /// <summary>
+        /// Calculate the location of rectangle of the given size,
+        /// so that it's indicated corner would be at the given point.
+        /// </summary>
+        /// <param name="pt">The point</param>
+        /// <param name="size"></param>
+        /// <param name="corner">Which corner will be positioned at the reference point</param>
+        /// <returns></returns>
+        /// <example>CalculateAlignedPosition(new Point(50, 100), new Size(10, 20), ContentAlignment.TopLeft) -> Point(50, 100)</example>
+        /// <example>CalculateAlignedPosition(new Point(50, 100), new Size(10, 20), ContentAlignment.MiddleCenter) -> Point(45, 90)</example>
+        /// <example>CalculateAlignedPosition(new Point(50, 100), new Size(10, 20), ContentAlignment.BottomRight) -> Point(40, 80)</example>
+        public Point CalculateAlignedPosition(Point pt, Size size, ContentAlignment corner) {
+            switch (corner) {
+                case ContentAlignment.TopLeft:
+                    return pt;
+                case ContentAlignment.TopCenter:
+                    return new Point(pt.X - (size.Width / 2), pt.Y);
+                case ContentAlignment.TopRight:
+                    return new Point(pt.X - size.Width, pt.Y);
+                case ContentAlignment.MiddleLeft:
+                    return new Point(pt.X, pt.Y - (size.Height / 2));
+                case ContentAlignment.MiddleCenter:
+                    return new Point(pt.X - (size.Width / 2), pt.Y - (size.Height / 2));
+                case ContentAlignment.MiddleRight:
+                    return new Point(pt.X - size.Width, pt.Y - (size.Height / 2));
+                case ContentAlignment.BottomLeft:
+                    return new Point(pt.X, pt.Y - size.Height);
+                case ContentAlignment.BottomCenter:
+                    return new Point(pt.X - (size.Width / 2), pt.Y - size.Height);
+                case ContentAlignment.BottomRight:
+                    return new Point(pt.X - size.Width, pt.Y - size.Height);
+            }
+
+            // Should never reach here
+            return pt;
+        }
 
         /// <summary>
         /// Calculate a rectangle that has the given size which is positioned so that
@@ -132,43 +197,6 @@ namespace BrightIdeasSoftware
         }
 
         /// <summary>
-        /// Calculate the location of rectangle of the given size,
-        /// so that it's indicated corner would be at the given point.
-        /// </summary>
-        /// <param name="pt">The point</param>
-        /// <param name="size"></param>
-        /// <param name="corner">Which corner will be positioned at the reference point</param>
-        /// <returns></returns>
-        /// <example>CalculateAlignedPosition(new Point(50, 100), new Size(10, 20), ContentAlignment.TopLeft) -> Point(50, 100)</example>
-        /// <example>CalculateAlignedPosition(new Point(50, 100), new Size(10, 20), ContentAlignment.MiddleCenter) -> Point(45, 90)</example>
-        /// <example>CalculateAlignedPosition(new Point(50, 100), new Size(10, 20), ContentAlignment.BottomRight) -> Point(40, 80)</example>
-        public Point CalculateAlignedPosition(Point pt, Size size, ContentAlignment corner) {
-            switch (corner) {
-                case ContentAlignment.TopLeft:
-                    return pt;
-                case ContentAlignment.TopCenter:
-                    return new Point(pt.X - (size.Width / 2), pt.Y);
-                case ContentAlignment.TopRight:
-                    return new Point(pt.X - size.Width, pt.Y);
-                case ContentAlignment.MiddleLeft:
-                    return new Point(pt.X, pt.Y - (size.Height / 2));
-                case ContentAlignment.MiddleCenter:
-                    return new Point(pt.X - (size.Width / 2), pt.Y - (size.Height / 2));
-                case ContentAlignment.MiddleRight:
-                    return new Point(pt.X - (size.Width / 2), pt.Y);
-                case ContentAlignment.BottomLeft:
-                    return new Point(pt.X, pt.Y - size.Height);
-                case ContentAlignment.BottomCenter:
-                    return new Point(pt.X - (size.Width / 2), pt.Y - size.Height);
-                case ContentAlignment.BottomRight:
-                    return new Point(pt.X - size.Width, pt.Y - size.Height);
-            }
-
-            // Should never reach here
-            return pt;
-        }
-
-        /// <summary>
         /// Return the point at the indicated corner of the given rectangle (it doesn't
         /// have to be a corner, but a named location)
         /// </summary>
@@ -202,6 +230,22 @@ namespace BrightIdeasSoftware
             
             // Should never reach here
             return r.Location;
+        }
+
+        /// <summary>
+        /// Given the item and the subitem, calculate its bounds.
+        /// </summary>
+        /// <param name="item"></param>
+        /// <param name="si"></param>
+        /// <returns></returns>
+        public Rectangle CalculateItemBounds(OLVListItem item, OLVListSubItem si) {
+            if (item == null)
+                return Rectangle.Empty;
+
+            if (si == null)
+                return item.Bounds;
+            else
+                return item.GetSubItemBounds(item.SubItems.IndexOf(si));
         }
 
         #endregion
@@ -290,8 +334,9 @@ namespace BrightIdeasSoftware
         }
 
         private void DrawTransparentBitmap(Graphics g, Point pt, Image image, int transparency) {
-            ImageAttributes imageAttributes = new ImageAttributes();
+            ImageAttributes imageAttributes = null;
             if (transparency != 255) {
+                imageAttributes = new ImageAttributes();
                 float a = (float)transparency / 255.0f;
                 float[][] colorMatrixElements = {
                     new float[] {1,  0,  0,  0, 0},
@@ -321,6 +366,78 @@ namespace BrightIdeasSoftware
         #region Public properties
 
         /// <summary>
+        /// Gets or sets the background color of the text
+        /// Set this to Color.Empty to not draw a background
+        /// </summary>
+        [Category("Appearance - ObjectListView"),
+         Description("The background color of the text"),
+         DefaultValue(typeof(Color), "")]
+        public Color BackColor {
+            get { return this.backColor; }
+            set { this.backColor = value; }
+        }
+        private Color backColor = Color.Empty;
+
+        /// <summary>
+        /// Gets the brush that will be used to paint the text
+        /// </summary>
+        [Browsable(false)]
+        public Brush BackgroundBrush {
+            get {
+                return new SolidBrush(Color.FromArgb(this.WorkingTransparency, this.BackColor));
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the color of the border around the billboard.
+        /// Set this to Color.Empty to remove the border
+        /// </summary>
+        [Category("Appearance - ObjectListView"),
+         Description("The color of the border around the text"),
+         DefaultValue(typeof(Color), "")]
+        public Color BorderColor {
+            get { return this.borderColor; }
+            set { this.borderColor = value; }
+        }
+        private Color borderColor = Color.Empty;
+
+        /// <summary>
+        /// Gets the brush that will be used to paint the text
+        /// </summary>
+        [Browsable(false)]
+        public Pen BorderPen {
+            get {
+                return new Pen(Color.FromArgb(this.WorkingTransparency, this.BorderColor), this.BorderWidth);
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the width of the border around the text
+        /// </summary>
+        [Category("Appearance - ObjectListView"),
+         Description("The width of the border around the text"),
+         DefaultValue(0.0f)]
+        public float BorderWidth {
+            get { return this.borderWidth; }
+            set { this.borderWidth = value; }
+        }
+        private float borderWidth;
+
+        /// <summary>
+        /// How rounded should the corners of the border be? 0 means no rounding.
+        /// </summary>
+        /// <remarks>If this value is too large, the edges of the border will appear odd.</remarks>
+        [Category("Appearance - ObjectListView"),
+         Description("How rounded should the corners of the border be? 0 means no rounding."),
+         DefaultValue(16.0f),
+         NotifyParentProperty(true)]
+        public float CornerRounding {
+            get { return this.cornerRounding; }
+            set { this.cornerRounding = value; }
+        }
+        private float cornerRounding = 16.0f;
+
+        /// <summary>
         /// Gets or sets the font that will be used to draw the text
         /// </summary>
         [Category("Appearance - ObjectListView"),
@@ -344,37 +461,56 @@ namespace BrightIdeasSoftware
         }
 
         /// <summary>
-        /// How rounded should the corners of the border be? 0 means no rounding.
-        /// </summary>
-        /// <remarks>If this value is too large, the edges of the border will appear odd.</remarks>
-        public float CornerRounding {
-            get { return this.cornerRounding; }
-            set { this.cornerRounding = value; }
-        }
-        private float cornerRounding = 16.0f;
-
-        /// <summary>
-        /// Gets or sets the color of the text
-        /// </summary>
-        [Category("Appearance - ObjectListView"),
-         Description("The color of the text"),
-         DefaultValue(typeof(Color), "DarkBlue"),
-         NotifyParentProperty(true)]
-        public Color TextColor {
-            get { return this.textColor; }
-            set { this.textColor = value; }
-        }
-        private Color textColor = Color.DarkBlue;
-
-        /// <summary>
-        /// Gets the brush that will be used to paint the text
+        /// Does this text have a background?
         /// </summary>
         [Browsable(false)]
-        public Brush TextBrush {
+        public bool HasBackground {
             get {
-                return new SolidBrush(Color.FromArgb(this.Transparency, this.TextColor));
+                return this.BackColor != Color.Empty;
             }
         }
+
+        /// <summary>
+        /// Does this overlay have a border?
+        /// </summary>
+        [Browsable(false)]
+        public bool HasBorder {
+            get {
+                return this.BorderColor != Color.Empty && this.BorderWidth > 0;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the maximum width of the text. Text longer than this will wrap.
+        /// 0 means no maximum.
+        /// </summary>
+        [Category("Appearance - ObjectListView"),
+         Description("The maximum width the text (0 means no maximum). Text longer than this will wrap"),
+         DefaultValue(0)]
+        public int MaximumTextWidth {
+            get { return this.maximumTextWidth; }
+            set { this.maximumTextWidth = value; }
+        }
+        private int maximumTextWidth;
+
+        /// <summary>
+        /// Gets or sets the formatting that should be used on the text
+        /// </summary>
+        [Browsable(false),
+         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public StringFormat StringFormat {
+            get {
+                if (this.stringFormat == null) {
+                    this.stringFormat = new StringFormat();
+                    this.stringFormat.Alignment = StringAlignment.Center;
+                    this.stringFormat.LineAlignment = StringAlignment.Center;
+                    this.stringFormat.Trimming = StringTrimming.EllipsisCharacter;
+                }
+                return this.stringFormat; 
+            }
+            set { this.stringFormat = value; }
+        }
+        private StringFormat stringFormat;
 
         /// <summary>
         /// Gets or sets the text that will be drawn
@@ -391,149 +527,63 @@ namespace BrightIdeasSoftware
         private string text;
 
         /// <summary>
-        /// Gets or sets the background color of the text
-        /// Set this to Color.Empty to not draw a background
-        /// </summary>
-        [Category("Appearance - ObjectListView"),
-         Description("The background color of the text"),
-         DefaultValue(typeof(Color), "")]
-        public Color BackColor {
-            get { return this.backColor; }
-            set { this.backColor = value; }
-        }
-        private Color backColor = Color.Empty;
-
-        /// <summary>
-        /// Does this text have a background?
-        /// </summary>
-        [Browsable(false)]
-        public bool HasBackground {
-            get {
-                return this.BackColor != Color.Empty;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the color of the border around the billboard.
-        /// Set this to Color.Empty to remove the border
-        /// </summary>
-        [Category("Appearance - ObjectListView"),
-         Description("The color of the border around the text"),
-         DefaultValue(typeof(Color), "")]
-        public Color BorderColor {
-            get { return this.borderColor; }
-            set { this.borderColor = value; }
-        }
-        private Color borderColor = Color.Empty;
-
-        /// <summary>
-        /// Gets or sets the width of the border around the text
-        /// </summary>
-        [Category("Appearance - ObjectListView"),
-         Description("The width of the border around the text"),
-         DefaultValue(0.0f)]
-        public float BorderWidth {
-            get { return this.borderWidth; }
-            set { this.borderWidth = value; }
-        }
-        private float borderWidth;
-
-        /// <summary>
-        /// Gets or sets the maximum width of the text
-        /// </summary>
-        [Category("Appearance - ObjectListView"),
-         Description("The maximum width the text"),
-         DefaultValue(0)]
-        public int MaximumTextWidth {
-            get { return this.maximumTextWidth; }
-            set { this.maximumTextWidth = value; }
-        }
-        private int maximumTextWidth;
-
-        /// <summary>
-        /// Gets or sets the formatting that should be used on the text
-        /// </summary>
-        [Category("Appearance - ObjectListView"),
-         Description("The width of the border around the text"),
-         DefaultValue(0.0f)]
-        public StringFormat StringFormat {
-            get {
-                if (this.stringFormat == null) {
-                    this.stringFormat = new StringFormat();
-                    this.stringFormat.Alignment = StringAlignment.Center;
-                    this.stringFormat.LineAlignment = StringAlignment.Center;
-                    this.stringFormat.Trimming = StringTrimming.EllipsisCharacter;
-                }
-                return this.stringFormat; 
-            }
-            set { this.stringFormat = value; }
-        }
-        private StringFormat stringFormat;
-
-        /// <summary>
         /// Gets the brush that will be used to paint the text
         /// </summary>
         [Browsable(false)]
-        public Pen BorderPen {
+        public Brush TextBrush {
             get {
-                return new Pen(Color.FromArgb(this.Transparency, this.BorderColor), this.BorderWidth);
+                return new SolidBrush(Color.FromArgb(this.WorkingTransparency, this.TextColor));
             }
         }
 
         /// <summary>
-        /// Does this overlay have a border?
+        /// Gets or sets the color of the text
         /// </summary>
-        [Browsable(false)]
-        public bool HasBorder {
-            get {
-                return this.BorderColor != Color.Empty && this.BorderWidth > 0;
-            }
+        [Category("Appearance - ObjectListView"),
+         Description("The color of the text"),
+         DefaultValue(typeof(Color), "DarkBlue"),
+         NotifyParentProperty(true)]
+        public Color TextColor {
+            get { return this.textColor; }
+            set { this.textColor = value; }
         }
-
-        /// <summary>
-        /// Gets the brush that will be used to paint the text
-        /// </summary>
-        [Browsable(false)]
-        public Brush BackgroundBrush {
-            get {
-                return new SolidBrush(Color.FromArgb(this.Transparency, this.BackColor));
-            }
-        }
+        private Color textColor = Color.DarkBlue;
 
         #endregion
 
         #region Implementation
 
         /// <summary>
-        /// Draw our text with our stored configuration
+        /// Draw our text with our stored configuration in relation to the given
+        /// reference rectangle
         /// </summary>
-        /// <param name="g"></param>
-        /// <param name="r"></param>
+        /// <param name="g">The Graphics used for drawing</param>
+        /// <param name="r">The reference rectangle in relation to which the text will be drawn</param>
         public void DrawText(Graphics g, Rectangle r) {
-            this.DrawText(g, r, this.Text);
+            this.DrawText(g, r, this.Text, this.Transparency);
         }
 
         /// <summary>
         /// Draw the given text with our stored configuration
         /// </summary>
         /// <param name="g">The Graphics used for drawing</param>
-        /// <param name="r">The bounds of the rendering</param>
+        /// <param name="r">The reference rectangle in relation to which the text will be drawn</param>
         /// <param name="text">The text to draw</param>
-        public void DrawText(Graphics g, Rectangle r, string text) {
+        public void DrawText(Graphics g, Rectangle r, string text, int transparency) {
             if (String.IsNullOrEmpty(text))
                 return;
 
             Rectangle textRect = this.CalculateTextBounds(g, r, text);
-            this.DrawBorderedText(g, textRect, text);
+            this.DrawBorderedText(g, textRect, text, transparency);
         }
 
         /// <summary>
         /// Draw the text with a border
         /// </summary>
-        /// <param name="g"></param>
-        /// <param name="r"></param>
+        /// <param name="g">The Graphics used for drawing</param>
+        /// <param name="textRect">The bounds within which the text should be drawn</param>
         /// <param name="text">The text to draw</param>
-        protected void DrawBorderedText(Graphics g, Rectangle textRect, string text) {
+        protected void DrawBorderedText(Graphics g, Rectangle textRect, string text, int transparency) {
             Rectangle borderRect = textRect;
             borderRect.Inflate((int)this.BorderWidth / 2, (int)this.BorderWidth / 2);
             borderRect.Y -= 1; // Looker better a little higher
@@ -541,6 +591,7 @@ namespace BrightIdeasSoftware
             try {
                 this.ApplyRotation(g, textRect);
                 using (GraphicsPath path = this.GetRoundedRect(borderRect, this.CornerRounding)) {
+                    this.WorkingTransparency = transparency;
                     if (this.HasBackground)
                         g.FillPath(this.BackgroundBrush, path);
 
@@ -597,5 +648,7 @@ namespace BrightIdeasSoftware
         }
 
         #endregion
+
+        private int WorkingTransparency;
     }
 }

@@ -28,6 +28,7 @@
  */
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -36,23 +37,36 @@ namespace BrightIdeasSoftware
 {
     public static class Generator
     {
-        static public void BuildColumns(ObjectListView olv, Type type) {
-            IList<OLVColumn> columns = Generator.BuildColumns(type);
+        static public void GenerateColumns(ObjectListView olv, IEnumerable enumerable) {
+            // Generate columns based on the type of the first model in the collection and then quit
+            foreach (object model in enumerable) {
+                Generator.GenerateColumns(olv, model.GetType());
+                return;
+            }
+
+            // If we reach here, the collection was empty, so we clear the list
+            Generator.ReplaceColumns(olv, new List<OLVColumn>());
+        }
+
+        static public void GenerateColumns(ObjectListView olv, Type type) {
+            IList<OLVColumn> columns = Generator.GenerateColumns(type);
             Generator.ReplaceColumns(olv, columns);
         }
 
         static private void ReplaceColumns(ObjectListView olv, IList<OLVColumn> columns) {
+            olv.Clear();
+            olv.AllColumns.Clear();
             if (columns.Count > 0) {
-                olv.Clear();
                 olv.AllColumns.AddRange(columns);
                 olv.RebuildColumns();
             }
         }
 
-        static public IList<OLVColumn> BuildColumns(Type type) {
+        static public IList<OLVColumn> GenerateColumns(Type type) {
             List<OLVColumn> columns = new List<OLVColumn>();
             
-            // Iterate all public properties in the class
+            // Iterate all public properties in the class and build columns from those that have
+            // an OLVColumn attribute.
             foreach (PropertyInfo pinfo in type.GetProperties()) {
                 OLVColumnAttribute attr = Attribute.GetCustomAttribute(pinfo, typeof(OLVColumnAttribute)) as OLVColumnAttribute;
                 if (attr != null)

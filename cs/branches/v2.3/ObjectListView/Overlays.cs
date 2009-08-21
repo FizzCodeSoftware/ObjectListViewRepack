@@ -5,7 +5,9 @@
  * Date: 14/04/2009 4:36 PM
  *
  * Change log:
- * 2009-08-10   JPP  - Added IDecoration interface
+ * 2009-08-17   JPP  - Overlays now use Adornments
+ *                   - Overlays can now have separate transparency levels
+ * 2009-08-10   JPP  - Moved decoration related code to new file
  * v2.2.1
  * 200-07-24    JPP  - TintedColumnDecoration now works when last item is a member of a collapsed
  *                     group (well, it no longer crashes).
@@ -59,9 +61,21 @@ namespace BrightIdeasSoftware
     }
 
     /// <summary>
+    /// An interface for an overlay that supports variable levels of transparency
+    /// </summary>
+    public interface ITransparentOverlay : IOverlay
+    {
+        /// <summary>
+        /// Gets or sets the transparency of the overlay. 
+        /// 0 is completely transparent, 255 is completely opaque.
+        /// </summary>
+        int Transparency { get; set; }
+    }
+
+    /// <summary>
     /// A null implementation of the IOverlay interface
     /// </summary>
-    public class AbstractOverlay : IOverlay
+    public class AbstractOverlay : ITransparentOverlay
     {
         #region IOverlay Members
 
@@ -75,145 +89,23 @@ namespace BrightIdeasSoftware
         }
 
         #endregion
-    }
-    /*
-    /// <summary>
-    /// An overlay that can be positioned within the ObjectListView.
-    /// </summary>
-    [TypeConverter(typeof(BrightIdeasSoftware.Design.OverlayConverter))]
-    public class GraphicOverlay : AbstractOverlay
-    {
-        #region Public properties
 
-        /// <summary>
-        /// Get or set where within the content rectangle of the listview this overlay should be drawn
-        /// </summary>
-        [Category("Appearance - ObjectListView"),
-         Description("Where within the content rectangle of the listview the overlay will be drawn"),
-         DefaultValue(System.Drawing.ContentAlignment.BottomRight),
-         RefreshProperties(RefreshProperties.Repaint)]
-        public System.Drawing.ContentAlignment Alignment {
-            get { return this.overlayImageAlignment; }
-            set { this.overlayImageAlignment = value; }
+        #region ITransparentOverlay Members
+
+        public int Transparency {
+            get { return this.transparency; }
+            set { this.transparency = Math.Min(255, Math.Max(0, value)); }
         }
-        private System.Drawing.ContentAlignment overlayImageAlignment = System.Drawing.ContentAlignment.BottomRight;
-
-        /// <summary>
-        /// Gets or sets the number of pixels that this overlay will be inset of the horizontal edges of the
-        /// ListViews content rectangle
-        /// </summary>
-        [Category("Appearance - ObjectListView"),
-         Description("The number of pixels that the overlay will be inset from the horizontal edges of the ListViews content rectangle"),
-         DefaultValue(20),
-         NotifyParentProperty(true)]
-        public int InsetX {
-            get { return this.insetX; }
-            set { this.insetX = Math.Max(0, value); }
-        }
-        private int insetX = 20;
-
-        /// <summary>
-        /// Gets or sets the number of pixels that this overlay will be inset from the vertical edges of the
-        /// ListViews content rectangle
-        /// </summary>
-        [Category("Appearance - ObjectListView"),
-         Description("The number of pixels that the overlay will be inset from the vertical edges of the ListViews content rectangle"),
-         DefaultValue(20),
-         NotifyParentProperty(true)]
-        public int InsetY {
-            get { return this.insetY; }
-            set { this.insetY = Math.Max(0, value); }
-        }
-        private int insetY = 20;
-
-        /// <summary>
-        /// Gets or sets the degree of rotation by which the graphic will be transformed.
-        /// The centre of rotation will be the center point of the graphic.
-        /// </summary>
-        [Category("Appearance - ObjectListView"),
-         Description("The degree of rotation that will be applied to the graphic."),
-         DefaultValue(0),
-         NotifyParentProperty(true)]
-        public int Rotation {
-            get { return this.rotation; }
-            set { this.rotation = value; }
-        }
-        private int rotation;
-
-        #endregion
-
-        #region Calculations
-
-        /// <summary>
-        /// Align a rectangle of the given size within the given bounds,
-        /// obeying alignment and inset.
-        /// </summary>
-        /// <param name="bounds">The outer bounds</param>
-        /// <param name="size">How big the rectangle should be</param>
-        /// <returns>A rectangle</returns>
-        protected Point CalculateAlignedLocation(Rectangle bounds, Size size) {
-            Rectangle r = bounds;
-            r.Inflate(-this.InsetX, -this.InsetY);
-
-            Point pt = r.Location;
-            switch (this.Alignment) {
-                case System.Drawing.ContentAlignment.TopLeft:
-                    return new Point(r.X, r.Top);
-                case System.Drawing.ContentAlignment.TopCenter:
-                    return new Point(r.X + ((r.Width - size.Width) / 2), r.Top);
-                case System.Drawing.ContentAlignment.TopRight:
-                    return new Point(r.Right - size.Width, r.Top);
-                case System.Drawing.ContentAlignment.MiddleLeft:
-                    return new Point(r.X, r.Y + ((r.Height - size.Height) / 2));
-                case System.Drawing.ContentAlignment.MiddleCenter:
-                    return new Point(r.X + ((r.Width - size.Width) / 2), r.Y + ((r.Height - size.Height) / 2));
-                case System.Drawing.ContentAlignment.MiddleRight:
-                    return new Point(r.Right - size.Width, r.Y + ((r.Height - size.Height) / 2));
-                case System.Drawing.ContentAlignment.BottomLeft:
-                    return new Point(r.X, r.Bottom - size.Height);
-                case System.Drawing.ContentAlignment.BottomCenter:
-                    return new Point(r.X + ((r.Width - size.Width) / 2), r.Bottom - size.Height);
-                case System.Drawing.ContentAlignment.BottomRight:
-                    return new Point(r.Right - size.Width, r.Bottom - size.Height);
-            }
-
-            // Should never reach here
-            return bounds.Location;
-        }
-
-        /// <summary>
-        /// Apply any specified rotation to the Graphic content.
-        /// </summary>
-        /// <param name="g">The Graphics to be transformed</param>
-        /// <param name="r">The rotation will be around the centre of this rect</param>
-        protected void ApplyRotation(Graphics g, Rectangle r) {
-            if (this.Rotation == 0)
-                return;
-
-            // THINK: Do we want to reset the transform? I think we want to push a new transform
-            g.ResetTransform();
-            Matrix m = new Matrix();
-            m.RotateAt(this.Rotation, new Point(r.Left + r.Width / 2, r.Top + r.Height / 2));
-            g.Transform = m;
-        }
-
-        /// <summary>
-        /// Reverse the rotation created by ApplyRotation()
-        /// </summary>
-        /// <param name="g"></param>
-        protected void UnapplyRotation(Graphics g) {
-            if (this.Rotation != 0)
-                g.ResetTransform();
-        }
+        private int transparency = 128;
 
         #endregion
     }
-    */
+    
     /// <summary>
     /// An overlay that will draw an image over the top of the ObjectListView
     /// </summary>
     [TypeConverter(typeof(BrightIdeasSoftware.Design.OverlayConverter))]
-    public class ImageOverlay : ImageAdornment, IOverlay
+    public class ImageOverlay : ImageAdornment, ITransparentOverlay
     {
         public ImageOverlay() {
             this.Alignment = ContentAlignment.BottomRight;
@@ -260,7 +152,9 @@ namespace BrightIdeasSoftware
         public virtual void Draw(ObjectListView olv, Graphics g, Rectangle r) {
             Rectangle insetRect = r;
             insetRect.Inflate(-this.InsetX, -this.InsetY);
-            this.DrawImage(g, insetRect);
+
+            // We hard code a transparency of 255 here since transparency is handled by the glass panel
+            this.DrawImage(g, insetRect, this.Image, 255);
         }
 
         #endregion
@@ -270,12 +164,9 @@ namespace BrightIdeasSoftware
     /// An overlay that will draw text over the top of the ObjectListView
     /// </summary>
     [TypeConverter(typeof(BrightIdeasSoftware.Design.OverlayConverter))]
-    public class TextOverlay : TextAdornment, IOverlay
+    public class TextOverlay : TextAdornment, ITransparentOverlay
     {
         public TextOverlay() {
-            // All text overlays draw at 100% opaque since the transparency is handled by 
-            // glass panel onto which they are drawn
-            this.Transparency = 255;
             this.Alignment = ContentAlignment.BottomRight;
         }
 
@@ -310,10 +201,8 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Gets or sets whether the border will be drawn with rounded corners
         /// </summary>
-        [Category("Appearance - ObjectListView"),
-         Description("Will the border be drawn with rounded corners"),
-         DefaultValue(true),
-         Obsolete("Ise CornerRounding instead", false),
+        [Browsable(false),
+         Obsolete("Use CornerRounding instead", false),
          DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool RoundCorneredBorder {
             get { return this.CornerRounding > 0; }
@@ -338,7 +227,8 @@ namespace BrightIdeasSoftware
         public virtual void Draw(ObjectListView olv, Graphics g, Rectangle r) {
             Rectangle insetRect = r;
             insetRect.Inflate(-this.InsetX, -this.InsetY);
-            this.DrawText(g, insetRect);
+            // We hard code a transparency of 255 here since transparency is handled by the glass panel
+            this.DrawText(g, insetRect, this.Text, 255);
         }
 
         #endregion
@@ -350,6 +240,7 @@ namespace BrightIdeasSoftware
     public class BillboardOverylay : TextOverlay
     {
         public BillboardOverylay() {
+            this.Transparency = 255;
             this.BackColor = Color.PeachPuff;
             this.TextColor = Color.Black;
             this.BorderColor = Color.Empty;
@@ -385,7 +276,7 @@ namespace BrightIdeasSoftware
             if (textRect.Bottom > r.Height)
                 textRect.Y = Math.Max(r.Top, r.Height - textRect.Height);
 
-            this.DrawBorderedText(g, textRect, this.Text);
+            this.DrawBorderedText(g, textRect, this.Text, 255);
         }
     }
 }

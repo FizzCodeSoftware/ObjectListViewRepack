@@ -59,11 +59,16 @@ namespace ObjectListViewDemo
 		List<Person> masterList;
 		void InitializeExamples()
 		{
+            // Use different font under Vista
+            //if (ObjectListView.IsVista)
+                this.Font = new Font("Segoe UI", 9);
+
 			masterList = new List<Person>();
             masterList.Add(new Person("Wilhelm Frat", "Gymnast", 19, new DateTime(1984, 9, 23), 45.67, false, "ak", "Aggressive, belligerent "));
             masterList.Add(new Person("Alana Roderick", "Gymnast", 21, new DateTime(1974, 9, 23), 245.67, false, "gp", "Beautiful, exquisite"));
             masterList.Add(new Person("Frank Price", "Dancer", 30, new DateTime(1965, 11, 1), 75.5, false, "ns", "Competitive, spirited"));
             masterList.Add(new Person("Eric", "Half-a-bee", 1, new DateTime(1966, 10, 12), 12.25, true, "cp", "Diminutive, vertically challenged"));
+            masterList.Add(new Person("Nicola Scotton", "Nurse", 42, new DateTime(1965, 10, 29), 1245.7, false, "np", "Wise, fun, lovely"));
             masterList.Add(new Person("Madalene Alright", "School Teacher", 21, new DateTime(1964, 9, 23), 145.67, false, "jr", "Extensive, dimensionally challenged"));
             masterList.Add(new Person("Ned Peirce", "School Teacher", 21, new DateTime(1960, 1, 23), 145.67, false, "gab", "Fulsome, effusive"));
             masterList.Add(new Person("Felicity Brown", "Economist", 30, new DateTime(1975, 1, 12), 175.5, false, "sp", "Gifted, exceptional"));
@@ -336,7 +341,7 @@ namespace ObjectListViewDemo
                 photoRect.Inflate(-spacing, -spacing);
                 Person person = rowObject as Person;
                 if (person != null) {
-                    photoRect.Width = 75;
+                    photoRect.Width = 80;
                     string photoFile = String.Format(@".\Photos\{0}.png", person.Photo);
                     if (File.Exists(photoFile)) {
                         Image photo = Image.FromFile(photoFile);
@@ -1760,28 +1765,28 @@ namespace ObjectListViewDemo
 
         private void treeListView_ItemChecked(object sender, ItemCheckedEventArgs e)
         {
-            System.Diagnostics.Debug.WriteLine("tree checked");
+            //System.Diagnostics.Debug.WriteLine("tree checked");
         }
 
         private void treeListView_ItemCheck(object sender, ItemCheckEventArgs e)
         {
-            System.Diagnostics.Debug.WriteLine("tree check");
+            //System.Diagnostics.Debug.WriteLine("tree check");
         }
 
         private void listViewSimple_ItemChecked(object sender, ItemCheckedEventArgs e) {
-            System.Diagnostics.Debug.WriteLine("simple checked");
+            //System.Diagnostics.Debug.WriteLine("simple checked");
         }
 
         private void olvFastList_ItemChecked(object sender, ItemCheckedEventArgs e) {
-            System.Diagnostics.Debug.WriteLine("fast checked");
+            //System.Diagnostics.Debug.WriteLine("fast checked");
         }
 
         private void listViewSimple_ItemCheck(object sender, ItemCheckEventArgs e) {
-            System.Diagnostics.Debug.WriteLine("simple check");
+            //System.Diagnostics.Debug.WriteLine("simple check");
         }
 
         private void olvFastList_ItemCheck(object sender, ItemCheckEventArgs e) {
-            System.Diagnostics.Debug.WriteLine("fast check");
+            //System.Diagnostics.Debug.WriteLine("fast check");
         }
 
         private void checkBox19_CheckedChanged(object sender, EventArgs e) {
@@ -2012,18 +2017,48 @@ namespace ObjectListViewDemo
         }
 
         private void listViewComplex_FormatRow(object sender, FormatRowEventArgs e) {
-            e.UseCellFormatEvents = false;
+            e.UseCellFormatEvents = true;
+            if (listViewComplex.View != View.Details) {
+                if (e.Item.Text.ToLowerInvariant().StartsWith("nicola")) {
+                    e.Item.Decoration = new ImageDecoration(Resource1.loveheart, 200);
+                } else
+                    e.Item.Decoration = null;
+            }
         }
 
         private void listViewComplex_FormatCell(object sender, FormatCellEventArgs e) {
             Person p = (Person)e.Model;
-            if (e.ColumnIndex == 7 && p.CanTellJokes.HasValue && p.CanTellJokes.Value)
-                e.SubItem.Decoration = this.cbd;
-            else
-                e.SubItem.Decoration = null;
-        }
 
-        CellBorderDecoration cbd = new CellBorderDecoration();
+            // Put a love heart next to Nicola's name :)
+            if (e.ColumnIndex == 0) {
+                if (e.SubItem.Text.ToLowerInvariant().StartsWith("nicola")) {
+                    e.SubItem.Decoration = new ImageDecoration(Resource1.loveheart, 200);
+                }  else
+                    e.SubItem.Decoration = null;
+            }
+            
+            // If the occupation is missing a value, put a composite decoration over it
+            // to draw attention to.
+            if (e.ColumnIndex == 1 && e.SubItem.Text == "") {
+                TextDecoration decoration = new TextDecoration("Missing!", 255);
+                decoration.Alignment = ContentAlignment.MiddleCenter;
+                decoration.Font = new Font(this.Font.Name, this.Font.SizeInPoints+2);
+                decoration.TextColor = Color.Firebrick;
+                decoration.Rotation = -20;
+                e.SubItem.Decoration = decoration;
+                CellBorderDecoration cbd = new CellBorderDecoration();
+                cbd.BorderPen = new Pen(Color.FromArgb(128, Color.Firebrick));
+                cbd.FillBrush = null;
+                cbd.CornerRounding = 4.0f;
+                e.SubItem.Decorations.Add(cbd);
+            }
+            //if (e.ColumnIndex == 7) {
+            //    if (p.CanTellJokes.HasValue && p.CanTellJokes.Value)
+            //        e.SubItem.Decoration = new CellBorderDecoration();
+            //    else
+            //        e.SubItem.Decoration = null;
+            //}
+        }
 
         private void listViewSimple_IsHyperlink(object sender, IsHyperlinkEventArgs e) {
             if (e.Text.ToLowerInvariant().StartsWith("m"))

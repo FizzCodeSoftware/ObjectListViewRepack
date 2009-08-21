@@ -546,7 +546,7 @@ namespace BrightIdeasSoftware
 
             if (this.UseGdiTextRendering) {
                 Size proposedSize = new Size(int.MaxValue, int.MaxValue);
-                return TextRenderer.MeasureText(txt, this.Font, proposedSize, TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix).Width;
+                return TextRenderer.MeasureText(g, txt, this.Font, proposedSize, TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix).Width;
             } else {
                 StringFormat fmt = new StringFormat();
                 fmt.Trimming = StringTrimming.EllipsisCharacter;

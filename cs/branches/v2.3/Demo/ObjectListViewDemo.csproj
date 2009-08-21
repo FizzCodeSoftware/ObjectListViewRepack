@@ -161,6 +161,7 @@
     <Content Include="Photos\mb.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Photos\np.png" />
     <Content Include="Photos\ns.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

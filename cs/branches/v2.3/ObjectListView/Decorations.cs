@@ -347,4 +347,140 @@ namespace BrightIdeasSoftware
             return this.CellBounds;
         }
     }
+
+    /// <summary>
+    /// Instances of this class put an Image over the row/cell that it is decorating
+    /// </summary>
+    public class ImageDecoration : ImageAdornment, IDecoration
+    {
+        #region Constructors
+
+        public ImageDecoration() {
+            this.Alignment = ContentAlignment.MiddleRight;
+        }
+
+        public ImageDecoration(Image image)
+            : this() {
+            this.Image = image;
+        }
+
+        public ImageDecoration(Image image, int transparency)
+            : this() {
+            this.Image = image;
+            this.Transparency = transparency;
+        }
+
+        public ImageDecoration(Image image, ContentAlignment alignment)
+            : this() {
+            this.Image = image;
+            this.Alignment = alignment;
+        }
+
+        public ImageDecoration(Image image, int transparency, ContentAlignment alignment)
+            : this() {
+            this.Image = image;
+            this.Transparency = transparency;
+            this.Alignment = alignment;
+        }
+
+        #endregion
+
+        #region IDecoration Members
+
+        public OLVListItem ListItem {
+            get { return listItem; }
+            set { listItem = value; }
+        }
+        private OLVListItem listItem;
+
+        public OLVListSubItem SubItem {
+            get { return subItem; }
+            set { subItem = value; }
+        }
+        private OLVListSubItem subItem;
+
+        #endregion
+
+        #region Commands
+
+        /// <summary>
+        /// Draw this overlay
+        /// </summary>
+        /// <param name="olv">The ObjectListView being decorated</param>
+        /// <param name="g">The Graphics used for drawing</param>
+        /// <param name="r">The bounds of the rendering</param>
+        public virtual void Draw(ObjectListView olv, Graphics g, Rectangle r) {
+            this.DrawImage(g, this.CalculateItemBounds(this.ListItem, this.SubItem));
+        }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Instances of this class draw some text over the row/cell that they are decorating
+    /// </summary>
+    public class TextDecoration : TextAdornment, IDecoration
+    {
+        #region Constructors
+
+        public TextDecoration() {
+            this.Alignment = ContentAlignment.MiddleRight;
+        }
+
+        public TextDecoration(string text)
+            : this() {
+            this.Text = text;
+        }
+        
+        public TextDecoration(string text, int transparency)
+            : this() {
+            this.Text = text;
+            this.Transparency = transparency;
+        }
+
+        public TextDecoration(string text, ContentAlignment alignment)
+            : this() {
+            this.Text = text;
+            this.Alignment = alignment;
+        }
+
+        public TextDecoration(string text, int transparency, ContentAlignment alignment)
+            : this() {
+            this.Text = text;
+            this.Transparency = transparency;
+            this.Alignment = alignment;
+        }
+
+        #endregion
+
+        #region IDecoration Members
+
+        public OLVListItem ListItem {
+            get { return listItem; }
+            set { listItem = value; }
+        }
+        private OLVListItem listItem;
+
+        public OLVListSubItem SubItem {
+            get { return subItem; }
+            set { subItem = value; }
+        }
+        private OLVListSubItem subItem;
+
+        #endregion
+
+        #region Commands
+
+        /// <summary>
+        /// Draw this overlay
+        /// </summary>
+        /// <param name="olv">The ObjectListView being decorated</param>
+        /// <param name="g">The Graphics used for drawing</param>
+        /// <param name="r">The bounds of the rendering</param>
+        public virtual void Draw(ObjectListView olv, Graphics g, Rectangle r) {
+            this.DrawText(g, this.CalculateItemBounds(this.ListItem, this.SubItem));
+        }
+
+        #endregion
+    }
 }
