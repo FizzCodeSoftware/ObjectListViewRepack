@@ -5,6 +5,10 @@
  * Date: 2009-03-17 5:15 PM
  *
  * Change log:
+ * 2009-08-27   JPP  - Added ModelDropEventArgs.RefreshObjects() to simplify updating after
+ *                     a drag-drop operation
+ * 2009-08-19   JPP  - Changed to use OlvHitTest()
+ * v2.2.1
  * 2007-07-06   JPP  - Added StandardDropActionFromKeys property to OlvDropEventArgs
  * v2.2
  * 2009-05-17   JPP  - Added a Handled flag to OlvDropEventArgs
@@ -854,6 +858,8 @@ namespace BrightIdeasSoftware
         /// DropTargetItem and DropTargetSubItemIndex tells what is the target
         /// </remarks>
         protected virtual void DrawFeedbackItemTarget(Graphics g, Rectangle bounds) {
+            if (this.DropTargetItem == null)
+                return;
             Rectangle r = this.CalculateDropTargetRectangle(this.DropTargetItem, this.DropTargetSubItemIndex);
             r.Inflate(1, 1);
             float diameter = r.Height / 3;
@@ -873,6 +879,9 @@ namespace BrightIdeasSoftware
         /// <param name="g"></param>
         /// <param name="bounds"></param>
         protected virtual void DrawFeedbackAboveItemTarget(Graphics g, Rectangle bounds) {
+            if (this.DropTargetItem == null)
+                return;
+
             Rectangle r = this.CalculateDropTargetRectangle(this.DropTargetItem, this.DropTargetSubItemIndex);
             this.DrawBetweenLine(g, r.Left, r.Top, r.Right, r.Top);
         }
@@ -883,6 +892,9 @@ namespace BrightIdeasSoftware
         /// <param name="g"></param>
         /// <param name="bounds"></param>
         protected virtual void DrawFeedbackBelowItemTarget(Graphics g, Rectangle bounds) {
+            if (this.DropTargetItem == null)
+                return;
+
             Rectangle r = this.CalculateDropTargetRectangle(this.DropTargetItem, this.DropTargetSubItemIndex);
             this.DrawBetweenLine(g, r.Left, r.Bottom, r.Right, r.Bottom);
         }
@@ -1259,5 +1271,28 @@ namespace BrightIdeasSoftware
             internal set { this.targetModel = value; }
         }
         private object targetModel;
+
+        /// <summary>
+        /// Refresh all the objects involved in the operation
+        /// </summary>
+        public void RefreshObjects() {
+            TreeListView tlv = this.SourceListView as TreeListView;
+            ArrayList toBeRefreshed = new ArrayList();
+            if (tlv != null) {
+                foreach (object model in this.SourceModels) {
+                    object parent = tlv.GetParent(model);
+                    if (!toBeRefreshed.Contains(parent))
+                        toBeRefreshed.Add(parent);
+                }
+            }
+            toBeRefreshed.AddRange(this.SourceModels);
+            if (this.ListView == this.SourceListView) {
+                toBeRefreshed.Add(this.TargetModel);
+                this.ListView.RefreshObjects(toBeRefreshed);
+            } else {
+                this.SourceListView.RefreshObjects(toBeRefreshed);
+                this.ListView.RefreshObject(this.TargetModel);
+            }
+        }
     }
 }
