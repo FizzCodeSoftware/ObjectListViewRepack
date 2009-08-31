@@ -5,6 +5,7 @@
  * Date: 19/08/2009 10:56 PM
  *
  * Change log:
+ * 2009-08-23   JPP  - Added LightBoxDecoration
  * 2009-08-19   JPP  - Initial version. Separated from Overlays.cs
  *
  * To do:
@@ -32,6 +33,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.Windows.Forms;
 
 namespace BrightIdeasSoftware
 {
@@ -345,6 +347,35 @@ namespace BrightIdeasSoftware
     {
         protected override Rectangle CalculateBounds() {
             return this.CellBounds;
+        }
+    }
+
+    /// <summary>
+    /// This decoration causes everything except the decoration row to be overpainted
+    /// with a tint. The dark and more opaque the fill color, the more obvious the
+    /// decorated row becomes.
+    /// </summary>
+    public class LightBoxDecoration : BorderDecoration
+    {
+        public LightBoxDecoration() {
+            this.BoundsPadding = new Size(-1, 4);
+            this.CornerRounding = 8.0f;
+            this.FillBrush = new SolidBrush(Color.FromArgb(48, Color.Black));
+        }
+
+        public override void Draw(ObjectListView olv, Graphics g, Rectangle r) {
+            if (!r.Contains(olv.PointToClient(Cursor.Position)))
+                return;
+
+            using (Region newClip = new Region(r)) {
+                Rectangle bounds = this.RowBounds;
+                bounds.Inflate(this.BoundsPadding);
+                newClip.Exclude(this.GetRoundedRect(bounds, this.CornerRounding));
+                Region originalClip = g.Clip;
+                g.Clip = newClip;
+                g.FillRectangle(this.FillBrush, r);
+                g.Clip = originalClip;
+            }
         }
     }
 
