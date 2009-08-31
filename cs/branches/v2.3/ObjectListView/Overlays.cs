@@ -6,7 +6,7 @@
  *
  * Change log:
  * 2009-08-17   JPP  - Overlays now use Adornments
- *                   - Overlays can now have separate transparency levels
+ *                   - Added ITransparentOverlay interface. Overlays can now have separate transparency levels
  * 2009-08-10   JPP  - Moved decoration related code to new file
  * v2.2.1
  * 200-07-24    JPP  - TintedColumnDecoration now works when last item is a member of a collapsed
@@ -92,6 +92,13 @@ namespace BrightIdeasSoftware
 
         #region ITransparentOverlay Members
 
+        /// <summary>
+        /// How transparent should this overlay be?
+        /// </summary>
+        [Category("Appearance - ObjectListView"),
+         Description("How transparent should this overlay be"),
+         DefaultValue(128),
+         NotifyParentProperty(true)]
         public int Transparency {
             get { return this.transparency; }
             set { this.transparency = Math.Min(255, Math.Max(0, value)); }
@@ -108,7 +115,7 @@ namespace BrightIdeasSoftware
     public class ImageOverlay : ImageAdornment, ITransparentOverlay
     {
         public ImageOverlay() {
-            this.Alignment = ContentAlignment.BottomRight;
+            this.Alignment = System.Drawing.ContentAlignment.BottomRight;
         }
 
         #region Public properties
@@ -167,7 +174,7 @@ namespace BrightIdeasSoftware
     public class TextOverlay : TextAdornment, ITransparentOverlay
     {
         public TextOverlay() {
-            this.Alignment = ContentAlignment.BottomRight;
+            this.Alignment = System.Drawing.ContentAlignment.BottomRight;
         }
 
         #region Public properties
