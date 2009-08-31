@@ -249,9 +249,10 @@ namespace BrightIdeasSoftware
         /// <param name="sender"></param>
         /// <param name="e"></param>
         void objectListView_SizeChanged(object sender, EventArgs e) {
-            if (this.isGlassShown) {
-                this.Size = this.objectListView.ClientSize;
-            }
+            // This event is triggered in all sorts of places, and not always when the size changes.
+            //if (this.isGlassShown) {
+            //    this.Size = this.objectListView.ClientSize;
+            //}
         }
 
         /// <summary>
