@@ -5,6 +5,7 @@
  * Date: 17/10/2008 9:15 PM
  *
  * Change log:
+ * 2009-08-16   JPP  - Added group events
  * 2009-08-08   JPP  - Added HotItem event
  * 2009-07-24   JPP  - Added Hyperlink events
  *                   - Added Formatting events
@@ -43,6 +44,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
@@ -98,6 +100,34 @@ namespace BrightIdeasSoftware
         [Category("Behavior - ObjectListView"),
         Description("This event is triggered before the items in the list are sorted.")]
         public event EventHandler<BeforeSortingEventArgs> BeforeSorting;
+
+        /// <summary>
+        /// Triggered after a ObjectListView has created groups
+        /// </summary>
+        [Category("Behavior - ObjectListView"),
+        Description("This event is triggered after the groups are created.")]
+        public event EventHandler<CreateGroupsEventArgs> AfterCreatingGroups;
+
+        /// <summary>
+        /// Triggered before a ObjectListView begins to create groups
+        /// </summary>
+        /// <remarks>
+        /// Set Groups to prevent the default group creation process
+        /// </remarks>
+        [Category("Behavior - ObjectListView"),
+        Description("This event is triggered before the groups are created.")]
+        public event EventHandler<CreateGroupsEventArgs> BeforeCreatingGroups;
+
+        /// <summary>
+        /// Triggered just before a ObjectListView creates groups
+        /// </summary>
+        /// <remarks>
+        /// You can make changes to the groups, which have been created, before those
+        /// groups are created within the listview.
+        /// </remarks>
+        [Category("Behavior - ObjectListView"),
+        Description("This event is triggered when the groups are just about to be created.")]
+        public event EventHandler<CreateGroupsEventArgs> AboutToCreateGroups;
 
         /// <summary>
         /// This event is triggered when the user moves a drag over an ObjectListView that
@@ -221,6 +251,13 @@ namespace BrightIdeasSoftware
         public event EventHandler<HyperlinkClickedEventArgs> HyperlinkClicked;
 
         /// <summary>
+        /// Triggered when the task text of a group is clicked.
+        /// </summary>
+        [Category("Behavior - ObjectListView"),
+        Description("This event is triggered when the task text of a group is clicked.")]
+        public event EventHandler<GroupTaskClickedEventArgs> GroupTaskClicked;
+
+        /// <summary>
         /// Is the value in the given cell a hyperlink.
         /// </summary>
         [Category("Behavior - ObjectListView"),
@@ -301,6 +338,21 @@ namespace BrightIdeasSoftware
         //-----------------------------------------------------------------------------------
         #region OnEvents
 
+        protected virtual void OnAboutToCreateGroups(CreateGroupsEventArgs e) {
+            if (this.AboutToCreateGroups != null)
+                this.AboutToCreateGroups(this, e);
+        }
+
+        protected virtual void OnBeforeCreatingGroups(CreateGroupsEventArgs e) {
+            if (this.BeforeCreatingGroups != null)
+                this.BeforeCreatingGroups(this, e);
+        }
+
+        protected virtual void OnAfterCreatingGroups(CreateGroupsEventArgs e) {
+            if (this.AfterCreatingGroups != null)
+                this.AfterCreatingGroups(this, e);
+        }
+
         protected virtual void OnAfterSearching(AfterSearchingEventArgs e) {
             if (this.AfterSearching != null)
                 this.AfterSearching(this, e);
@@ -379,6 +431,11 @@ namespace BrightIdeasSoftware
         protected virtual void OnHyperlinkClicked(HyperlinkClickedEventArgs e) {
             if (this.HyperlinkClicked != null)
                 this.HyperlinkClicked(this, e);
+        }
+
+        protected virtual void OnGroupTaskClicked(GroupTaskClickedEventArgs e) {
+            if (this.GroupTaskClicked != null)
+                this.GroupTaskClicked(this, e);
         }
 
         protected virtual void OnIsHyperlink(IsHyperlinkEventArgs e) {
@@ -1309,6 +1366,56 @@ namespace BrightIdeasSoftware
             internal set { oldHotRowIndex = value; }
         }
         private int oldHotRowIndex;
+    }
+
+    /// <summary>
+    /// This event argument block is used when groups are created for a list.
+    /// </summary>
+    public class CreateGroupsEventArgs : EventArgs
+    {
+        public CreateGroupsEventArgs(GroupingParameters parms) {
+            this.parameters = parms;
+        }
+
+        /// <summary>
+        /// Gets the settings that control the creation of groups
+        /// </summary>
+        public GroupingParameters Parameters {
+            get { return this.parameters; }
+        }
+        private GroupingParameters parameters;
+
+        /// <summary>
+        /// Gets or sets the groups that should be used
+        /// </summary>
+        public IList<OLVGroup> Groups {
+            get { return this.groups; }
+            set { this.groups = value; }
+        }
+        private IList<OLVGroup> groups;
+
+        /// <summary>
+        /// Has this event been cancelled by the event handler?
+        /// </summary>
+        public bool Canceled;
+    }
+    
+    /// <summary>
+    /// This event argument block is used when the text of a group task is clicked
+    /// </summary>
+    public class GroupTaskClickedEventArgs : EventArgs
+    {
+        public GroupTaskClickedEventArgs(OLVGroup group) {
+            this.group = group;
+        }
+
+        /// <summary>
+        /// Gets which group was clicked
+        /// </summary>
+        public OLVGroup Group {
+            get { return this.group; }
+        }
+        private OLVGroup group;
     }
 
     #endregion
