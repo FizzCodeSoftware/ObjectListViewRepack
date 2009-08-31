@@ -7,8 +7,8 @@ What's New?
 
 For the (mostly) complete change log, :ref:`see here <changelog>`.
 
-September 2009 - Version 2.3
-----------------------------
+1 September 2009 - Version 2.3 alpha
+------------------------------------
 
 This release focused on formatting -- giving programmers more opportunity to play with the appearance
 of the `ObjectListView`.
@@ -16,16 +16,45 @@ of the `ObjectListView`.
 Decorations
 ^^^^^^^^^^^
 
-Decorations are overlays that are attached to be particular row or cell. Unlike
-`Overlays` proper, `Decorations` scroll when their row or cell scrolls.
+Decorations allow you to put pretty images, text and effects over the top of your `ObjectListView`.
+Here the love heart and the "Missing!" are decorations.
 
-Decorations are set through the `Decoration` property of the `OLVListItem` and
-`OLVListSubItem` classes. The best place to set those properties is during the
-`FormatRow` and `FormatCell` events (:ref:`see below <whats-new-format-events>`).
+.. image:: images/decorations-example.png
 
-Like overlays, decoration are not limited to drawing within the bounds of their
-attached row or cell. Also like overlays, decorations do not use the `OwnerDraw`
-mechanism, so they are available in non-OwnerDrawn `ObjectListViews.`
+Decorations allow arbitrary drawing over the contents
+of the ListView. Unlike overlays, decorations are attached to a particular row
+or cell and scroll with their row or cell. Like overlays, decorations
+are not limited to drawing within the bounds of their attached row or cell. Also
+like overlays, decorations do not use the `OwnerDraw` mechanism, so they are
+available in non-OwnerDrawn `ObjectListViews.`
+
+Decorations can be used in several ways:
+
+* they can be registered directly using the `ObjectListView.AddDecoration()` method
+* they can be assigned to an `OLVListItem` or `OlVListSubItem` during `FormatRow` and `FormatCell` events (:ref:`see below <whats-new-format-events>`).
+* they can be applied to the hot row by setting `HotItemStyle.Decoration` property
+* they can be applied to the selected row through the `ObjectListView.SelectedRowsDecoration` property
+
+Group header formatting
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Groups have been overhauled for this release. Groups under XP remain unchanged, but under Vista
+and Windows 7, many more formatting options are now available.
+
+.. image:: images/group-formatting.png
+
+These groups have a `TitleImage` (the chef picture), `Subtitle` ("Do whatever
+is...") and a `Task` ("Check Bank Balance"). There is a
+`OLVColumn.GroupFormatter` delegate, which allows you to apply formatting to a
+group before it is created.
+
+There are four new events related to grouping:
+
+* `BeforeCreatingGroups` which allows you to completely control which groups are created
+* `AboutToCreateGroups` which allows you to change the details of groups before they are created
+* `AfterCreatingGroups` which tells the world that new groups have been created.
+* `GroupTaskClick` when the user clicks on the task given for a group (for example, the "Check
+  Bank Balance" text in the above screenshot)
 
 Hyperlinks
 ^^^^^^^^^^
@@ -36,8 +65,7 @@ Columns can now be marked as containing hyperlinks. Set `Hyperlink` property of
 For links to appear, you must set `HyperlinkStyle` property of `ObjectListView`.
 You can create and configure a `HyperLinkStyle` within the IDE, and then assign
 it to your `ObjectListView`. The same style can be assigned to multiple
-`ObjectListViews`. In 95% of cases, the default styling will be what is
-required.
+`ObjectListViews`. In 95% of cases, the default styling will suffice.
 
 For each cell in a hyperlink column, an `IsHyperlink` event will be triggered.
 In that event, you can specify what URL will be attached to that cell. By
@@ -78,16 +106,16 @@ In previous version, `RowFormatter` was the approved way to change the
 formatting (font/text color/background color) of a row or cell. But it had some
 limitations:
 
-1. It did play well with `AlternateBackgroundColors` property
+1. It did not play well with `AlternateBackgroundColors` property
 
 2. It was called before the `OLVListItem` had been added to the
- `ObjectListView`, so many of its properties were not yet initialized.
+   `ObjectListView`, so many of its properties were not yet initialized.
 
 3. It was painful to use it to format only one cell.
 
 4. Perhaps most importantly, the programmer did not know where in the
-`ObjectListView` the row was going to appear so they could not implement more
-sophisticated versions of the row alternate background colors scheme.
+   `ObjectListView` the row was going to appear so they could not implement more
+   sophisticated versions of the row alternate background colors scheme.
 
 To get around all these problems, there is now a `FormatRow` event. This is
 called *after* the `OLVListItem` has been added to the control. Plus it has a
@@ -143,39 +171,78 @@ This reuses the same `ObjectListView` control, but now it is a fully functional
 
 [Thanks to John Kohler for this idea and the original implementation]
 
+Groups on virtual lists
+^^^^^^^^^^^^^^^^^^^^^^^
+
+When running on Vista and later, virtual lists can now be grouped!
+
+`FastObjectListView` supports grouping out of the box. For your own
+`VirtualObjectListView` you must set the `GroupingStrategy` property to an
+object that implements the `IVirtualGroups` interface.
+
+Grouping on virtual lists is still not perfect. It works perfectly with 10,000
+row, works acceptibly with 50,000, but on my laptop, controls with more than
+100,000 rows were not usable. It seems that in some situations (for example,
+while scrolling) the control runs through all the rows (or a good chunk of
+them), asking which group each row belongs to. It does this quickly, but running
+through a million rows still takes some time.
+
+One other problem is that when a group is selected, the listview control selects
+all the members of that group. If the group has 100,000 items in it, it will
+trigger 100,000 `SelectedIndexChanged` events -- which is a pain!
+
+Iimplementation of this feature required the use of undocumented features. That means
+there is no guarantee that it will continue working in later versions of Windows
+(or even on current versions). You have been warned.
+
+[This was more of a technical challenge rather something that was actually useful]
+
 Small changes
 ^^^^^^^^^^^^^
 
 * Added `UseTranslucentSelection` property which mimics the selection
- highlighting scheme used in Vista. This works fine on Vista and on XP when the
- list is `OwnerDrawn`, but only moderately well on XP when non-OwnerDrawn, since
- the native control insists on drawing its normal "blue background, white
- foreground" selection scheme.
+  highlighting scheme used in Vista. This works fine on Vista and on XP when the
+  list is `OwnerDrawn`, but only moderately well on XP when non-OwnerDrawn, since
+  the native control insists on drawing its normal "blue background, white
+  foreground" selection scheme.
 
 * Added `UseTranslucentHotItem` property which draws a translucent area over the
- top of the current hot item.
+  top of the current hot item.
+
+* Added `ShowCommandMenuOnRightClick` property which is `true` shows extra commands
+  when a header is right clicked. This is `false` by default.
 
 * Added `ImageAspectName` which the name of a property that will be invoked to
-get the image that should be shown on a column.
-This allows the image for a column to be retrieved
-from the model without having to install an `ImageGetter` delegate.
+  get the image that should be shown on a column.
+  This allows the image for a column to be retrieved
+  from the model without having to install an `ImageGetter` delegate.
 
 * Added `HotItemChanged` event and `Hot*` properties to allow programmers to
-perform actions when the mouse moves to a different row or cell.
+  perform actions when the mouse moves to a different row or cell.
 
 * `OlvHitTest()` now works correctly even when `FullRowSelect` is `false`. There
-is a bug in the .NET `ListView` where `HitTest()` for a point that is in
-column 0 but not over the text or icon will fail (i.e. fail to recognize that
-it is over column 0). `OlvHitTest()` does not have that failure.
+  is a bug in the .NET `ListView` where `HitTest()` for a point that is in
+  column 0 but not over the text or icon will fail (i.e. fail to recognize that
+  it is over column 0). `OlvHitTest()` does not have that failure.
 
 * Added `OLVListItem.GetSubItemBounds()` which correctly calculates the bounds
-of cell even for column 0. In .NET `ListView` the bounds of any subitem 0 are
-always the bounds of the whole row.
+  of cell even for column 0. In .NET `ListView` the bounds of any subitem 0 are
+  always the bounds of the whole row.
 
 * Column 0 now follows its `TextAlign` setting, but only when `OwnerDrawn`. On a
-plain `ListView`, column 0 is always left aligned. ** This feature is
-experimental. Use it if you want. Don't complain if it doesn't work :) **
+  plain `ListView`, column 0 is always left aligned. ** This feature is
+  experimental. Use it if you want. Don't complain if it doesn't work :) **
 
+* Renamed `LastSortColumn` to be `PrimarySortColumn`, which better indicates its use.
+  Similar `LastSortOrder` became `PrimarySortOrder`.
+
+* Cell editors are no longer forcibly disposed after being used to edit a cell.
+  This allows them to be cached and reused.
+
+* Reimplemented `OLVListItem.Bounds` since the base version throws an exception
+  if the given item is part of a collapsed group.
+
+* Removed even token support for Mono.
 
 4 August 2009 - Version 2.2.1
 -----------------------------
@@ -192,21 +259,15 @@ New features
 Bug fixes
 ^^^^^^^^^
 
-* Avoided bug in .NET framework involving column 0 of owner drawn listviews not
- being redrawn when the listview was scrolled horizontally (this was a *lot* of
- work to track down and fix!)
+* Avoided bug in .NET framework involving column 0 of owner drawn listviews not being redrawn when the listview was scrolled horizontally (this was a *lot* of work to track down and fix!)
 
-* Subitem edit rectangles always allowed for an image in the cell, even if there
- was none. Now they only allow for an image when there actually is one.
+* Subitem edit rectangles always allowed for an image in the cell, even if there was none. Now they only allow for an image when there actually is one.
 
 * The cell edit rectangle is now correctly calculated when the listview is scrolled horizontally.
 
-* If the user clicks/double clicks on a tree list cell, an edit operation will
- no longer begin if the click was to the left of the expander. This is
- implemented in such a way that other renderers can have similar "dead" zones.
+* If the user clicks/double clicks on a tree list cell, an edit operation will no longer begin if the click was to the left of the expander. This is implemented in such a way that other renderers can have similar "dead" zones.
 
-* `CalculateCellBounds()` messed with the `FullRowSelect` property, which
- confused the tooltip handling on the underlying control. It no longer does this.
+* `CalculateCellBounds()` messed with the `FullRowSelect` property, which confused the tooltip handling on the underlying control. It no longer does this.
 
 * The cell edit rectangle is now correctly calculated for owner-drawn, non-Details views.
 
@@ -261,34 +322,26 @@ See :ref:`recipe-emptymsg` for details.
 Other new features
 ^^^^^^^^^^^^^^^^^^
 
-* The most requested feature ever -- collapsible groups -- is now available.
- But it is for Vista only. Thanks to Crustyapplesniffer for his implementation of this feature.
- Set the `HasCollapsibleGroups` to `false` if you don't want this on your `ObjectListView` (it is `true` by default).
+* The most requested feature ever -- collapsible groups -- is now available. But it is for Vista only. Thanks to Crustyapplesniffer for his implementation of this feature. Set the `HasCollapsibleGroups` to `false` if you don't want this on your `ObjectListView` (it is `true` by default).
 
-* Added `SelectedColumn` property, which puts a slight tint over that column.
- When combined with the `TintSortColumn` and `SelectedColumnTint` properties, the
- sorted column will automatically be tinted with whatever colour you want.
+* Added `SelectedColumn` property, which puts a slight tint over that column. When combined with the `TintSortColumn` and `SelectedColumnTint` properties, the sorted column will automatically be tinted with whatever colour you want.
 
 * Added `Scroll` event (thanks to Christophe Hosten who implemented this)
 * Made several properties localizable.
 * The project no longer uses `unsafe` code, and can therefore be used in a limited trust environment.
 * `TreeListView` now has `GetParent()` and `GetChildren()` methods to allow tree traversal. It also has a
- `DiscardAllState()` method to collapse all branches and forget everything about all model objects.
+  `DiscardAllState()` method to collapse all branches and forget everything about all model objects.
 
 Bug fixes (not a complete list)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* Fix a long standing problem with flickering on owner drawn virtual lists.
- Apart from now being flicker-free, this means that grid lines no longer get
- confused, and drag-select no longer flickers. This means that TreeListView now
- has noticeably less flicker (it is always an owner drawn virtual list).
+* Fix a long standing problem with flickering on owner drawn virtual lists. Apart from now being flicker-free, this means that grid lines no longer get confused, and drag-select no longer flickers. This means that TreeListView now has noticeably less flicker (it is always an owner drawn virtual list).
 
 * Double-clicking on a row no longer toggles the checkbox (Why did MS ever include that?).
 * Double-clicking on a checkbox no longer confuses the checkbox.
 * Correctly renderer checkboxes when `RowHeight` is non-standard.
 * Checkboxes are now visible even when the `ObjectListView` does not have a `SmallImageList`.
-* `AlwaysGroupByColumn` and `SortGroupItemsByPrimaryColumn` now work correctly (without messing
- up the column header sort indicators).
+* `AlwaysGroupByColumn` and `SortGroupItemsByPrimaryColumn` now work correctly (without messing up the column header sort indicators).
 * Several Vista-only bugs were fixed
 
 3 February 2009 - Version 2.1
@@ -311,21 +364,18 @@ non-detail view. This second responsibility now belongs explicitly to the
 * Renderers are now Components and can be created, configured, and assigned within the IDE.
 * Renderers can now also do hit testing.
 * Owner draw text now looks like native ListView
-* The text AND bitmaps now follow the alignment of the column. Previously only the
- text was aligned.
+* The text AND bitmaps now follow the alignment of the column. Previously only the text was aligned.
 * Added `ItemRenderer` to handle non-details owner drawing
-* Images are now drawn directly from the image list if possible.
- 30% faster than previous versions.
+* Images are now drawn directly from the image list if possible. 30% faster than previous versions.
 
 Other significant changes
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * Added hot tracking
 * Added checkboxes to subitems
-* AspectNames can now be used as indexes onto the model objects -- effectively
- something like this: `modelObject[this.AspectName]`. This is particularly
- helpful for `DataListView` since `DataRows` and `DataRowViews` support this type of
- indexing.
+
+* AspectNames can now be used as indexes onto the model objects -- effectively something like this: `modelObject[this.AspectName]`. This is particularly helpful for `DataListView` since `DataRows` and `DataRowViews` support this type of indexing.
+
 * Added `EditorRegistry` to make it easier to change or add cell editors
 
 Minor Changes
@@ -334,8 +384,7 @@ Minor Changes
 * Added `TriStateCheckBoxes`, `UseCustomSelectionColors` and `UseHotItem` properties
 * Added `TreeListView.RevealAfterExpand` property
 * Enums are now edited by a ComboBox that shows all the possible values.
-* Changed model comparisons to use `Equals()` rather than `==`. This allows the model objects to
- implement their own idea of equality.
+* Changed model comparisons to use `Equals()` rather than `==`. This allows the model objects to implement their own idea of equality.
 * `ImageRenderer` can now handle multiple images. This makes `ImagesRenderer` defunct.
 * `FlagsRenderer<T>` is no longer generic. It is simply `FlagsRenderer`.
 * Virtual ObjectListViews now trigger `ItemCheck` and `ItemChecked` events
@@ -346,8 +395,7 @@ Bug fixes
 * `RefreshItem()` now correctly recalculates the background color
 * Fixed bug with simple checkboxes which meant that `CheckedObjects` always returned empty.
 * `TreeListView` now works when visual styles are disabled
-* `DataListView` now handles boolean types better. It also now longer crashes when the data source
- is reseated.
+* `DataListView` now handles boolean types better. It also now longer crashes when the data source is reseated.
 * Fixed bug with `AlwaysGroupByColumn` where column header clicks would not resort groups.
 
 10 January 2009 - Version 2.0.1
@@ -416,27 +464,27 @@ Major changes
 ^^^^^^^^^^^^^
 
 * Allow check boxes on `FastObjectListViews`. .NET's ListView cannot support
- checkboxes on virtual lists. We cannot get around this limit for plain
- `VirtualObjectListViews`, but we can for `FastObjectListViews`. This is a
- significant piece of work and there may well be bugs that I have missed. This
- implementation does not modify the traditional `CheckedIndicies`/`CheckedItems`
- properties, which will still fail. It uses the new `CheckedObjects` property as
- the way to access the checked rows. Once `CheckBoxes` is set on a
- `FastObjectListView`, trying to turn it off again will throw an exception.
+  checkboxes on virtual lists. We cannot get around this limit for plain
+  `VirtualObjectListViews`, but we can for `FastObjectListViews`. This is a
+  significant piece of work and there may well be bugs that I have missed. This
+  implementation does not modify the traditional `CheckedIndicies`/`CheckedItems`
+  properties, which will still fail. It uses the new `CheckedObjects` property as
+  the way to access the checked rows. Once `CheckBoxes` is set on a
+  `FastObjectListView`, trying to turn it off again will throw an exception.
 
 * There is now a `CellEditValidating` event, which allows a cell editor to be
- validated before it loses focus. If validation fails, the cell editor will
- remain. Previous versions could not prevent the cell editor from losing focus.
- Thanks to Artiom Chilaru for the idea and the initial implementation.
+  validated before it loses focus. If validation fails, the cell editor will
+  remain. Previous versions could not prevent the cell editor from losing focus.
+  Thanks to Artiom Chilaru for the idea and the initial implementation.
 
 * Allow selection foreground and background colors to be changed. Windows does
- not allow these colours to be customised, so we can only do these when the
- `ObjectListView` is owner drawn. To see this in action, set the
- `HighlightForegroundColor` and `HighlightBackgroundColor` properties and then set
- `UseCustomSelectionColors` to true.
+  not allow these colours to be customised, so we can only do these when the
+  `ObjectListView` is owner drawn. To see this in action, set the
+  `HighlightForegroundColor` and `HighlightBackgroundColor` properties and then
+  set `UseCustomSelectionColors` to true.
 
 * Added `AlwaysGroupByColumn` and `AlwaysGroupBySortOrder` properties, which
- force the list view to always be grouped by a particular column.
+  force the list view to always be grouped by a particular column.
 
 Minor improvements
 ^^^^^^^^^^^^^^^^^^
@@ -469,8 +517,8 @@ Bug fixes (not a complete list)
 * The column select menu will now appear when the header is right clicked even when a context menu is installed on the `ObjectListView`
 * Tabbing while editing the primary column in a non-details view no longer tries to edit the new column's value
 * When a virtual list that is scrolled vertically is cleared, the underlying
- `ListView` becomes confused about the scroll position, and incorrectly renders
- items after that. ObjectListView now avoids this problem.
+  `ListView` becomes confused about the scroll position, and incorrectly renders
+  items after that. ObjectListView now avoids this problem.
 
 1 May 2008 - Version 1.11
 -------------------------
@@ -505,28 +553,28 @@ Bug fixes (not a complete list)
 -----------------------------
 
 * Added ability to have hidden columns, i.e. columns that the ObjectListView
- knows about but that are not visible to the user. This is controlled by
- `OLVColumn.IsVisible`. I added `ColumnSelectionForm` to the demo project to show
- how it could be used in an application. Also, right clicking on the column
- header will allow the user to choose which columns are visible. Set
- `SelectColumnsOnRightClick` to false to prevent this behaviour.
+  knows about but that are not visible to the user. This is controlled by
+  `OLVColumn.IsVisible`. I added `ColumnSelectionForm` to the demo project to show
+  how it could be used in an application. Also, right clicking on the column
+  header will allow the user to choose which columns are visible. Set
+  `SelectColumnsOnRightClick` to false to prevent this behaviour.
 
 * Added `CopySelectionToClipboard()` which pastes a text and HTML representation
- of the selected rows onto the Clipboard. By default, this is bound to Ctrl-C.
+  of the selected rows onto the Clipboard. By default, this is bound to Ctrl-C.
 
 * Added support for checkboxes via `CheckStateGetter` and `CheckStatePutter`
- properties. See `ColumnSelectionForm` for an example of how to use.
+  properties. See `ColumnSelectionForm` for an example of how to use.
 
 * Added `ImagesRenderer` to draw more than one image in a column.
 
 * Made `ObjectListView` and `OLVColumn` into partial classes so that others can
- extend them.
+  extend them.
 
 * Added experimental `IncrementalUpdate()` method, which operates like
- `SetObjects()` but without changing the scrolling position, the selection, or
- the sort order. And it does this without a single flicker. Good for lists that
- are updated regularly. [Better to use a `FastObjectListView` and the `Objects`
- property]
+  `SetObjects()` but without changing the scrolling position, the selection, or
+  the sort order. And it does this without a single flicker. Good for lists that
+  are updated regularly. [Better to use a `FastObjectListView` and the `Objects`
+  property]
 
 * Fixed the required quota of small bugs.
 
@@ -556,18 +604,18 @@ Major changes
 ^^^^^^^^^^^^^
 
 * Added ability to give each column a minimum and maximum width (set the minimum
- equal to the maximum to make a fixed-width column). Thanks to Andrew Philips for
- his suggestions and input.
+  equal to the maximum to make a fixed-width column). Thanks to Andrew Philips for
+  his suggestions and input.
 
 * Complete overhaul of `DataListView` to now be a fully functional, data-
- bindable control. This is based on Ian Griffiths' excellent example, which
- should be available here__, but unfortunately seems to have disappeared from the
- Web. Thanks to ereigo for significant help with debugging this new code.
+  bindable control. This is based on Ian Griffiths' excellent example, which
+  should be available here__, but unfortunately seems to have disappeared from the
+  Web. Thanks to ereigo for significant help with debugging this new code.
 
 * Added the ability for the listview to display a "this list is empty"-type
- message when the ListView is empty (obviously). This is controlled by the
- `EmptyListMsg` and `EmptyListMsgFont` properties. Have a look at the "File
- Explorer" tab in the demo to see what it looks like.
+  message when the ListView is empty (obviously). This is controlled by the
+  `EmptyListMsg` and `EmptyListMsgFont` properties. Have a look at the "File
+  Explorer" tab in the demo to see what it looks like.
 
 .. __: http://www.interact-sw.co.uk/utilities/bindablelistview
 
