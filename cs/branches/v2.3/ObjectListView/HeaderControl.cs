@@ -5,6 +5,8 @@
  * Date: 25/11/2008 17:15 
  *
  * Change log:
+ * 2009-08-24  JPP  - Handle the header being destroyed
+ * v2.2.1
  * 2009-08-16  JPP  - Correctly handle header themes
  * 2009-08-15  JPP  - Added formatting capabilities: font, color, word wrap
  * v2.2
@@ -150,7 +152,7 @@ namespace BrightIdeasSoftware
         /// Calculate how height the header needs to be
         /// </summary>
         /// <returns>Height in pixels</returns>
-        protected int CalculateHeight() {
+        protected int CalculateHeight(Graphics g) {
             TextFormatFlags flags = this.TextFormatFlags;
             float height = 0.0f;
             for (int i = 0; i < this.ListView.Columns.Count; i++) {
@@ -158,10 +160,10 @@ namespace BrightIdeasSoftware
                 Font f = this.CalculateFont(column);
                 if (this.WordWrap) {
                     Rectangle r = this.GetItemRect(i);
-                    r.Width += 4;
+                    r.Width -= 6; // Match the "tweaking" done in CustomRender
                     if (this.HasNonThemedSortIndicator(column))
                         r.Width -= 16;
-                    SizeF size = TextRenderer.MeasureText(column.Text, f, new Size(r.Width, 100), flags);
+                    SizeF size = TextRenderer.MeasureText(g, column.Text, f, new Size(r.Width, 100), flags);
                     height = Math.Max(height, size.Height);
                 } else {
                     height = Math.Max(height, f.Height);
@@ -228,6 +230,7 @@ namespace BrightIdeasSoftware
         #region Windows messaging
 
         protected override void WndProc(ref Message m) {
+            const int WM_DESTROY = 2;
             const int WM_SETCURSOR = 0x20;
             const int WM_NOTIFY = 0x4E;
             const int WM_MOUSEMOVE = 0x200;
@@ -236,10 +239,8 @@ namespace BrightIdeasSoftware
 
             switch (m.Msg) {
                 case WM_SETCURSOR:
-                    if (this.IsCursorOverLockedDivider) {
-                        m.Result = (IntPtr)1;	// Don't change the cursor
+                    if (!this.HandleSetCursor(ref m))
                         return;
-                    }
                     break;
 
                 case WM_NOTIFY:
@@ -248,11 +249,17 @@ namespace BrightIdeasSoftware
                     break;
 
                 case WM_MOUSEMOVE:
-                    this.HandleMouseMove(ref m);
+                    if (!this.HandleMouseMove(ref m))
+                        return;
                     break;
 
                 case HDM_LAYOUT:
                     if (!this.HandleLayout(ref m))
+                        return;
+                    break;
+
+                case WM_DESTROY:
+                    if (!this.HandleDestroy(ref m))
                         return;
                     break;
             }
@@ -260,7 +267,15 @@ namespace BrightIdeasSoftware
             base.WndProc(ref m);
         }
 
-        protected void HandleMouseMove(ref Message m) {
+        protected bool HandleSetCursor(ref Message m) {
+            if (this.IsCursorOverLockedDivider) {
+                m.Result = (IntPtr)1;	// Don't change the cursor
+                return false;
+            }
+            return true;
+        }
+
+        protected bool HandleMouseMove(ref Message m) {
             int columnIndex = this.ColumnIndexUnderCursor;
 
             // If the mouse has moved to a different header, pop the current tip (if any)
@@ -268,6 +283,8 @@ namespace BrightIdeasSoftware
                 this.ToolTip.PopToolTip(this);
                 this.columnShowingTip = columnIndex;
             }
+
+            return true;
         }
         private int columnShowingTip = -1;
 
@@ -281,17 +298,17 @@ namespace BrightIdeasSoftware
 
                 case ToolTipControl.TTN_SHOW:
                     //System.Diagnostics.Debug.WriteLine("hdr TTN_SHOW");
-                    System.Diagnostics.Trace.Assert(this.ToolTip.Handle == nmhdr.hwndFrom);
+                    //System.Diagnostics.Trace.Assert(this.ToolTip.Handle == nmhdr.hwndFrom);
                     return this.ToolTip.HandleShow(ref m);
 
                 case ToolTipControl.TTN_POP:
                     //System.Diagnostics.Debug.WriteLine("hdr TTN_POP");
-                    System.Diagnostics.Trace.Assert(this.ToolTip.Handle == nmhdr.hwndFrom);
+                    //System.Diagnostics.Trace.Assert(this.ToolTip.Handle == nmhdr.hwndFrom);
                     return this.ToolTip.HandlePop(ref m);
 
                 case ToolTipControl.TTN_GETDISPINFO:
                     //System.Diagnostics.Debug.WriteLine("hdr TTN_GETDISPINFO");
-                    System.Diagnostics.Trace.Assert(this.ToolTip.Handle == nmhdr.hwndFrom);
+                    //System.Diagnostics.Trace.Assert(this.ToolTip.Handle == nmhdr.hwndFrom);
                     return this.ToolTip.HandleGetDispInfo(ref m);
             }
 
@@ -326,6 +343,7 @@ namespace BrightIdeasSoftware
 
                     if (this.cachedNeedsCustomDraw) {
                         using (Graphics g = Graphics.FromHdc(nmcustomdraw.hdc)) {
+                            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
                             this.CustomDrawHeaderCell(g, columnIndex, nmcustomdraw.uItemState);
                         }
                         m.Result = (IntPtr)CDRF_SKIPDEFAULT;
@@ -358,19 +376,22 @@ namespace BrightIdeasSoftware
             NativeMethods.RECT rect = (NativeMethods.RECT)Marshal.PtrToStructure(hdlayout.prc, typeof(NativeMethods.RECT));
             NativeMethods.WINDOWPOS wpos = (NativeMethods.WINDOWPOS)Marshal.PtrToStructure(hdlayout.pwpos, typeof(NativeMethods.WINDOWPOS));
 
-            int height = this.CalculateHeight();
-            wpos.hwnd = this.Handle;
-            wpos.hwndInsertAfter = IntPtr.Zero;
-            wpos.flags = NativeMethods.SWP_FRAMECHANGED;
-            wpos.x = rect.left;
-            wpos.y = rect.top;
-            wpos.cx = rect.right - rect.left;
-            wpos.cy = height;
+            using (Graphics g = this.ListView.CreateGraphics()) {
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+                int height = this.CalculateHeight(g);
+                wpos.hwnd = this.Handle;
+                wpos.hwndInsertAfter = IntPtr.Zero;
+                wpos.flags = NativeMethods.SWP_FRAMECHANGED;
+                wpos.x = rect.left;
+                wpos.y = rect.top;
+                wpos.cx = rect.right - rect.left;
+                wpos.cy = height;
 
             rect.top = height;
 
-            Marshal.StructureToPtr(rect, hdlayout.prc, false);
-            Marshal.StructureToPtr(wpos, hdlayout.pwpos, false);
+                Marshal.StructureToPtr(rect, hdlayout.prc, false);
+                Marshal.StructureToPtr(wpos, hdlayout.pwpos, false);
+            }
 
             this.ListView.BeginInvoke((MethodInvoker)delegate {
                 this.Invalidate();
@@ -378,11 +399,28 @@ namespace BrightIdeasSoftware
             });
             return false;
         }
-        
+
+        /// <summary>
+        /// Handle when the underlying header control is destroyed
+        /// </summary>
+        /// <param name="m"></param>
+        /// <returns></returns>
+        protected bool HandleDestroy(ref Message m) {
+            if (this.ToolTip != null) {
+                this.ToolTip.Showing -= new EventHandler<ToolTipShowingEventArgs>(this.ListView.headerToolTip_Showing);
+            }
+            return false;
+        }
+
         #endregion
 
         #region Rendering
 
+        /// <summary>
+        /// Does this header need to be custom drawn?
+        /// </summary>
+        /// <remarks>Word wrapping and colored text require custom drawning. Funnily enough, we
+        /// can change the font natively.</remarks>
         protected bool NeedsCustomDraw {
             get {
                 if (this.WordWrap)
@@ -395,7 +433,14 @@ namespace BrightIdeasSoftware
             }
         }
 
+        /// <summary>
+        /// Draw one cell of the header
+        /// </summary>
+        /// <param name="g"></param>
+        /// <param name="columnIndex"></param>
+        /// <param name="itemState"></param>
         protected void CustomDrawHeaderCell(Graphics g, int columnIndex, int itemState) {
+            // TODO: This needs to be refactored
             const int CDIS_SELECTED = 1;
             Rectangle r = this.GetItemRect(columnIndex);
             OLVColumn column = this.ListView.GetColumn(columnIndex);
@@ -444,6 +489,8 @@ namespace BrightIdeasSoftware
                     }
 
                 } else {
+                    // No theme support for sort indicators. So, we draw a triangle at the right edge
+                    // of the column header.
                     const int triangleHeight = 16;
                     const int triangleWidth = 16;
                     const int midX = triangleWidth / 2;
