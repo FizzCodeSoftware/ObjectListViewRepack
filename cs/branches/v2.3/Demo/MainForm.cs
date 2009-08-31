@@ -60,7 +60,7 @@ namespace ObjectListViewDemo
 		void InitializeExamples()
 		{
             // Use different font under Vista
-            //if (ObjectListView.IsVista)
+            if (ObjectListView.IsVista)
                 this.Font = new Font("Segoe UI", 9);
 
 			masterList = new List<Person>();
@@ -83,7 +83,7 @@ namespace ObjectListViewDemo
 
             // Change this value to see the performance on bigger lists.
             // Each list builds about 1000 rows per second.
-            //while (list.Count < 200) {
+            //while (list.Count < 5000) {
             //    foreach (Person p in masterList)
             //        list.Add(new Person(p));
             //}
@@ -137,6 +137,7 @@ namespace ObjectListViewDemo
 
 		void InitializeComplexExample(List<Person> list)
 		{
+
             // The following line makes getting aspect about 10x faster. Since getting the aspect is
             // the slowest part of building the ListView, it is worthwhile BUT NOT NECESSARY to do.
             TypedObjectListView<Person> tlist = new TypedObjectListView<Person>(this.listViewComplex);
@@ -169,8 +170,17 @@ namespace ObjectListViewDemo
 
             // Cooking skill columns
             this.columnCookingSkill.MakeGroupies(
-                new Int32[]{10, 20, 30, 40},
-                new String[] {"Pay to eat out", "Suggest take-away", "Passable", "Seek dinner invitation", "Hire as chef"});
+                new object[]{10, 20, 30, 40},
+                new string[] {"Pay to eat out", "Suggest take-away", "Passable", "Seek dinner invitation", "Hire as chef"},
+                new string[] { "emptytoast", "hamburger", "toast", "dinnerplate", "chef" },
+                new string[] { 
+                    "Pay good money -- or flee the house -- rather than eat their homecooked food", 
+                    "Offer to buy takeaway rather than risk what may appear on your plate", 
+                    "Neither spectacular nor dangerous", 
+                    "Try to visit at dinner time to wrangle an invitation to dinner", 
+                    "Do whatever is necessary to procure their services" },
+                new string[] { "Call 911", "Phone PizzaHut", "", "Open calendar", "Check bank balance" }
+            );
 
             // Hourly rate column
             this.hourlyRateColumn.MakeGroupies(
@@ -413,15 +423,16 @@ namespace ObjectListViewDemo
         /// <summary>
         /// This simple class just shows how an overlay can be drawn when the hot item changes.
         /// </summary>
-        internal class BusinessCardOverlay : IOverlay
+        internal class BusinessCardOverlay : AbstractOverlay
         {
             public BusinessCardOverlay() {
                 businessCardRenderer.HeaderBackBrush = Brushes.DarkBlue;
                 businessCardRenderer.BorderPen = new Pen(Color.DarkBlue, 2);
+                this.Transparency = 255;
             }
             #region IOverlay Members
 
-            public void Draw(ObjectListView olv, Graphics g, Rectangle r) {
+            public override void Draw(ObjectListView olv, Graphics g, Rectangle r) {
                 if (olv.HotRowIndex < 0)
                     return;
 
@@ -528,7 +539,7 @@ namespace ObjectListViewDemo
             }
 
             public override int GetObjectCount() {
-                return 10000000;
+                return 50000;
             }
 
             public override void Sort(OLVColumn column, SortOrder order) {
@@ -663,6 +674,9 @@ namespace ObjectListViewDemo
             attributesRenderer.Add(FileAttributes.Hidden, "hidden");
             attributesRenderer.Add(FileAttributes.Temporary, "temporary");
             this.olvColumnAttributes.Renderer = attributesRenderer;
+
+            // Which hot item style to use?
+            this.comboBox14.SelectedIndex = 3;
 
             this.comboBox4.SelectedIndex = 4;
             this.textBoxFolderPath.Text = @"c:\";
@@ -1083,6 +1097,8 @@ namespace ObjectListViewDemo
         private void button8_Click(object sender, EventArgs e)
         {
             this.listViewVirtual.SelectAll();
+            //this.listViewVirtual.ShowGroups = !this.listViewVirtual.ShowGroups;
+            //this.listViewVirtual.BuildList();
         }
 
         private void button9_Click(object sender, EventArgs e)
@@ -1494,6 +1510,17 @@ namespace ObjectListViewDemo
             this.olvColumn19.AspectGetter = delegate(object x) { return ((Person)x).Occupation; };
             this.olvColumn26.AspectGetter = delegate(object x) { return ((Person)x).CulinaryRating; };
             this.olvColumn26.Renderer = new MultiImageRenderer(Resource1.star16, 5, 0, 40);
+            this.olvColumn26.MakeGroupies(
+                new object[] { 10, 20, 30, 40 },
+                new string[] { "Pay to eat out", "Suggest take-away", "Passable", "Seek dinner invitation", "Hire as chef" },
+                new string[] { "emptytoast", "hamburger", "toast", "dinnerplate", "chef" },
+                new string[] { "Pay good money -- or flee the house -- rather than eat their homecooked food", 
+                                "Offer to buy takeaway rather than risk what may appear on your plate", 
+                                "Neither spectacular nor dangerous", 
+                                "Try to visit at dinner time to wrangle an invitation to dinner", 
+                                "Do whatever is necessary to procure their services" },
+                new string[] { "Call 911", "Phone PizzaHut", "", "Open calendar", "Check bank balance" }
+            );
 
             this.olvColumn27.AspectGetter = delegate(object x) { return ((Person)x).YearOfBirth; };
 
@@ -1913,7 +1940,7 @@ namespace ObjectListViewDemo
         private void checkBox19_CheckedChanged_1(object sender, EventArgs e) {
             this.showToolTipsOnFiles = !this.showToolTipsOnFiles;
         }
-        bool showToolTipsOnFiles = true;
+        bool showToolTipsOnFiles = false;
 
         private void listViewFiles_CellClick(object sender, CellClickEventArgs e) {
             System.Diagnostics.Trace.WriteLine(String.Format("clicked ({0}, {1}). model {2}. click count: {3}", 
@@ -2020,7 +2047,7 @@ namespace ObjectListViewDemo
             e.UseCellFormatEvents = true;
             if (listViewComplex.View != View.Details) {
                 if (e.Item.Text.ToLowerInvariant().StartsWith("nicola")) {
-                    e.Item.Decoration = new ImageDecoration(Resource1.loveheart, 200);
+                    e.Item.Decoration = new ImageDecoration(Resource1.loveheart, 64);
                 } else
                     e.Item.Decoration = null;
             }
@@ -2032,8 +2059,8 @@ namespace ObjectListViewDemo
             // Put a love heart next to Nicola's name :)
             if (e.ColumnIndex == 0) {
                 if (e.SubItem.Text.ToLowerInvariant().StartsWith("nicola")) {
-                    e.SubItem.Decoration = new ImageDecoration(Resource1.loveheart, 200);
-                }  else
+                    e.SubItem.Decoration = new ImageDecoration(Resource1.loveheart, 64);
+                } else
                     e.SubItem.Decoration = null;
             }
             
@@ -2065,6 +2092,60 @@ namespace ObjectListViewDemo
                 e.Url = null;
             else
                 e.Url = "http://objectlistview.sourceforge.net";
+        }
+
+        private void checkBox20_CheckedChanged(object sender, EventArgs e) {
+            if (ObjectListView.IsVista) {
+                this.olvFastList.ShowGroups = !this.olvFastList.ShowGroups;
+                this.olvFastList.BuildList();
+            } else {
+                MessageBox.Show("Sorry. Groups on virtual lists only works on Vista and later", 
+                    "OLV Demo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
+        private void listViewComplex_GroupTaskClicked(object sender, GroupTaskClickedEventArgs e) {
+            System.Diagnostics.Debug.WriteLine(String.Format("group task click: {0}", e.Group));
+        }
+
+        private void olvFastList_GroupTaskClicked(object sender, GroupTaskClickedEventArgs e) {
+            System.Diagnostics.Debug.WriteLine(String.Format("group task click: {0}", e.Group));
+        }
+
+        private void comboBox14_SelectedIndexChanged(object sender, EventArgs e) {
+            ComboBox cb = (ComboBox)sender;
+            ObjectListView olv = this.listViewFiles;
+
+            olv.UseHotItem = true;
+            HotItemStyle his = new HotItemStyle();
+
+            switch (cb.SelectedIndex) {
+                case 0:
+                    olv.UseHotItem = false;
+                    break;
+                case 1:
+                    his.ForeColor = Color.SeaGreen;
+                    olv.HotItemStyle = his;
+                    break;
+                case 2:
+                    RowBorderDecoration rbd = new RowBorderDecoration();
+                    rbd.BorderPen = new Pen(Color.SeaGreen, 2);
+                    rbd.FillBrush = null;
+                    rbd.CornerRounding = 4.0f;
+                    his.Decoration = rbd;
+                    olv.HotItemStyle = his;
+                    break;
+                case 3:
+                    olv.UseTranslucentHotItem = true;
+                    break;
+                case 4:
+                    LightBoxDecoration lbd = new LightBoxDecoration();
+                    his.Decoration = lbd;
+                    olv.HotItemStyle = his;
+                    break;
+            }
+            olv.Invalidate();
+
         }
     }
         

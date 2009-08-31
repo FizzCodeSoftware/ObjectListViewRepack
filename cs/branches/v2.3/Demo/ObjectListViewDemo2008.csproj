@@ -68,7 +68,7 @@
     <FileAlignment>4096</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <DefineConstants>DEBUG</DefineConstants>
     <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <DocumentationFile>
@@ -200,7 +200,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <None Include="Resources\fav32.png" />
-    <None Include="Resources\LoveHeart.bmp" />
     <None Include="Resources\redback1.png" />
     <None Include="Resources\redbull.png" />
     <None Include="Resources\limeleaf.png" />

@@ -103,6 +103,7 @@ namespace ObjectListViewDemo
             this.daysSinceBirthColumn = new BrightIdeasSoftware.OLVColumn();
             this.olvJokeColumn = new BrightIdeasSoftware.OLVColumn();
             this.olvColumn41 = new BrightIdeasSoftware.OLVColumn();
+            this.groupImageList = new System.Windows.Forms.ImageList(this.components);
             this.tabPage3 = new System.Windows.Forms.TabPage();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.label22 = new System.Windows.Forms.Label();
@@ -150,6 +151,8 @@ namespace ObjectListViewDemo
             this.olvColumn9 = new BrightIdeasSoftware.OLVColumn();
             this.olvColumn10 = new BrightIdeasSoftware.OLVColumn();
             this.tabPage5 = new System.Windows.Forms.TabPage();
+            this.label37 = new System.Windows.Forms.Label();
+            this.comboBox14 = new System.Windows.Forms.ComboBox();
             this.checkBox19 = new System.Windows.Forms.CheckBox();
             this.buttonSaveState = new System.Windows.Forms.Button();
             this.buttonRestoreState = new System.Windows.Forms.Button();
@@ -161,7 +164,6 @@ namespace ObjectListViewDemo
             this.label9 = new System.Windows.Forms.Label();
             this.comboBox4 = new System.Windows.Forms.ComboBox();
             this.checkBox10 = new System.Windows.Forms.CheckBox();
-            this.checkBox11 = new System.Windows.Forms.CheckBox();
             this.checkBox12 = new System.Windows.Forms.CheckBox();
             this.label5 = new System.Windows.Forms.Label();
             this.listViewFiles = new BrightIdeasSoftware.ObjectListView();
@@ -208,6 +210,7 @@ namespace ObjectListViewDemo
             this.printPreviewControl1 = new System.Windows.Forms.PrintPreviewControl();
             this.listViewPrinter1 = new BrightIdeasSoftware.ListViewPrinter();
             this.tabPage7 = new System.Windows.Forms.TabPage();
+            this.checkBox20 = new System.Windows.Forms.CheckBox();
             this.button19 = new System.Windows.Forms.Button();
             this.button18 = new System.Windows.Forms.Button();
             this.label26 = new System.Windows.Forms.Label();
@@ -357,30 +360,30 @@ namespace ObjectListViewDemo
             this.command3ToolStripMenuItem,
             this.appearOnTheColumnHeadersToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(270, 92);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(263, 92);
             // 
             // command1ToolStripMenuItem
             // 
             this.command1ToolStripMenuItem.Name = "command1ToolStripMenuItem";
-            this.command1ToolStripMenuItem.Size = new System.Drawing.Size(269, 22);
+            this.command1ToolStripMenuItem.Size = new System.Drawing.Size(262, 22);
             this.command1ToolStripMenuItem.Text = "Dummy commands...";
             // 
             // command2ToolStripMenuItem
             // 
             this.command2ToolStripMenuItem.Name = "command2ToolStripMenuItem";
-            this.command2ToolStripMenuItem.Size = new System.Drawing.Size(269, 22);
+            this.command2ToolStripMenuItem.Size = new System.Drawing.Size(262, 22);
             this.command2ToolStripMenuItem.Text = "...to test that a context menu...";
             // 
             // command3ToolStripMenuItem
             // 
             this.command3ToolStripMenuItem.Name = "command3ToolStripMenuItem";
-            this.command3ToolStripMenuItem.Size = new System.Drawing.Size(269, 22);
+            this.command3ToolStripMenuItem.Size = new System.Drawing.Size(262, 22);
             this.command3ToolStripMenuItem.Text = "...appears here and a different one...";
             // 
             // appearOnTheColumnHeadersToolStripMenuItem
             // 
             this.appearOnTheColumnHeadersToolStripMenuItem.Name = "appearOnTheColumnHeadersToolStripMenuItem";
-            this.appearOnTheColumnHeadersToolStripMenuItem.Size = new System.Drawing.Size(269, 22);
+            this.appearOnTheColumnHeadersToolStripMenuItem.Size = new System.Drawing.Size(262, 22);
             this.appearOnTheColumnHeadersToolStripMenuItem.Text = "...appear on the column headers.";
             // 
             // imageList1
@@ -647,21 +650,18 @@ namespace ObjectListViewDemo
             this.listViewSimple.SelectedRowDecoration = null;
             this.listViewSimple.ShowCommandMenuOnRightClick = true;
             this.listViewSimple.ShowGroups = false;
-            this.listViewSimple.ShowImagesOnSubItems = true;
             this.listViewSimple.ShowItemToolTips = true;
             this.listViewSimple.Size = new System.Drawing.Size(748, 409);
             this.listViewSimple.SortGroupItemsByPrimaryColumn = false;
             this.listViewSimple.TabIndex = 0;
-            this.listViewSimple.TintSortColumn = true;
-            this.listViewSimple.TranslucentSelectionDecoration = null;
             this.listViewSimple.TriStateCheckBoxes = true;
             this.listViewSimple.UseAlternatingBackColors = true;
             this.listViewSimple.UseCompatibleStateImageBehavior = false;
             this.listViewSimple.UseHotItem = true;
             this.listViewSimple.View = System.Windows.Forms.View.Details;
-            this.listViewSimple.SelectedIndexChanged += new System.EventHandler(this.ListViewSelectedIndexChanged);
-            this.listViewSimple.CellOver += new System.EventHandler<BrightIdeasSoftware.CellOverEventArgs>(this.listViewSimple_CellOver);
             this.listViewSimple.IsHyperlink += new System.EventHandler<BrightIdeasSoftware.IsHyperlinkEventArgs>(this.listViewSimple_IsHyperlink);
+            this.listViewSimple.CellOver += new System.EventHandler<BrightIdeasSoftware.CellOverEventArgs>(this.listViewSimple_CellOver);
+            this.listViewSimple.SelectedIndexChanged += new System.EventHandler(this.ListViewSelectedIndexChanged);
             this.listViewSimple.Scroll += new System.EventHandler<System.Windows.Forms.ScrollEventArgs>(this.listViewSimple_Scroll);
             this.listViewSimple.CellClick += new System.EventHandler<BrightIdeasSoftware.CellClickEventArgs>(this.listViewSimple_CellClick);
             // 
@@ -954,6 +954,7 @@ namespace ObjectListViewDemo
             this.listViewComplex.Cursor = System.Windows.Forms.Cursors.Default;
             this.listViewComplex.EmptyListMsg = "This list is empty. Press \"Add\" to create some items";
             this.listViewComplex.FullRowSelect = true;
+            this.listViewComplex.GroupImageList = this.groupImageList;
             this.listViewComplex.GroupWithItemCountFormat = "{0} ({1} people)";
             this.listViewComplex.GroupWithItemCountSingularFormat = "{0} ({1} person)";
             this.listViewComplex.HeaderWordWrap = true;
@@ -972,35 +973,34 @@ namespace ObjectListViewDemo
             this.listViewComplex.OverlayText.Rotation = 20;
             this.listViewComplex.OverlayText.Text = "";
             this.listViewComplex.OverlayText.TextColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
-            this.listViewComplex.OverlayTransparency = 255;
             this.listViewComplex.OwnerDraw = true;
             this.listViewComplex.SelectedRowDecoration = null;
             this.listViewComplex.ShowCommandMenuOnRightClick = true;
             this.listViewComplex.ShowGroups = false;
             this.listViewComplex.ShowImagesOnSubItems = true;
+            this.listViewComplex.ShowItemCountOnGroups = true;
             this.listViewComplex.ShowItemToolTips = true;
             this.listViewComplex.Size = new System.Drawing.Size(748, 409);
             this.listViewComplex.SmallImageList = this.imageList1;
+            this.listViewComplex.SpaceBetweenGroups = 20;
             this.listViewComplex.TabIndex = 0;
-            this.listViewComplex.TintSortColumn = true;
-            this.listViewComplex.TranslucentSelectionDecoration = null;
-            this.listViewComplex.UseAlternatingBackColors = true;
             this.listViewComplex.UseCompatibleStateImageBehavior = false;
             this.listViewComplex.UseHotItem = true;
             this.listViewComplex.UseSubItemCheckBoxes = true;
             this.listViewComplex.View = System.Windows.Forms.View.Details;
+            this.listViewComplex.CellEditStarting += new BrightIdeasSoftware.CellEditEventHandler(this.listViewComplex_CellEditStarting);
             this.listViewComplex.CellEditValidating += new BrightIdeasSoftware.CellEditEventHandler(this.listViewComplex_CellEditValidating);
             this.listViewComplex.MouseClick += new System.Windows.Forms.MouseEventHandler(this.listViewComplex_MouseClick);
-            this.listViewComplex.SelectedIndexChanged += new System.EventHandler(this.ListViewSelectedIndexChanged);
             this.listViewComplex.CellToolTipShowing += new System.EventHandler<BrightIdeasSoftware.ToolTipShowingEventArgs>(this.listViewComplex_CellToolTip);
-            this.listViewComplex.CellEditStarting += new BrightIdeasSoftware.CellEditEventHandler(this.listViewComplex_CellEditStarting);
-            this.listViewComplex.FormatCell += new System.EventHandler<BrightIdeasSoftware.FormatCellEventArgs>(this.listViewComplex_FormatCell);
-            this.listViewComplex.CellOver += new System.EventHandler<BrightIdeasSoftware.CellOverEventArgs>(this.listViewComplex_CellOver);
             this.listViewComplex.CellRightClick += new System.EventHandler<BrightIdeasSoftware.CellRightClickEventArgs>(this.listViewComplex_CellRightClick);
-            this.listViewComplex.CellEditFinishing += new BrightIdeasSoftware.CellEditEventHandler(this.listViewComplex_CellEditFinishing);
-            this.listViewComplex.HotItemChanged += new System.EventHandler<BrightIdeasSoftware.HotItemChangedEventArgs>(this.listViewComplex_HotItemChanged);
-            this.listViewComplex.HeaderToolTipShowing += new System.EventHandler<BrightIdeasSoftware.ToolTipShowingEventArgs>(this.listViewComplex_HeaderToolTipShowing);
+            this.listViewComplex.CellOver += new System.EventHandler<BrightIdeasSoftware.CellOverEventArgs>(this.listViewComplex_CellOver);
+            this.listViewComplex.FormatCell += new System.EventHandler<BrightIdeasSoftware.FormatCellEventArgs>(this.listViewComplex_FormatCell);
             this.listViewComplex.FormatRow += new System.EventHandler<BrightIdeasSoftware.FormatRowEventArgs>(this.listViewComplex_FormatRow);
+            this.listViewComplex.HeaderToolTipShowing += new System.EventHandler<BrightIdeasSoftware.ToolTipShowingEventArgs>(this.listViewComplex_HeaderToolTipShowing);
+            this.listViewComplex.CellEditFinishing += new BrightIdeasSoftware.CellEditEventHandler(this.listViewComplex_CellEditFinishing);
+            this.listViewComplex.SelectedIndexChanged += new System.EventHandler(this.ListViewSelectedIndexChanged);
+            this.listViewComplex.GroupTaskClicked += new System.EventHandler<BrightIdeasSoftware.GroupTaskClickedEventArgs>(this.listViewComplex_GroupTaskClicked);
+            this.listViewComplex.HotItemChanged += new System.EventHandler<BrightIdeasSoftware.HotItemChangedEventArgs>(this.listViewComplex_HotItemChanged);
             // 
             // personColumn
             // 
@@ -1102,6 +1102,16 @@ namespace ObjectListViewDemo
             this.olvColumn41.Text = "Married?";
             this.olvColumn41.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.olvColumn41.ToolTipText = "Married column info with a much longer value";
+            // 
+            // groupImageList
+            // 
+            this.groupImageList.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("groupImageList.ImageStream")));
+            this.groupImageList.TransparentColor = System.Drawing.Color.Transparent;
+            this.groupImageList.Images.SetKeyName(0, "chef");
+            this.groupImageList.Images.SetKeyName(1, "emptytoast");
+            this.groupImageList.Images.SetKeyName(2, "toast");
+            this.groupImageList.Images.SetKeyName(3, "hamburger");
+            this.groupImageList.Images.SetKeyName(4, "dinnerplate");
             // 
             // tabPage3
             // 
@@ -1298,13 +1308,12 @@ namespace ObjectListViewDemo
             this.listViewDataSet.Size = new System.Drawing.Size(626, 209);
             this.listViewDataSet.SmallImageList = this.imageList1;
             this.listViewDataSet.TabIndex = 0;
-            this.listViewDataSet.TranslucentSelectionDecoration = null;
             this.listViewDataSet.UseCellFormatEvents = true;
             this.listViewDataSet.UseCompatibleStateImageBehavior = false;
             this.listViewDataSet.UseHotItem = true;
             this.listViewDataSet.View = System.Windows.Forms.View.Details;
-            this.listViewDataSet.SelectedIndexChanged += new System.EventHandler(this.ListViewDataSetSelectedIndexChanged);
             this.listViewDataSet.FormatCell += new System.EventHandler<BrightIdeasSoftware.FormatCellEventArgs>(this.listViewDataSet_FormatCell);
+            this.listViewDataSet.SelectedIndexChanged += new System.EventHandler(this.ListViewDataSetSelectedIndexChanged);
             // 
             // olvColumn1
             // 
@@ -1630,7 +1639,6 @@ namespace ObjectListViewDemo
             this.listViewVirtual.Name = "listViewVirtual";
             this.listViewVirtual.OverlayImage.Offset = new System.Drawing.Size(0, 0);
             this.listViewVirtual.OverlayText.Offset = new System.Drawing.Size(0, 0);
-            this.listViewVirtual.OverlayTransparency = 254;
             this.listViewVirtual.OwnerDraw = true;
             this.listViewVirtual.SelectedRowDecoration = null;
             this.listViewVirtual.ShowCommandMenuOnRightClick = true;
@@ -1641,7 +1649,6 @@ namespace ObjectListViewDemo
             this.listViewVirtual.SmallImageList = this.imageList1;
             this.listViewVirtual.TabIndex = 0;
             this.listViewVirtual.TintSortColumn = true;
-            this.listViewVirtual.TranslucentSelectionDecoration = null;
             this.listViewVirtual.UseAlternatingBackColors = true;
             this.listViewVirtual.UseCompatibleStateImageBehavior = false;
             this.listViewVirtual.UseHotItem = true;
@@ -1707,6 +1714,8 @@ namespace ObjectListViewDemo
             // 
             // tabPage5
             // 
+            this.tabPage5.Controls.Add(this.label37);
+            this.tabPage5.Controls.Add(this.comboBox14);
             this.tabPage5.Controls.Add(this.checkBox19);
             this.tabPage5.Controls.Add(this.buttonSaveState);
             this.tabPage5.Controls.Add(this.buttonRestoreState);
@@ -1718,7 +1727,6 @@ namespace ObjectListViewDemo
             this.tabPage5.Controls.Add(this.label9);
             this.tabPage5.Controls.Add(this.comboBox4);
             this.tabPage5.Controls.Add(this.checkBox10);
-            this.tabPage5.Controls.Add(this.checkBox11);
             this.tabPage5.Controls.Add(this.checkBox12);
             this.tabPage5.Controls.Add(this.label5);
             this.tabPage5.Controls.Add(this.listViewFiles);
@@ -1730,12 +1738,37 @@ namespace ObjectListViewDemo
             this.tabPage5.Text = "File Explorer";
             this.tabPage5.UseVisualStyleBackColor = true;
             // 
+            // label37
+            // 
+            this.label37.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.label37.AutoSize = true;
+            this.label37.Location = new System.Drawing.Point(228, 479);
+            this.label37.Name = "label37";
+            this.label37.Size = new System.Drawing.Size(50, 13);
+            this.label37.TabIndex = 15;
+            this.label37.Text = "Hot Item:";
+            // 
+            // comboBox14
+            // 
+            this.comboBox14.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.comboBox14.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboBox14.FormattingEnabled = true;
+            this.comboBox14.Items.AddRange(new object[] {
+            "None",
+            "Text Color",
+            "Border",
+            "Translucent",
+            "Lightbox"});
+            this.comboBox14.Location = new System.Drawing.Point(279, 474);
+            this.comboBox14.Name = "comboBox14";
+            this.comboBox14.Size = new System.Drawing.Size(86, 21);
+            this.comboBox14.TabIndex = 16;
+            this.comboBox14.SelectedIndexChanged += new System.EventHandler(this.comboBox14_SelectedIndexChanged);
+            // 
             // checkBox19
             // 
             this.checkBox19.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.checkBox19.Checked = true;
-            this.checkBox19.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBox19.Location = new System.Drawing.Point(268, 477);
+            this.checkBox19.Location = new System.Drawing.Point(153, 477);
             this.checkBox19.Name = "checkBox19";
             this.checkBox19.Size = new System.Drawing.Size(65, 19);
             this.checkBox19.TabIndex = 14;
@@ -1746,7 +1779,7 @@ namespace ObjectListViewDemo
             // buttonSaveState
             // 
             this.buttonSaveState.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonSaveState.Location = new System.Drawing.Point(457, 474);
+            this.buttonSaveState.Location = new System.Drawing.Point(497, 472);
             this.buttonSaveState.Name = "buttonSaveState";
             this.buttonSaveState.Size = new System.Drawing.Size(87, 23);
             this.buttonSaveState.TabIndex = 10;
@@ -1758,7 +1791,7 @@ namespace ObjectListViewDemo
             // 
             this.buttonRestoreState.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.buttonRestoreState.Enabled = false;
-            this.buttonRestoreState.Location = new System.Drawing.Point(550, 474);
+            this.buttonRestoreState.Location = new System.Drawing.Point(590, 474);
             this.buttonRestoreState.Name = "buttonRestoreState";
             this.buttonRestoreState.Size = new System.Drawing.Size(83, 23);
             this.buttonRestoreState.TabIndex = 11;
@@ -1769,11 +1802,11 @@ namespace ObjectListViewDemo
             // button13
             // 
             this.button13.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.button13.Location = new System.Drawing.Point(639, 474);
+            this.button13.Location = new System.Drawing.Point(679, 474);
             this.button13.Name = "button13";
-            this.button13.Size = new System.Drawing.Size(115, 23);
+            this.button13.Size = new System.Drawing.Size(75, 23);
             this.button13.TabIndex = 12;
-            this.button13.Text = "&Choose Columns...";
+            this.button13.Text = "&Columns...";
             this.button13.UseVisualStyleBackColor = true;
             this.button13.Click += new System.EventHandler(this.button13_Click);
             // 
@@ -1823,7 +1856,7 @@ namespace ObjectListViewDemo
             // 
             this.label9.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.label9.AutoSize = true;
-            this.label9.Location = new System.Drawing.Point(331, 479);
+            this.label9.Location = new System.Drawing.Point(371, 479);
             this.label9.Name = "label9";
             this.label9.Size = new System.Drawing.Size(33, 13);
             this.label9.TabIndex = 8;
@@ -1840,7 +1873,7 @@ namespace ObjectListViewDemo
             "List",
             "Tile",
             "Details"});
-            this.comboBox4.Location = new System.Drawing.Point(365, 474);
+            this.comboBox4.Location = new System.Drawing.Point(405, 474);
             this.comboBox4.Name = "comboBox4";
             this.comboBox4.Size = new System.Drawing.Size(86, 21);
             this.comboBox4.TabIndex = 9;
@@ -1851,24 +1884,13 @@ namespace ObjectListViewDemo
             this.checkBox10.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.checkBox10.Checked = true;
             this.checkBox10.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBox10.Location = new System.Drawing.Point(182, 477);
+            this.checkBox10.Location = new System.Drawing.Point(67, 477);
             this.checkBox10.Name = "checkBox10";
             this.checkBox10.Size = new System.Drawing.Size(90, 19);
             this.checkBox10.TabIndex = 7;
             this.checkBox10.Text = "Owner &Draw";
             this.checkBox10.UseVisualStyleBackColor = true;
             this.checkBox10.CheckedChanged += new System.EventHandler(this.CheckBox10CheckedChanged);
-            // 
-            // checkBox11
-            // 
-            this.checkBox11.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.checkBox11.Location = new System.Drawing.Point(98, 474);
-            this.checkBox11.Name = "checkBox11";
-            this.checkBox11.Size = new System.Drawing.Size(81, 24);
-            this.checkBox11.TabIndex = 6;
-            this.checkBox11.Text = "Item &Count";
-            this.checkBox11.UseVisualStyleBackColor = true;
-            this.checkBox11.CheckedChanged += new System.EventHandler(this.CheckBox11CheckedChanged);
             // 
             // checkBox12
             // 
@@ -1877,7 +1899,7 @@ namespace ObjectListViewDemo
             this.checkBox12.Name = "checkBox12";
             this.checkBox12.Size = new System.Drawing.Size(104, 24);
             this.checkBox12.TabIndex = 5;
-            this.checkBox12.Text = "Show &Groups";
+            this.checkBox12.Text = "&Groups";
             this.checkBox12.UseVisualStyleBackColor = true;
             this.checkBox12.CheckedChanged += new System.EventHandler(this.CheckBox12CheckedChanged);
             // 
@@ -1924,7 +1946,6 @@ namespace ObjectListViewDemo
             this.listViewFiles.OverlayImage.Offset = new System.Drawing.Size(0, 0);
             this.listViewFiles.OverlayText.Offset = new System.Drawing.Size(0, 0);
             this.listViewFiles.OwnerDraw = true;
-            this.listViewFiles.RowHeight = 20;
             this.listViewFiles.SelectedRowDecoration = null;
             this.listViewFiles.ShowCommandMenuOnRightClick = true;
             this.listViewFiles.ShowGroups = false;
@@ -1932,12 +1953,11 @@ namespace ObjectListViewDemo
             this.listViewFiles.Size = new System.Drawing.Size(748, 385);
             this.listViewFiles.SmallImageList = this.imageList1;
             this.listViewFiles.TabIndex = 13;
-            this.listViewFiles.TranslucentSelectionDecoration = null;
             this.listViewFiles.UseCompatibleStateImageBehavior = false;
             this.listViewFiles.View = System.Windows.Forms.View.Details;
+            this.listViewFiles.ItemActivate += new System.EventHandler(this.listViewFiles_ItemActivate);
             this.listViewFiles.CellToolTipShowing += new System.EventHandler<BrightIdeasSoftware.ToolTipShowingEventArgs>(this.listViewFiles_CellToolTipShowing);
             this.listViewFiles.CellRightClick += new System.EventHandler<BrightIdeasSoftware.CellRightClickEventArgs>(this.listViewFiles_CellRightClick);
-            this.listViewFiles.ItemActivate += new System.EventHandler(this.listViewFiles_ItemActivate);
             this.listViewFiles.CellClick += new System.EventHandler<BrightIdeasSoftware.CellClickEventArgs>(this.listViewFiles_CellClick);
             // 
             // olvColumnFileName
@@ -1964,7 +1984,7 @@ namespace ObjectListViewDemo
             this.olvColumnFileModified.HeaderFont = null;
             this.olvColumnFileModified.IsTileViewColumn = true;
             this.olvColumnFileModified.Text = "Modified";
-            this.olvColumnFileModified.Width = 145;
+            this.olvColumnFileModified.Width = 127;
             // 
             // olvColumnSize
             // 
@@ -2433,6 +2453,7 @@ namespace ObjectListViewDemo
             // 
             // tabPage7
             // 
+            this.tabPage7.Controls.Add(this.checkBox20);
             this.tabPage7.Controls.Add(this.button19);
             this.tabPage7.Controls.Add(this.button18);
             this.tabPage7.Controls.Add(this.label26);
@@ -2452,10 +2473,21 @@ namespace ObjectListViewDemo
             this.tabPage7.Text = "Fast List";
             this.tabPage7.UseVisualStyleBackColor = true;
             // 
+            // checkBox20
+            // 
+            this.checkBox20.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.checkBox20.Location = new System.Drawing.Point(6, 472);
+            this.checkBox20.Name = "checkBox20";
+            this.checkBox20.Size = new System.Drawing.Size(60, 21);
+            this.checkBox20.TabIndex = 18;
+            this.checkBox20.Text = "&Groups";
+            this.checkBox20.UseVisualStyleBackColor = true;
+            this.checkBox20.CheckedChanged += new System.EventHandler(this.checkBox20_CheckedChanged);
+            // 
             // button19
             // 
             this.button19.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.button19.Location = new System.Drawing.Point(400, 472);
+            this.button19.Location = new System.Drawing.Point(429, 472);
             this.button19.Name = "button19";
             this.button19.Size = new System.Drawing.Size(90, 23);
             this.button19.TabIndex = 17;
@@ -2466,11 +2498,11 @@ namespace ObjectListViewDemo
             // button18
             // 
             this.button18.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.button18.Location = new System.Drawing.Point(571, 472);
+            this.button18.Location = new System.Drawing.Point(600, 472);
             this.button18.Name = "button18";
-            this.button18.Size = new System.Drawing.Size(101, 23);
+            this.button18.Size = new System.Drawing.Size(72, 23);
             this.button18.TabIndex = 7;
-            this.button18.Text = "Remove Selected";
+            this.button18.Text = "Remove";
             this.button18.UseVisualStyleBackColor = true;
             this.button18.Click += new System.EventHandler(this.Button18Click);
             // 
@@ -2496,7 +2528,7 @@ namespace ObjectListViewDemo
             "Single Click",
             "Double Click",
             "F2 Only"});
-            this.comboBox9.Location = new System.Drawing.Point(189, 474);
+            this.comboBox9.Location = new System.Drawing.Point(212, 472);
             this.comboBox9.Name = "comboBox9";
             this.comboBox9.Size = new System.Drawing.Size(83, 21);
             this.comboBox9.TabIndex = 3;
@@ -2506,7 +2538,7 @@ namespace ObjectListViewDemo
             // 
             this.label24.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.label24.AutoSize = true;
-            this.label24.Location = new System.Drawing.Point(140, 478);
+            this.label24.Location = new System.Drawing.Point(167, 477);
             this.label24.Name = "label24";
             this.label24.Size = new System.Drawing.Size(48, 13);
             this.label24.TabIndex = 2;
@@ -2516,7 +2548,7 @@ namespace ObjectListViewDemo
             // 
             this.label25.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.label25.AutoSize = true;
-            this.label25.Location = new System.Drawing.Point(277, 478);
+            this.label25.Location = new System.Drawing.Point(301, 477);
             this.label25.Name = "label25";
             this.label25.Size = new System.Drawing.Size(33, 13);
             this.label25.TabIndex = 4;
@@ -2533,7 +2565,7 @@ namespace ObjectListViewDemo
             "List",
             "Tile",
             "Details"});
-            this.comboBox10.Location = new System.Drawing.Point(311, 474);
+            this.comboBox10.Location = new System.Drawing.Point(340, 472);
             this.comboBox10.Name = "comboBox10";
             this.comboBox10.Size = new System.Drawing.Size(83, 21);
             this.comboBox10.TabIndex = 5;
@@ -2544,7 +2576,7 @@ namespace ObjectListViewDemo
             this.checkBox13.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.checkBox13.Checked = true;
             this.checkBox13.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBox13.Location = new System.Drawing.Point(6, 474);
+            this.checkBox13.Location = new System.Drawing.Point(72, 472);
             this.checkBox13.Name = "checkBox13";
             this.checkBox13.Size = new System.Drawing.Size(113, 21);
             this.checkBox13.TabIndex = 1;
@@ -2555,7 +2587,7 @@ namespace ObjectListViewDemo
             // button15
             // 
             this.button15.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.button15.Location = new System.Drawing.Point(496, 472);
+            this.button15.Location = new System.Drawing.Point(525, 472);
             this.button15.Name = "button15";
             this.button15.Size = new System.Drawing.Size(69, 23);
             this.button15.TabIndex = 6;
@@ -2607,6 +2639,7 @@ namespace ObjectListViewDemo
             this.olvFastList.EmptyListMsg = "This fast list is empty";
             this.olvFastList.FullRowSelect = true;
             this.olvFastList.GridLines = true;
+            this.olvFastList.GroupImageList = this.groupImageList;
             this.olvFastList.HideSelection = false;
             this.olvFastList.LargeImageList = this.imageList2;
             this.olvFastList.Location = new System.Drawing.Point(6, 47);
@@ -2623,16 +2656,17 @@ namespace ObjectListViewDemo
             this.olvFastList.ShowItemToolTips = true;
             this.olvFastList.Size = new System.Drawing.Size(748, 419);
             this.olvFastList.SmallImageList = this.imageList1;
+            this.olvFastList.SpaceBetweenGroups = 25;
             this.olvFastList.TabIndex = 0;
             this.olvFastList.TintSortColumn = true;
-            this.olvFastList.TranslucentSelectionDecoration = null;
             this.olvFastList.UseAlternatingBackColors = true;
             this.olvFastList.UseCompatibleStateImageBehavior = false;
             this.olvFastList.View = System.Windows.Forms.View.Details;
             this.olvFastList.VirtualMode = true;
+            this.olvFastList.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler(this.olvFastList_ItemCheck);
             this.olvFastList.SelectionChanged += new System.EventHandler(this.olvFastList_SelectionChanged);
             this.olvFastList.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.olvFastList_ItemChecked);
-            this.olvFastList.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler(this.olvFastList_ItemCheck);
+            this.olvFastList.GroupTaskClicked += new System.EventHandler<BrightIdeasSoftware.GroupTaskClickedEventArgs>(this.olvFastList_GroupTaskClicked);
             // 
             // olvColumn18
             // 
@@ -2823,6 +2857,7 @@ namespace ObjectListViewDemo
             this.treeListView.Name = "treeListView";
             this.treeListView.OverlayImage.Image = global::ObjectListViewDemo.Resource1.limeleaf;
             this.treeListView.OverlayImage.Offset = new System.Drawing.Size(0, 0);
+            this.treeListView.OverlayImage.Transparency = 128;
             this.treeListView.OverlayText.Offset = new System.Drawing.Size(0, 0);
             this.treeListView.OwnerDraw = true;
             this.treeListView.SelectedRowDecoration = null;
@@ -2833,14 +2868,13 @@ namespace ObjectListViewDemo
             this.treeListView.Size = new System.Drawing.Size(748, 413);
             this.treeListView.SmallImageList = this.imageList1;
             this.treeListView.TabIndex = 13;
-            this.treeListView.TranslucentSelectionDecoration = null;
             this.treeListView.UseCompatibleStateImageBehavior = false;
             this.treeListView.View = System.Windows.Forms.View.Details;
             this.treeListView.VirtualMode = true;
             this.treeListView.ModelCanDrop += new System.EventHandler<BrightIdeasSoftware.ModelDropEventArgs>(this.treeListView_ModelCanDrop);
             this.treeListView.ItemActivate += new System.EventHandler(this.treeListView_ItemActivate);
-            this.treeListView.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.treeListView_ItemChecked);
             this.treeListView.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler(this.treeListView_ItemCheck);
+            this.treeListView.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.treeListView_ItemChecked);
             this.treeListView.ModelDropped += new System.EventHandler<BrightIdeasSoftware.ModelDropEventArgs>(this.treeListView_ModelDropped);
             // 
             // treeColumnName
@@ -3019,6 +3053,7 @@ namespace ObjectListViewDemo
             this.olvGeeks.Name = "olvGeeks";
             this.olvGeeks.OverlayImage.Image = global::ObjectListViewDemo.Resource1.redbull;
             this.olvGeeks.OverlayImage.Offset = new System.Drawing.Size(0, 0);
+            this.olvGeeks.OverlayImage.Transparency = 128;
             this.olvGeeks.OverlayText.Alignment = System.Drawing.ContentAlignment.BottomLeft;
             this.olvGeeks.OverlayText.Offset = new System.Drawing.Size(0, 0);
             this.olvGeeks.OverlayText.Text = "";
@@ -3030,7 +3065,6 @@ namespace ObjectListViewDemo
             this.olvGeeks.Size = new System.Drawing.Size(365, 384);
             this.olvGeeks.SmallImageList = this.imageList1;
             this.olvGeeks.TabIndex = 8;
-            this.olvGeeks.TranslucentSelectionDecoration = null;
             this.olvGeeks.UseAlternatingBackColors = true;
             this.olvGeeks.UseCompatibleStateImageBehavior = false;
             this.olvGeeks.View = System.Windows.Forms.View.Details;
@@ -3157,6 +3191,7 @@ namespace ObjectListViewDemo
             this.olvFroods.Name = "olvFroods";
             this.olvFroods.OverlayImage.Image = global::ObjectListViewDemo.Resource1.redback1;
             this.olvFroods.OverlayImage.Offset = new System.Drawing.Size(0, 0);
+            this.olvFroods.OverlayImage.Transparency = 128;
             this.olvFroods.OverlayText.Alignment = System.Drawing.ContentAlignment.BottomLeft;
             this.olvFroods.OverlayText.Offset = new System.Drawing.Size(0, 0);
             this.olvFroods.OverlayText.Text = "";
@@ -3168,7 +3203,6 @@ namespace ObjectListViewDemo
             this.olvFroods.Size = new System.Drawing.Size(365, 384);
             this.olvFroods.SmallImageList = this.imageList1;
             this.olvFroods.TabIndex = 13;
-            this.olvFroods.TranslucentSelectionDecoration = null;
             this.olvFroods.UseAlternatingBackColors = true;
             this.olvFroods.UseCompatibleStateImageBehavior = false;
             this.olvFroods.View = System.Windows.Forms.View.Details;
@@ -3480,30 +3514,30 @@ namespace ObjectListViewDemo
             this.whichOnlyAppearsToolStripMenuItem,
             this.whenYouClickOnColumn0ToolStripMenuItem});
             this.contextMenuStrip2.Name = "contextMenuStrip2";
-            this.contextMenuStrip2.Size = new System.Drawing.Size(226, 92);
+            this.contextMenuStrip2.Size = new System.Drawing.Size(231, 92);
             // 
             // menuOfCommandsToolStripMenuItem
             // 
             this.menuOfCommandsToolStripMenuItem.Name = "menuOfCommandsToolStripMenuItem";
-            this.menuOfCommandsToolStripMenuItem.Size = new System.Drawing.Size(225, 22);
+            this.menuOfCommandsToolStripMenuItem.Size = new System.Drawing.Size(230, 22);
             this.menuOfCommandsToolStripMenuItem.Text = "Menu of commands";
             // 
             // appropriateToTheClickedFileToolStripMenuItem
             // 
             this.appropriateToTheClickedFileToolStripMenuItem.Name = "appropriateToTheClickedFileToolStripMenuItem";
-            this.appropriateToTheClickedFileToolStripMenuItem.Size = new System.Drawing.Size(225, 22);
+            this.appropriateToTheClickedFileToolStripMenuItem.Size = new System.Drawing.Size(230, 22);
             this.appropriateToTheClickedFileToolStripMenuItem.Text = "Appropriate to the clicked file";
             // 
             // whichOnlyAppearsToolStripMenuItem
             // 
             this.whichOnlyAppearsToolStripMenuItem.Name = "whichOnlyAppearsToolStripMenuItem";
-            this.whichOnlyAppearsToolStripMenuItem.Size = new System.Drawing.Size(225, 22);
+            this.whichOnlyAppearsToolStripMenuItem.Size = new System.Drawing.Size(230, 22);
             this.whichOnlyAppearsToolStripMenuItem.Text = "Which only appears";
             // 
             // whenYouClickOnColumn0ToolStripMenuItem
             // 
             this.whenYouClickOnColumn0ToolStripMenuItem.Name = "whenYouClickOnColumn0ToolStripMenuItem";
-            this.whenYouClickOnColumn0ToolStripMenuItem.Size = new System.Drawing.Size(225, 22);
+            this.whenYouClickOnColumn0ToolStripMenuItem.Size = new System.Drawing.Size(230, 22);
             this.whenYouClickOnColumn0ToolStripMenuItem.Text = "When you click on column 0";
             // 
             // hotItemStyle2
@@ -3547,7 +3581,6 @@ namespace ObjectListViewDemo
             this.objectListView1.Size = new System.Drawing.Size(774, 367);
             this.objectListView1.SmallImageList = this.imageList1;
             this.objectListView1.TabIndex = 13;
-            this.objectListView1.TranslucentSelectionDecoration = null;
             this.objectListView1.UseCompatibleStateImageBehavior = false;
             this.objectListView1.UseHotItem = true;
             this.objectListView1.View = System.Windows.Forms.View.Details;
@@ -3787,8 +3820,7 @@ namespace ObjectListViewDemo
 		private System.Windows.Forms.Button buttonGo;
 		private System.Windows.Forms.TextBox textBoxFolderPath;
 		private System.Windows.Forms.Label label5;
-		private System.Windows.Forms.CheckBox checkBox12;
-		private System.Windows.Forms.CheckBox checkBox11;
+        private System.Windows.Forms.CheckBox checkBox12;
 		private System.Windows.Forms.CheckBox checkBox10;
 		private System.Windows.Forms.ComboBox comboBox4;
 		private System.Windows.Forms.Label label9;
@@ -4020,6 +4052,10 @@ namespace ObjectListViewDemo
         private ToolStripMenuItem whenYouClickOnColumn0ToolStripMenuItem;
         private HotItemStyle hotItemStyle2;
         private HyperlinkStyle hyperlinkStyle1;
+        private CheckBox checkBox20;
+        private ImageList groupImageList;
+        private Label label37;
+        private ComboBox comboBox14;
 
 	}
 }
