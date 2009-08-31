@@ -47,11 +47,11 @@ namespace BrightIdeasSoftware
         /// </summary>
         [Browsable(false),
          DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public ContentAlignment AdornmentCorner {
+        public System.Drawing.ContentAlignment AdornmentCorner {
             get { return this.adornmentCorner; }
             set { this.adornmentCorner = value; }
         }
-        private ContentAlignment adornmentCorner = ContentAlignment.MiddleCenter;
+        private System.Drawing.ContentAlignment adornmentCorner = System.Drawing.ContentAlignment.MiddleCenter;
 
         /// <summary>
         /// Gets or sets location within the reference rectange where the adornment will be drawn
@@ -59,9 +59,9 @@ namespace BrightIdeasSoftware
         /// <remarks>This is a simplied interface to ReferenceCorner && AdornmentCorner </remarks>
         [Category("Appearance - ObjectListView"),
          Description("How will the adornment be aligned"),
-         DefaultValue(ContentAlignment.BottomRight),
+         DefaultValue(System.Drawing.ContentAlignment.BottomRight),
          NotifyParentProperty(true)]
-        public ContentAlignment Alignment {
+        public System.Drawing.ContentAlignment Alignment {
             get { return this.alignment; }
             set { 
                 this.alignment = value;
@@ -69,7 +69,7 @@ namespace BrightIdeasSoftware
                 this.AdornmentCorner = value;
             }
         }
-        private ContentAlignment alignment = ContentAlignment.BottomRight;
+        private System.Drawing.ContentAlignment alignment = System.Drawing.ContentAlignment.BottomRight;
 
         /// <summary>
         /// Gets or sets the offset by which the position of the adornment will be adjusted
@@ -87,11 +87,11 @@ namespace BrightIdeasSoftware
         /// </summary>
         [Browsable(false),
          DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public ContentAlignment ReferenceCorner {
+        public System.Drawing.ContentAlignment ReferenceCorner {
             get { return this.referenceCorner; }
             set { this.referenceCorner = value; }
         }
-        private ContentAlignment referenceCorner = ContentAlignment.MiddleCenter;
+        private System.Drawing.ContentAlignment referenceCorner = System.Drawing.ContentAlignment.MiddleCenter;
 
         /// <summary>
         /// Gets or sets the degree of rotation by which the adornment will be transformed.
@@ -133,28 +133,28 @@ namespace BrightIdeasSoftware
         /// <param name="size"></param>
         /// <param name="corner">Which corner will be positioned at the reference point</param>
         /// <returns></returns>
-        /// <example>CalculateAlignedPosition(new Point(50, 100), new Size(10, 20), ContentAlignment.TopLeft) -> Point(50, 100)</example>
-        /// <example>CalculateAlignedPosition(new Point(50, 100), new Size(10, 20), ContentAlignment.MiddleCenter) -> Point(45, 90)</example>
-        /// <example>CalculateAlignedPosition(new Point(50, 100), new Size(10, 20), ContentAlignment.BottomRight) -> Point(40, 80)</example>
-        public Point CalculateAlignedPosition(Point pt, Size size, ContentAlignment corner) {
+        /// <example>CalculateAlignedPosition(new Point(50, 100), new Size(10, 20), System.Drawing.ContentAlignment.TopLeft) -> Point(50, 100)</example>
+        /// <example>CalculateAlignedPosition(new Point(50, 100), new Size(10, 20), System.Drawing.ContentAlignment.MiddleCenter) -> Point(45, 90)</example>
+        /// <example>CalculateAlignedPosition(new Point(50, 100), new Size(10, 20), System.Drawing.ContentAlignment.BottomRight) -> Point(40, 80)</example>
+        public Point CalculateAlignedPosition(Point pt, Size size, System.Drawing.ContentAlignment corner) {
             switch (corner) {
-                case ContentAlignment.TopLeft:
+                case System.Drawing.ContentAlignment.TopLeft:
                     return pt;
-                case ContentAlignment.TopCenter:
+                case System.Drawing.ContentAlignment.TopCenter:
                     return new Point(pt.X - (size.Width / 2), pt.Y);
-                case ContentAlignment.TopRight:
+                case System.Drawing.ContentAlignment.TopRight:
                     return new Point(pt.X - size.Width, pt.Y);
-                case ContentAlignment.MiddleLeft:
+                case System.Drawing.ContentAlignment.MiddleLeft:
                     return new Point(pt.X, pt.Y - (size.Height / 2));
-                case ContentAlignment.MiddleCenter:
+                case System.Drawing.ContentAlignment.MiddleCenter:
                     return new Point(pt.X - (size.Width / 2), pt.Y - (size.Height / 2));
-                case ContentAlignment.MiddleRight:
+                case System.Drawing.ContentAlignment.MiddleRight:
                     return new Point(pt.X - size.Width, pt.Y - (size.Height / 2));
-                case ContentAlignment.BottomLeft:
+                case System.Drawing.ContentAlignment.BottomLeft:
                     return new Point(pt.X, pt.Y - size.Height);
-                case ContentAlignment.BottomCenter:
+                case System.Drawing.ContentAlignment.BottomCenter:
                     return new Point(pt.X - (size.Width / 2), pt.Y - size.Height);
-                case ContentAlignment.BottomRight:
+                case System.Drawing.ContentAlignment.BottomRight:
                     return new Point(pt.X - size.Width, pt.Y - size.Height);
             }
 
@@ -190,7 +190,7 @@ namespace BrightIdeasSoftware
         /// very neat once you understand it.</para>
         /// </remarks>
         public Rectangle CreateAlignedRectangle(Rectangle r, Size sz,
-            ContentAlignment corner, ContentAlignment referenceCorner, Size offset) {
+            System.Drawing.ContentAlignment corner, System.Drawing.ContentAlignment referenceCorner, Size offset) {
             Point referencePt = this.CalculateCorner(r, referenceCorner);
             Point topLeft = this.CalculateAlignedPosition(referencePt, sz, corner);
             return new Rectangle(topLeft + offset, sz);
@@ -203,28 +203,28 @@ namespace BrightIdeasSoftware
         /// <param name="bounds">The reference rectangle</param>
         /// <param name="location">Which point of the rectangle should be returned?</param>
         /// <returns>A point</returns>
-        /// <example>CalculateReferenceLocation(new Rectangle(0, 0, 50, 100), ContentAlignment.TopLeft) -> Point(0, 0)</example>
-        /// <example>CalculateReferenceLocation(new Rectangle(0, 0, 50, 100), ContentAlignment.MiddleCenter) -> Point(25, 50)</example>
-        /// <example>CalculateReferenceLocation(new Rectangle(0, 0, 50, 100), ContentAlignment.BottomRight) -> Point(50, 100)</example>
-        public Point CalculateCorner(Rectangle r, ContentAlignment corner) {
+        /// <example>CalculateReferenceLocation(new Rectangle(0, 0, 50, 100), System.Drawing.ContentAlignment.TopLeft) -> Point(0, 0)</example>
+        /// <example>CalculateReferenceLocation(new Rectangle(0, 0, 50, 100), System.Drawing.ContentAlignment.MiddleCenter) -> Point(25, 50)</example>
+        /// <example>CalculateReferenceLocation(new Rectangle(0, 0, 50, 100), System.Drawing.ContentAlignment.BottomRight) -> Point(50, 100)</example>
+        public Point CalculateCorner(Rectangle r, System.Drawing.ContentAlignment corner) {
             switch (corner) {
-                case ContentAlignment.TopLeft:
+                case System.Drawing.ContentAlignment.TopLeft:
                     return new Point(r.Left, r.Top);
-                case ContentAlignment.TopCenter:
+                case System.Drawing.ContentAlignment.TopCenter:
                     return new Point(r.X + (r.Width / 2), r.Top);
-                case ContentAlignment.TopRight:
+                case System.Drawing.ContentAlignment.TopRight:
                     return new Point(r.Right, r.Top);
-                case ContentAlignment.MiddleLeft:
+                case System.Drawing.ContentAlignment.MiddleLeft:
                     return new Point(r.Left, r.Top + (r.Height / 2));
-                case ContentAlignment.MiddleCenter:
+                case System.Drawing.ContentAlignment.MiddleCenter:
                     return new Point(r.X + (r.Width / 2), r.Top + (r.Height  / 2));
-                case ContentAlignment.MiddleRight:
+                case System.Drawing.ContentAlignment.MiddleRight:
                     return new Point(r.Right, r.Top + (r.Height / 2));
-                case ContentAlignment.BottomLeft:
+                case System.Drawing.ContentAlignment.BottomLeft:
                     return new Point(r.Left, r.Bottom);
-                case ContentAlignment.BottomCenter:
+                case System.Drawing.ContentAlignment.BottomCenter:
                     return new Point(r.X + (r.Width / 2), r.Bottom);
-                case ContentAlignment.BottomRight:
+                case System.Drawing.ContentAlignment.BottomRight:
                     return new Point(r.Right, r.Bottom);
             }
             
