@@ -5,6 +5,10 @@
  * Date: 27/09/2008 9:15 AM
  *
  * Change log:
+ * 2009-08-29   JPP  - Fixed bug where some of a cell's background was not erased. 
+ * 2009-08-15   JPP  - Correctly MeasureText() using the appropriate graphic context
+ *                   - Handle translucent selection setting
+ * v2.2.1
  * 2009-07-24   JPP  - Try to honour CanWrap setting when GDI rendering text.
  * 2009-07-11   JPP  - Correctly calculate edit rectangle for subitems of a tree view
  *                     (previously subitems were indented in the same way as the primary column)
@@ -994,7 +998,7 @@ namespace BrightIdeasSoftware
             Color backgroundColor = this.GetBackgroundColor();
 
             using (Brush brush = new SolidBrush(backgroundColor)) {
-                g.FillRectangle(brush, r);
+                g.FillRectangle(brush, r.X - 1, r.Y - 1, r.Width + 2, r.Height + 2);
             }
         }
 
