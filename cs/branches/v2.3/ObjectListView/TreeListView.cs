@@ -5,6 +5,8 @@
  * Date: 23/09/2008 11:15 AM
  *
  * Change log:
+ * 2009-08-27  JPP  - Fixed bug when dragging a node from one place to another in the tree
+ * v2.2.1
  * 2009-07-14  JPP  - Clicks to the left of the expander in tree cells are now ignored.
  * v2.2
  * 2009-05-12  JPP  - Added tree traverse operations: GetParent and GetChildren.
@@ -135,6 +137,16 @@ namespace BrightIdeasSoftware
         public virtual CanExpandGetterDelegate CanExpandGetter {
             get { return this.TreeModel.CanExpandGetter; }
             set { this.TreeModel.CanExpandGetter = value; }
+        }
+
+        /// <summary>
+        /// Gets whether or not this listview is capabale of showing groups
+        /// </summary>
+        [Browsable(false)]
+        public override bool CanShowGroups {
+            get {
+                return false;
+            }
         }
 
         /// <summary>
@@ -358,10 +370,12 @@ namespace BrightIdeasSoftware
 
             // Refresh each object, remembering where the first update occured
             int firstChange = Int32.MaxValue;
-            foreach (Object x in modelObjects) {
-                int idx = this.TreeModel.RebuildChildren(x);
-                if (idx >= 0)
-                    firstChange = Math.Min(firstChange, idx);
+            foreach (Object model in modelObjects) {
+                if (model != null) {
+                    int idx = this.TreeModel.RebuildChildren(model);
+                    if (idx >= 0)
+                        firstChange = Math.Min(firstChange, idx);
+                }
             }
 
             // If we didn't refresh any objects, don't do anything else
@@ -910,8 +924,8 @@ namespace BrightIdeasSoftware
                 this.Tree = tree;
                 this.Model = model;
 
-                if (parent != null)
-                    this.Level = parent.Level + 1;
+                //if (parent != null)
+                //    this.Level = parent.Level + 1;
             }
 
             //------------------------------------------------------------------------------------------
@@ -960,6 +974,9 @@ namespace BrightIdeasSoftware
                     return children;
                 }
                 set {
+                    if (this.ChildBranches.Count > 0)
+                        this.ChildBranches[this.ChildBranches.Count - 1].IsLastChild = false;
+
                     this.ChildBranches.Clear();
                     foreach (Object x in value)
                         this.AddChild(x);
@@ -972,6 +989,8 @@ namespace BrightIdeasSoftware
                 Branch br = this.Tree.GetBranch(model);
                 if (br == null)
                     br = this.MakeBranch(model);
+                else
+                    br.ParentBranch = this;
                 this.ChildBranches.Add(br);
             }
 
@@ -1150,13 +1169,13 @@ namespace BrightIdeasSoftware
             /// </summary>
             /// <param name="comparer">The comparer that orders the branches</param>
             public virtual void Sort(BranchComparer comparer) {
-                if (comparer == null || this.ChildBranches.Count == 0)
+                if (this.ChildBranches.Count == 0)
                     return;
 
                 // We're about to sort the children, so clear the last child flag
                 this.ChildBranches[this.ChildBranches.Count - 1].IsLastChild = false;
-
-                this.ChildBranches.Sort(comparer);
+                if (comparer != null)
+                    this.ChildBranches.Sort(comparer);
                 this.ChildBranches[this.ChildBranches.Count - 1].IsLastChild = true;
 
                 foreach (Branch br in this.ChildBranches)
@@ -1172,7 +1191,14 @@ namespace BrightIdeasSoftware
             public List<Branch> ChildBranches = new List<Branch>();
             //public bool CanExpand = false;
             public bool IsExpanded = false;
-            public int Level = 0;
+            public int Level {
+                get {
+                    if (this.ParentBranch == null)
+                        return 0;
+                    else
+                        return this.ParentBranch.Level + 1;
+                }
+            }
 
             //------------------------------------------------------------------------------------------
             // Private instance variables
