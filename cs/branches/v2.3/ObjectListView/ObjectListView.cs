@@ -5,6 +5,8 @@
  * Date: 9/10/2006 11:15 AM
  *
  * Change log
+ * 2009-09-01  JPP  - Added ObjectListView.TextRendereringHint property which controls the 
+ *                    text rendering hint of all drawn text.
  * 2009-08-28  JPP  - Added group formatting to supercharge what is possible with groups
  *                  - Virtual groups now work
  *                  - Extended MakeGroupies() to handle more aspects of group creation
@@ -430,7 +432,7 @@ namespace BrightIdeasSoftware
         #region Static properties
 
         /// <summary>
-        /// Is the program running on Vista or later?
+        /// Gets whether the program running on Vista or later?
         /// </summary>
         static public bool IsVista {
             get {
@@ -441,6 +443,16 @@ namespace BrightIdeasSoftware
         }
         static private bool? isVista;
 
+        /// <summary>
+        /// Gets or sets how should text be renderered?
+        /// </summary>
+        static public System.Drawing.Text.TextRenderingHint TextRendereringHint {
+            get { return ObjectListView.textRendereringHint; }
+            set { ObjectListView.textRendereringHint = value; }
+        }
+        static private System.Drawing.Text.TextRenderingHint textRendereringHint = 
+            System.Drawing.Text.TextRenderingHint.SystemDefault;
+
         #endregion
 
         #region Public properties
@@ -448,6 +460,8 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Gets or sets the decoration that will be drawn on all selected rows
         /// </summary>
+        [Browsable(false),
+        DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
         public virtual IDecoration SelectedRowDecoration {
             get { return this.selectedRowDecoration; }
             set { this.selectedRowDecoration = value; }
@@ -1026,10 +1040,10 @@ namespace BrightIdeasSoftware
          Description("Should the groups in this control be collapsible (Vista only)."),
          DefaultValue(true)]
         public bool HasCollapsibleGroups {
-            get { return hasCollapsibleGroup; }
-            set { hasCollapsibleGroup = value; }
+            get { return hasCollapsibleGroups; }
+            set { hasCollapsibleGroups = value; }
         }
-        private bool hasCollapsibleGroup = true;
+        private bool hasCollapsibleGroups = true;
 
         /// <summary>
         /// Does this listview have a m that should be drawn when the list is empty?
@@ -2606,6 +2620,7 @@ namespace BrightIdeasSoftware
                 }
 
                 OLVGroup lvg = new OLVGroup(title);
+                lvg.Collapsible = this.HasCollapsibleGroups;
                 lvg.Key = key;
                 lvg.SortValue = key as IComparable;
                 lvg.Items = map[key];
@@ -6523,7 +6538,7 @@ namespace BrightIdeasSoftware
             }
 
             // Default to high quality drawing
-            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+            g.TextRenderingHint = ObjectListView.TextRendereringHint;
             g.SmoothingMode = SmoothingMode.HighQuality;
 
             // Finally, give the renderer a chance to draw something
@@ -7591,7 +7606,7 @@ namespace BrightIdeasSoftware
         /// <param name="g">A Graphics</param>
         /// <param name="drawnItems">The items that were redrawn and whose decorations should also be redrawn</param>
         protected virtual void DrawAllDecorations(Graphics g, List<OLVListItem> drawnItems) {
-            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+            g.TextRenderingHint = ObjectListView.TextRendereringHint;
             g.SmoothingMode = SmoothingMode.HighQuality;
 
             Rectangle contentRectangle = this.ContentRectangle;

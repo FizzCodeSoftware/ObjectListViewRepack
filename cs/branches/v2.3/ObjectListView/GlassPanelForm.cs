@@ -302,7 +302,7 @@ namespace BrightIdeasSoftware
                 return;
 
             Graphics g = e.Graphics;
-            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+            g.TextRenderingHint = ObjectListView.TextRendereringHint;
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
             //g.DrawRectangle(new Pen(Color.Green, 4.0f), this.ClientRectangle);
 

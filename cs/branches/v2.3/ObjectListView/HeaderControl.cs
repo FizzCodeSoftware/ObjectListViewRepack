@@ -343,7 +343,7 @@ namespace BrightIdeasSoftware
 
                     if (this.cachedNeedsCustomDraw) {
                         using (Graphics g = Graphics.FromHdc(nmcustomdraw.hdc)) {
-                            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+                            g.TextRenderingHint = ObjectListView.TextRendereringHint;
                             this.CustomDrawHeaderCell(g, columnIndex, nmcustomdraw.uItemState);
                         }
                         m.Result = (IntPtr)CDRF_SKIPDEFAULT;
@@ -377,7 +377,7 @@ namespace BrightIdeasSoftware
             NativeMethods.WINDOWPOS wpos = (NativeMethods.WINDOWPOS)Marshal.PtrToStructure(hdlayout.pwpos, typeof(NativeMethods.WINDOWPOS));
 
             using (Graphics g = this.ListView.CreateGraphics()) {
-                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+                g.TextRenderingHint = ObjectListView.TextRendereringHint;
                 int height = this.CalculateHeight(g);
                 wpos.hwnd = this.Handle;
                 wpos.hwndInsertAfter = IntPtr.Zero;

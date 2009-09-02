@@ -5,6 +5,8 @@
  * Date: 27/09/2008 9:15 AM
  *
  * Change log:
+ * 2009-09-01   JPP  - Correctly handle an ImageRenderer's handling of an aspect that holds
+ *                     the image to be displayed at Byte[].
  * 2009-08-29   JPP  - Fixed bug where some of a cell's background was not erased. 
  * 2009-08-15   JPP  - Correctly MeasureText() using the appropriate graphic context
  *                   - Handle translucent selection setting
@@ -1419,6 +1421,10 @@ namespace BrightIdeasSoftware
     /// <para>If an image is an animated GIF, it's state is stored in the SubItem object.</para>
     /// <para>By default, the image renderer does not render animations (it begins life with animations paused).
     /// To enable animations, you must call Unpause().</para>
+    /// <para>In the current implementation (2009-09), each column showing animated gifs must have a 
+    /// different instance of ImageRenderer assigned to it. You cannot share the same instance of
+    /// an image renderer between two animated gif columns. If you do, only the last column will be
+    /// animated.</para>
     /// </remarks>
     public class ImageRenderer : BaseRenderer
     {
@@ -1496,11 +1502,15 @@ namespace BrightIdeasSoftware
             if (this.Aspect == null || this.Aspect == System.DBNull.Value)
                 return;
 
-            ICollection imageSelectors = this.Aspect as ICollection;
-            if (imageSelectors == null)
+            if (this.Aspect is System.Byte[]) {
                 this.DrawAlignedImage(g, r, this.GetImageFromAspect());
-            else
-                this.DrawImages(g, r, imageSelectors);
+            } else {
+                ICollection imageSelectors = this.Aspect as ICollection;
+                if (imageSelectors == null)
+                    this.DrawAlignedImage(g, r, this.GetImageFromAspect());
+                else
+                    this.DrawImages(g, r, imageSelectors);
+            }
         }
 
         /// <summary>
