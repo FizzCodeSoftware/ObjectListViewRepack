@@ -5,7 +5,7 @@
  * Date: 9/10/2006 11:15 AM
  *
  * Change log
- * 2009-09-01  JPP  - Added ObjectListView.TextRendereringHint property which controls the 
+ * 2009-09-01  JPP  - Added ObjectListView.TextRendereringHint property which controls the
  *                    text rendering hint of all drawn text.
  * 2009-08-28  JPP  - Added group formatting to supercharge what is possible with groups
  *                  - Virtual groups now work
@@ -450,7 +450,7 @@ namespace BrightIdeasSoftware
             get { return ObjectListView.textRendereringHint; }
             set { ObjectListView.textRendereringHint = value; }
         }
-        static private System.Drawing.Text.TextRenderingHint textRendereringHint = 
+        static private System.Drawing.Text.TextRenderingHint textRendereringHint =
             System.Drawing.Text.TextRenderingHint.SystemDefault;
 
         #endregion
@@ -461,7 +461,7 @@ namespace BrightIdeasSoftware
         /// Gets or sets the decoration that will be drawn on all selected rows
         /// </summary>
         [Browsable(false),
-        DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
+        DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public virtual IDecoration SelectedRowDecoration {
             get { return this.selectedRowDecoration; }
             set { this.selectedRowDecoration = value; }
