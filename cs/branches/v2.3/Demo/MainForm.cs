@@ -68,7 +68,7 @@ namespace ObjectListViewDemo
             masterList.Add(new Person("Alana Roderick", "Gymnast", 21, new DateTime(1974, 9, 23), 245.67, false, "gp", "Beautiful, exquisite"));
             masterList.Add(new Person("Frank Price", "Dancer", 30, new DateTime(1965, 11, 1), 75.5, false, "ns", "Competitive, spirited"));
             masterList.Add(new Person("Eric", "Half-a-bee", 1, new DateTime(1966, 10, 12), 12.25, true, "cp", "Diminutive, vertically challenged"));
-            masterList.Add(new Person("Nicola Scotton", "Nurse", 42, new DateTime(1965, 10, 29), 1245.7, false, "np", "Wise, fun, lovely"));
+            masterList.Add(new Person("Nicola Scotts", "Nurse", 42, new DateTime(1965, 10, 29), 1245.7, false, "np", "Wise, fun, lovely"));
             masterList.Add(new Person("Madalene Alright", "School Teacher", 21, new DateTime(1964, 9, 23), 145.67, false, "jr", "Extensive, dimensionally challenged"));
             masterList.Add(new Person("Ned Peirce", "School Teacher", 21, new DateTime(1960, 1, 23), 145.67, false, "gab", "Fulsome, effusive"));
             masterList.Add(new Person("Felicity Brown", "Economist", 30, new DateTime(1975, 1, 12), 175.5, false, "sp", "Gifted, exceptional"));
@@ -173,11 +173,11 @@ namespace ObjectListViewDemo
                 new object[]{10, 20, 30, 40},
                 new string[] {"Pay to eat out", "Suggest take-away", "Passable", "Seek dinner invitation", "Hire as chef"},
                 new string[] { "emptytoast", "hamburger", "toast", "dinnerplate", "chef" },
-                new string[] { 
-                    "Pay good money -- or flee the house -- rather than eat their homecooked food", 
-                    "Offer to buy takeaway rather than risk what may appear on your plate", 
-                    "Neither spectacular nor dangerous", 
-                    "Try to visit at dinner time to wrangle an invitation to dinner", 
+                new string[] {
+                    "Pay good money -- or flee the house -- rather than eat their homecooked food",
+                    "Offer to buy takeaway rather than risk what may appear on your plate",
+                    "Neither spectacular nor dangerous",
+                    "Try to visit at dinner time to wrangle an invitation to dinner",
                     "Do whatever is necessary to procure their services" },
                 new string[] { "Call 911", "Phone PizzaHut", "", "Open calendar", "Check bank balance" }
             );
@@ -281,7 +281,7 @@ namespace ObjectListViewDemo
             items[indexInGroup] = lvi;
             for (int i = 0; i < items.Length; i++)
                 items[i].Group = null;
-            for (int i = 0; i < items.Length; i++) 
+            for (int i = 0; i < items.Length; i++)
                 group.Items.Add(items[i]);
             group.ListView.EndUpdate();
         }
@@ -296,7 +296,7 @@ namespace ObjectListViewDemo
         {
             public override bool RenderItem(DrawListViewItemEventArgs e, Graphics g, Rectangle itemBounds, object rowObject)
             {
-                // If we're in any other view than Tile, return false to say that we haven't done 
+                // If we're in any other view than Tile, return false to say that we haven't done
                 // the rendereing and the default process should do it's stuff
                 ObjectListView olv = e.Item.ListView as ObjectListView;
                 if (olv == null || olv.View != View.Tile)
@@ -370,34 +370,36 @@ namespace ObjectListViewDemo
                 textBoxRect.X += (photoRect.Width + spacing);
                 textBoxRect.Width = itemBounds.Right - textBoxRect.X - spacing;
 
-                // Measure the height of the title
                 StringFormat fmt = new StringFormat(StringFormatFlags.NoWrap);
                 fmt.Trimming = StringTrimming.EllipsisCharacter;
                 fmt.Alignment = StringAlignment.Center;
                 fmt.LineAlignment = StringAlignment.Near;
-                Font font = new Font("Tahoma", 11);
                 String txt = item.Text;
-                SizeF size = g.MeasureString(txt, font, (int)textBoxRect.Width, fmt);
 
-                // Draw the title
-                RectangleF r3 = textBoxRect;
-                r3.Height = size.Height;
-                path = this.GetRoundedRect(r3, 15);
-                g.FillPath(this.HeaderBackBrush, path);
-                g.DrawString(txt, font, this.HeaderTextBrush, textBoxRect, fmt);
-                textBoxRect.Y += size.Height + spacing;
+                using (Font font = new Font("Tahoma", 11)) {
+                    // Measure the height of the title
+                    SizeF size = g.MeasureString(txt, font, (int)textBoxRect.Width, fmt);
+                    // Draw the title
+                    RectangleF r3 = textBoxRect;
+                    r3.Height = size.Height;
+                    path = this.GetRoundedRect(r3, 15);
+                    g.FillPath(this.HeaderBackBrush, path);
+                    g.DrawString(txt, font, this.HeaderTextBrush, textBoxRect, fmt);
+                    textBoxRect.Y += size.Height + spacing;
+                }
 
                 // Draw the other bits of information
-                font = new Font("Tahoma", 8);
-                size = g.MeasureString("Wj", font, itemBounds.Width, fmt);
-                textBoxRect.Height = size.Height;
-                fmt.Alignment = StringAlignment.Near;
-                for (int i = 0; i < olv.Columns.Count; i++) {
-                    OLVColumn column = olv.GetColumn(i);
-                    if (column.IsTileViewColumn) {
-                        txt = column.GetStringValue(rowObject);
-                        g.DrawString(txt, font, this.TextBrush, textBoxRect, fmt);
-                        textBoxRect.Y += size.Height;
+                using (Font font = new Font("Tahoma", 8)) {
+                    SizeF size = g.MeasureString("Wj", font, itemBounds.Width, fmt);
+                    textBoxRect.Height = size.Height;
+                    fmt.Alignment = StringAlignment.Near;
+                    for (int i = 0; i < olv.Columns.Count; i++) {
+                        OLVColumn column = olv.GetColumn(i);
+                        if (column.IsTileViewColumn) {
+                            txt = column.GetStringValue(rowObject);
+                            g.DrawString(txt, font, this.TextBrush, textBoxRect, fmt);
+                            textBoxRect.Y += size.Height;
+                        }
                     }
                 }
             }
@@ -583,7 +585,7 @@ namespace ObjectListViewDemo
 
             // Install a RowFormatter to setup a tooltip on the item
             this.listViewVirtual.RowFormatter = delegate(OLVListItem lvi) {
-                lvi.ToolTipText = "This is a long tool tip for '" + lvi.Text + "' that does nothing except waste space.";
+                lvi.ToolTipText = String.Format("This is a long tool tip for '{0}' that does nothing except waste space.", lvi.Text);
             };
 
 			this.olvColumn4.ImageGetter = delegate (object row) {
@@ -676,6 +678,8 @@ namespace ObjectListViewDemo
             this.olvColumnAttributes.Renderer = attributesRenderer;
 
             // Which hot item style to use?
+            if (ObjectListView.IsVista)
+                this.comboBox14.Items.Add("Vista");
             this.comboBox14.SelectedIndex = 3;
 
             this.comboBox4.SelectedIndex = 4;
@@ -700,7 +704,7 @@ namespace ObjectListViewDemo
                 }
             };
 
-            this.treeListView.CheckBoxes = true;
+            this.treeListView.CheckBoxes = false;
 
             // You can change the way the connection lines are drawn by changing the pen
             //((TreeListView.TreeRenderer)this.treeListView.TreeColumnRenderer).LinePen = Pens.Firebrick;
@@ -828,8 +832,9 @@ namespace ObjectListViewDemo
 
 			try {
 				fs = new FileStream(fileName, FileMode.Open, FileAccess.Read);
-				StreamReader reader = new StreamReader(fs);
-	      		ds.ReadXml(reader);
+                using (StreamReader reader = new StreamReader(fs)) {
+                    ds.ReadXml(reader);
+                }
 			} catch (Exception e) {
 				MessageBox.Show(e.ToString());
 			} finally {
@@ -889,7 +894,8 @@ namespace ObjectListViewDemo
 		void ShowLabelsOnGroupsChecked(ObjectListView olv, CheckBox cb)
 		{
 			olv.ShowItemCountOnGroups = cb.Checked;
-			olv.BuildGroups();
+            if (olv.ShowGroups)
+    			olv.BuildGroups();
         }
 
         void HandleSelectionChanged(ObjectListView listView)
@@ -899,7 +905,7 @@ namespace ObjectListViewDemo
             if (p == null)
                 msg = listView.SelectedIndices.Count.ToString();
             else
-                msg = "'" + p.Name + "'";
+                msg = String.Format("'{0}'", p.Name);
             this.toolStripStatusLabel1.Text = String.Format("Selected {0} of {1} items", msg, listView.GetItemCount());
         }
 
@@ -921,7 +927,7 @@ namespace ObjectListViewDemo
                     listview.CheckBoxes = false;
                 }
             }
-            
+
             switch (comboBox.SelectedIndex) {
                 case 0: listview.View = View.SmallIcon; break;
                 case 1: listview.View = View.LargeIcon; break;
@@ -956,15 +962,14 @@ namespace ObjectListViewDemo
             this.TimedRebuildList(this.listViewSimple);
 		}
 
-		void Button4Click(object sender, System.EventArgs e)
-		{
-			// Silly example just to make sure that object selection works
+        void Button4Click(object sender, System.EventArgs e) {
+            // Silly example just to make sure that object selection works
 
             listViewSimple.SelectedObjects = listViewComplex.SelectedObjects;
             listViewSimple.Select();
 
             listViewSimple.CopyObjectsToClipboard(listViewSimple.CheckedObjects);
-		}
+        }
 
         private void button7_Click(object sender, EventArgs e)
         {
@@ -1097,8 +1102,6 @@ namespace ObjectListViewDemo
         private void button8_Click(object sender, EventArgs e)
         {
             this.listViewVirtual.SelectAll();
-            //this.listViewVirtual.ShowGroups = !this.listViewVirtual.ShowGroups;
-            //this.listViewVirtual.BuildList();
         }
 
         private void button9_Click(object sender, EventArgs e)
@@ -1386,22 +1389,22 @@ namespace ObjectListViewDemo
 
         #region Cell editing example
 
-        private void listViewComplex_CellEditStarting(object sender, CellEditEventArgs e)
-        {
-            // We only want to mess with the Cooking Skill column
-            if (e.Column.Text != "Cooking skill")
-                return;
+    private void listViewComplex_CellEditStarting(object sender, CellEditEventArgs e)
+    {
+        // We only want to mess with the Cooking Skill column
+        if (e.Column.Text != "Cooking skill")
+            return;
 
-            ComboBox cb = new ComboBox();
-            cb.Bounds = e.CellBounds;
-            cb.Font = ((ObjectListView)sender).Font;
-            cb.DropDownStyle = ComboBoxStyle.DropDownList;
-            cb.Items.AddRange(new String[] { "Pay to eat out", "Suggest take-away", "Passable", "Seek dinner invitation", "Hire as chef" });
-            cb.SelectedIndex = Math.Max(0, Math.Min(cb.Items.Count-1, ((int)e.Value) / 10));
-            cb.SelectedIndexChanged += new EventHandler(cb_SelectedIndexChanged);
-            cb.Tag = e.RowObject; // remember which person we are editing
-            e.Control = cb;
-        }
+        ComboBox cb = new ComboBox();
+        cb.Bounds = e.CellBounds;
+        cb.Font = ((ObjectListView)sender).Font;
+        cb.DropDownStyle = ComboBoxStyle.DropDownList;
+        cb.Items.AddRange(new String[] { "Pay to eat out", "Suggest take-away", "Passable", "Seek dinner invitation", "Hire as chef" });
+        cb.SelectedIndex = Math.Max(0, Math.Min(cb.Items.Count-1, ((int)e.Value) / 10));
+        cb.SelectedIndexChanged += new EventHandler(cb_SelectedIndexChanged);
+        cb.Tag = e.RowObject; // remember which person we are editing
+        e.Control = cb;
+    }
 
         private void cb_SelectedIndexChanged(object sender, EventArgs e)
         {
@@ -1514,10 +1517,10 @@ namespace ObjectListViewDemo
                 new object[] { 10, 20, 30, 40 },
                 new string[] { "Pay to eat out", "Suggest take-away", "Passable", "Seek dinner invitation", "Hire as chef" },
                 new string[] { "emptytoast", "hamburger", "toast", "dinnerplate", "chef" },
-                new string[] { "Pay good money -- or flee the house -- rather than eat their homecooked food", 
-                                "Offer to buy takeaway rather than risk what may appear on your plate", 
-                                "Neither spectacular nor dangerous", 
-                                "Try to visit at dinner time to wrangle an invitation to dinner", 
+                new string[] { "Pay good money -- or flee the house -- rather than eat their homecooked food",
+                                "Offer to buy takeaway rather than risk what may appear on your plate",
+                                "Neither spectacular nor dangerous",
+                                "Try to visit at dinner time to wrangle an invitation to dinner",
                                 "Do whatever is necessary to procure their services" },
                 new string[] { "Call 911", "Phone PizzaHut", "", "Open calendar", "Check bank balance" }
             );
@@ -1726,7 +1729,7 @@ namespace ObjectListViewDemo
 
         private void listViewComplex_MouseClick(object sender, MouseEventArgs e)
         {
-            //if (e.Button != MouseButtons.Right) 
+            //if (e.Button != MouseButtons.Right)
             //    return;
 
             //ContextMenuStrip ms = new ContextMenuStrip();
@@ -1751,7 +1754,7 @@ namespace ObjectListViewDemo
         /*
         private static void BlendBitmaps(Graphics g, Bitmap b1, Bitmap b2, float transition)
         {
-            float[][] colorMatrixElements = { 
+            float[][] colorMatrixElements = {
    new float[] {1,  0,  0,  0, 0},        // red scaling factor of 2
    new float[] {0,  1,  0,  0, 0},        // green scaling factor of 1
    new float[] {0,  0,  1,  0, 0},        // blue scaling factor of 1
@@ -1764,8 +1767,8 @@ namespace ObjectListViewDemo
 
             g.DrawImage(
                b1,
-               new Rectangle(0, 0, b1.Size.Width, b1.Size.Height),  // destination rectangle 
-               0, 0,        // upper-left corner of source rectangle 
+               new Rectangle(0, 0, b1.Size.Width, b1.Size.Height),  // destination rectangle
+               0, 0,        // upper-left corner of source rectangle
                b1.Size.Width,       // width of source rectangle
                b1.Size.Height,      // height of source rectangle
                GraphicsUnit.Pixel,
@@ -1776,8 +1779,8 @@ namespace ObjectListViewDemo
 
             g.DrawImage(
                b2,
-               new Rectangle(0, 0, b2.Size.Width, b2.Size.Height),  // destination rectangle 
-               0, 0,        // upper-left corner of source rectangle 
+               new Rectangle(0, 0, b2.Size.Width, b2.Size.Height),  // destination rectangle
+               0, 0,        // upper-left corner of source rectangle
                b2.Size.Width,       // width of source rectangle
                b2.Size.Height,      // height of source rectangle
                GraphicsUnit.Pixel,
@@ -1943,7 +1946,7 @@ namespace ObjectListViewDemo
         bool showToolTipsOnFiles = false;
 
         private void listViewFiles_CellClick(object sender, CellClickEventArgs e) {
-            System.Diagnostics.Trace.WriteLine(String.Format("clicked ({0}, {1}). model {2}. click count: {3}", 
+            System.Diagnostics.Trace.WriteLine(String.Format("clicked ({0}, {1}). model {2}. click count: {3}",
                 e.RowIndex, e.ColumnIndex, e.Model, e.ClickCount));
         }
 
@@ -1965,7 +1968,7 @@ namespace ObjectListViewDemo
         }
 
         private void treeListView_ModelDropped(object sender, ModelDropEventArgs e) {
-            String msg = String.Format("{2} items were dropped on '{1}' as a {0} operation.", 
+            String msg = String.Format("{2} items were dropped on '{1}' as a {0} operation.",
                 e.Effect, ((DirectoryInfo)e.TargetModel).Name, e.SourceModels.Count);
             MessageBox.Show(msg, "OLV Demo", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
@@ -2053,32 +2056,32 @@ namespace ObjectListViewDemo
             }
         }
 
-        private void listViewComplex_FormatCell(object sender, FormatCellEventArgs e) {
-            Person p = (Person)e.Model;
+    private void listViewComplex_FormatCell(object sender, FormatCellEventArgs e) {
+        Person p = (Person)e.Model;
 
-            // Put a love heart next to Nicola's name :)
-            if (e.ColumnIndex == 0) {
-                if (e.SubItem.Text.ToLowerInvariant().StartsWith("nicola")) {
-                    e.SubItem.Decoration = new ImageDecoration(Resource1.loveheart, 64);
-                } else
-                    e.SubItem.Decoration = null;
-            }
-            
+        // Put a love heart next to Nicola's name :)
+        if (e.ColumnIndex == 0) {
+            if (e.SubItem.Text.ToLowerInvariant().StartsWith("nicola")) {
+                e.SubItem.Decoration = new ImageDecoration(Resource1.loveheart, 64);
+            } else
+                e.SubItem.Decoration = null;
+        }
+
             // If the occupation is missing a value, put a composite decoration over it
             // to draw attention to.
-            if (e.ColumnIndex == 1 && e.SubItem.Text == "") {
-                TextDecoration decoration = new TextDecoration("Missing!", 255);
-                decoration.Alignment = ContentAlignment.MiddleCenter;
-                decoration.Font = new Font(this.Font.Name, this.Font.SizeInPoints+2);
-                decoration.TextColor = Color.Firebrick;
-                decoration.Rotation = -20;
-                e.SubItem.Decoration = decoration;
-                CellBorderDecoration cbd = new CellBorderDecoration();
-                cbd.BorderPen = new Pen(Color.FromArgb(128, Color.Firebrick));
-                cbd.FillBrush = null;
-                cbd.CornerRounding = 4.0f;
-                e.SubItem.Decorations.Add(cbd);
-            }
+    if (e.ColumnIndex == 1 && e.SubItem.Text == "") {
+        TextDecoration decoration = new TextDecoration("Missing!", 255);
+        decoration.Alignment = ContentAlignment.MiddleCenter;
+        decoration.Font = new Font(this.Font.Name, this.Font.SizeInPoints+2);
+        decoration.TextColor = Color.Firebrick;
+        decoration.Rotation = -20;
+        e.SubItem.Decoration = decoration;
+        CellBorderDecoration cbd = new CellBorderDecoration();
+        cbd.BorderPen = new Pen(Color.FromArgb(128, Color.Firebrick));
+        cbd.FillBrush = null;
+        cbd.CornerRounding = 4.0f;
+        e.SubItem.Decorations.Add(cbd);
+    }
             //if (e.ColumnIndex == 7) {
             //    if (p.CanTellJokes.HasValue && p.CanTellJokes.Value)
             //        e.SubItem.Decoration = new CellBorderDecoration();
@@ -2099,17 +2102,17 @@ namespace ObjectListViewDemo
                 this.olvFastList.ShowGroups = !this.olvFastList.ShowGroups;
                 this.olvFastList.BuildList();
             } else {
-                MessageBox.Show("Sorry. Groups on virtual lists only works on Vista and later", 
+                MessageBox.Show("Sorry. Groups on virtual lists only works on Vista and later",
                     "OLV Demo", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
 
         private void listViewComplex_GroupTaskClicked(object sender, GroupTaskClickedEventArgs e) {
-            System.Diagnostics.Debug.WriteLine(String.Format("group task click: {0}", e.Group));
+            MessageBox.Show(String.Format("group task click: {0}", e.Group), "OLV Demo", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void olvFastList_GroupTaskClicked(object sender, GroupTaskClickedEventArgs e) {
-            System.Diagnostics.Debug.WriteLine(String.Format("group task click: {0}", e.Group));
+            MessageBox.Show(String.Format("group task click: {0}", e.Group), "OLV Demo", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void comboBox14_SelectedIndexChanged(object sender, EventArgs e) {
@@ -2117,6 +2120,8 @@ namespace ObjectListViewDemo
             ObjectListView olv = this.listViewFiles;
 
             olv.UseHotItem = true;
+            olv.FullRowSelect = false;
+            olv.UseExplorerTheme = false;
             HotItemStyle his = new HotItemStyle();
 
             switch (cb.SelectedIndex) {
@@ -2124,7 +2129,8 @@ namespace ObjectListViewDemo
                     olv.UseHotItem = false;
                     break;
                 case 1:
-                    his.ForeColor = Color.SeaGreen;
+                    his.ForeColor = Color.AliceBlue;
+                    his.BackColor = Color.DarkGray;
                     olv.HotItemStyle = his;
                     break;
                 case 2:
@@ -2143,12 +2149,26 @@ namespace ObjectListViewDemo
                     his.Decoration = lbd;
                     olv.HotItemStyle = his;
                     break;
+                case 5:
+                    this.checkBox10.Checked = false;
+                    olv.FullRowSelect = true;
+                    olv.UseHotItem = false;
+                    olv.UseExplorerTheme = true;
+                    break;
             }
             olv.Invalidate();
 
         }
+
+        private void olvFastList_IsHyperlink(object sender, IsHyperlinkEventArgs e) {
+            if (e.Text.ToLowerInvariant().StartsWith("s")) {
+                e.Url = null; // no hyperlink for cells starting with s
+            } else {
+                e.Url = "http://objectlistview.sourceforge.net";
+            }
+        }
     }
-        
+
     enum MaritalStatus
     {
         Single,

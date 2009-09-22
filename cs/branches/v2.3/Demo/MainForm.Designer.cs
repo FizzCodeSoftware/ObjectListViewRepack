@@ -244,6 +244,7 @@ namespace ObjectListViewDemo
             this.treeColumnSize = new BrightIdeasSoftware.OLVColumn();
             this.treeColumnFileType = new BrightIdeasSoftware.OLVColumn();
             this.treeColumnAttributes = new BrightIdeasSoftware.OLVColumn();
+            this.imageList3 = new System.Windows.Forms.ImageList(this.components);
             this.tabPage8 = new System.Windows.Forms.TabPage();
             this.checkBox22 = new System.Windows.Forms.CheckBox();
             this.checkBox21 = new System.Windows.Forms.CheckBox();
@@ -317,6 +318,8 @@ namespace ObjectListViewDemo
             this.olvColumn6 = new BrightIdeasSoftware.OLVColumn();
             this.olvColumn11 = new BrightIdeasSoftware.OLVColumn();
             this.olvColumn16 = new BrightIdeasSoftware.OLVColumn();
+            this.imageRenderer2 = new BrightIdeasSoftware.ImageRenderer();
+            this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.contextMenuStrip1.SuspendLayout();
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
@@ -360,30 +363,30 @@ namespace ObjectListViewDemo
             this.command3ToolStripMenuItem,
             this.appearOnTheColumnHeadersToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(263, 92);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(270, 92);
             // 
             // command1ToolStripMenuItem
             // 
             this.command1ToolStripMenuItem.Name = "command1ToolStripMenuItem";
-            this.command1ToolStripMenuItem.Size = new System.Drawing.Size(262, 22);
+            this.command1ToolStripMenuItem.Size = new System.Drawing.Size(269, 22);
             this.command1ToolStripMenuItem.Text = "Dummy commands...";
             // 
             // command2ToolStripMenuItem
             // 
             this.command2ToolStripMenuItem.Name = "command2ToolStripMenuItem";
-            this.command2ToolStripMenuItem.Size = new System.Drawing.Size(262, 22);
+            this.command2ToolStripMenuItem.Size = new System.Drawing.Size(269, 22);
             this.command2ToolStripMenuItem.Text = "...to test that a context menu...";
             // 
             // command3ToolStripMenuItem
             // 
             this.command3ToolStripMenuItem.Name = "command3ToolStripMenuItem";
-            this.command3ToolStripMenuItem.Size = new System.Drawing.Size(262, 22);
+            this.command3ToolStripMenuItem.Size = new System.Drawing.Size(269, 22);
             this.command3ToolStripMenuItem.Text = "...appears here and a different one...";
             // 
             // appearOnTheColumnHeadersToolStripMenuItem
             // 
             this.appearOnTheColumnHeadersToolStripMenuItem.Name = "appearOnTheColumnHeadersToolStripMenuItem";
-            this.appearOnTheColumnHeadersToolStripMenuItem.Size = new System.Drawing.Size(262, 22);
+            this.appearOnTheColumnHeadersToolStripMenuItem.Size = new System.Drawing.Size(269, 22);
             this.appearOnTheColumnHeadersToolStripMenuItem.Text = "...appear on the column headers.";
             // 
             // imageList1
@@ -647,7 +650,6 @@ namespace ObjectListViewDemo
             this.listViewSimple.OverlayText.Rotation = -20;
             this.listViewSimple.OverlayText.Text = "A test overlay";
             this.listViewSimple.OverlayText.Transparency = 128;
-            this.listViewSimple.SelectedRowDecoration = null;
             this.listViewSimple.ShowCommandMenuOnRightClick = true;
             this.listViewSimple.ShowGroups = false;
             this.listViewSimple.ShowItemToolTips = true;
@@ -974,7 +976,6 @@ namespace ObjectListViewDemo
             this.listViewComplex.OverlayText.Text = "";
             this.listViewComplex.OverlayText.TextColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
             this.listViewComplex.OwnerDraw = true;
-            this.listViewComplex.SelectedRowDecoration = null;
             this.listViewComplex.ShowCommandMenuOnRightClick = true;
             this.listViewComplex.ShowGroups = false;
             this.listViewComplex.ShowImagesOnSubItems = true;
@@ -1285,6 +1286,7 @@ namespace ObjectListViewDemo
             this.heightColumn,
             this.olvColumn42,
             this.olvColumnGif});
+            this.listViewDataSet.Cursor = System.Windows.Forms.Cursors.Default;
             this.listViewDataSet.DataSource = null;
             this.listViewDataSet.EmptyListMsg = "Add rows to the above table to see them here";
             this.listViewDataSet.EmptyListMsgFont = new System.Drawing.Font("Comic Sans MS", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -1300,7 +1302,6 @@ namespace ObjectListViewDemo
             this.listViewDataSet.OverlayImage.Offset = new System.Drawing.Size(0, 0);
             this.listViewDataSet.OverlayText.Offset = new System.Drawing.Size(0, 0);
             this.listViewDataSet.OwnerDraw = true;
-            this.listViewDataSet.SelectedRowDecoration = null;
             this.listViewDataSet.ShowCommandMenuOnRightClick = true;
             this.listViewDataSet.ShowGroups = false;
             this.listViewDataSet.ShowImagesOnSubItems = true;
@@ -1330,7 +1331,7 @@ namespace ObjectListViewDemo
             this.olvColumn2.HeaderFont = null;
             this.olvColumn2.IsTileViewColumn = true;
             this.olvColumn2.Text = "Company";
-            this.olvColumn2.Width = 104;
+            this.olvColumn2.Width = 73;
             // 
             // olvColumn3
             // 
@@ -1338,7 +1339,7 @@ namespace ObjectListViewDemo
             this.olvColumn3.HeaderFont = null;
             this.olvColumn3.IsTileViewColumn = true;
             this.olvColumn3.Text = "Occupation";
-            this.olvColumn3.Width = 109;
+            this.olvColumn3.Width = 94;
             // 
             // salaryColumn
             // 
@@ -1348,7 +1349,6 @@ namespace ObjectListViewDemo
             this.salaryColumn.Renderer = this.salaryRenderer;
             this.salaryColumn.Text = "Salary";
             this.salaryColumn.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.salaryColumn.Width = 84;
             // 
             // salaryRenderer
             // 
@@ -1364,7 +1364,7 @@ namespace ObjectListViewDemo
             this.heightColumn.Renderer = this.heightRenderer;
             this.heightColumn.Text = "Height (m)";
             this.heightColumn.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-            this.heightColumn.Width = 72;
+            this.heightColumn.Width = 56;
             // 
             // heightRenderer
             // 
@@ -1640,7 +1640,6 @@ namespace ObjectListViewDemo
             this.listViewVirtual.OverlayImage.Offset = new System.Drawing.Size(0, 0);
             this.listViewVirtual.OverlayText.Offset = new System.Drawing.Size(0, 0);
             this.listViewVirtual.OwnerDraw = true;
-            this.listViewVirtual.SelectedRowDecoration = null;
             this.listViewVirtual.ShowCommandMenuOnRightClick = true;
             this.listViewVirtual.ShowGroups = false;
             this.listViewVirtual.ShowImagesOnSubItems = true;
@@ -1946,7 +1945,6 @@ namespace ObjectListViewDemo
             this.listViewFiles.OverlayImage.Offset = new System.Drawing.Size(0, 0);
             this.listViewFiles.OverlayText.Offset = new System.Drawing.Size(0, 0);
             this.listViewFiles.OwnerDraw = true;
-            this.listViewFiles.SelectedRowDecoration = null;
             this.listViewFiles.ShowCommandMenuOnRightClick = true;
             this.listViewFiles.ShowGroups = false;
             this.listViewFiles.ShowItemToolTips = true;
@@ -2514,7 +2512,7 @@ namespace ObjectListViewDemo
             this.label26.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.label26.Location = new System.Drawing.Point(6, 5);
             this.label26.Name = "label26";
-            this.label26.Size = new System.Drawing.Size(748, 38);
+            this.label26.Size = new System.Drawing.Size(748, 51);
             this.label26.TabIndex = 16;
             this.label26.Text = resources.GetString("label26.Text");
             // 
@@ -2642,27 +2640,28 @@ namespace ObjectListViewDemo
             this.olvFastList.GroupImageList = this.groupImageList;
             this.olvFastList.HideSelection = false;
             this.olvFastList.LargeImageList = this.imageList2;
-            this.olvFastList.Location = new System.Drawing.Point(6, 47);
+            this.olvFastList.Location = new System.Drawing.Point(6, 59);
             this.olvFastList.Name = "olvFastList";
             this.olvFastList.OverlayImage.Offset = new System.Drawing.Size(0, 0);
             this.olvFastList.OverlayText.Offset = new System.Drawing.Size(0, 0);
             this.olvFastList.OwnerDraw = true;
             this.olvFastList.RightToLeft = System.Windows.Forms.RightToLeft.No;
             this.olvFastList.SelectedColumnTint = System.Drawing.Color.FromArgb(((int)(((byte)(35)))), ((int)(((byte)(0)))), ((int)(((byte)(255)))), ((int)(((byte)(0)))));
-            this.olvFastList.SelectedRowDecoration = null;
             this.olvFastList.ShowCommandMenuOnRightClick = true;
             this.olvFastList.ShowGroups = false;
             this.olvFastList.ShowImagesOnSubItems = true;
             this.olvFastList.ShowItemToolTips = true;
-            this.olvFastList.Size = new System.Drawing.Size(748, 419);
+            this.olvFastList.Size = new System.Drawing.Size(748, 407);
             this.olvFastList.SmallImageList = this.imageList1;
             this.olvFastList.SpaceBetweenGroups = 25;
             this.olvFastList.TabIndex = 0;
             this.olvFastList.TintSortColumn = true;
             this.olvFastList.UseAlternatingBackColors = true;
             this.olvFastList.UseCompatibleStateImageBehavior = false;
+            this.olvFastList.UseHyperlinks = true;
             this.olvFastList.View = System.Windows.Forms.View.Details;
             this.olvFastList.VirtualMode = true;
+            this.olvFastList.IsHyperlink += new System.EventHandler<BrightIdeasSoftware.IsHyperlinkEventArgs>(this.olvFastList_IsHyperlink);
             this.olvFastList.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler(this.olvFastList_ItemCheck);
             this.olvFastList.SelectionChanged += new System.EventHandler(this.olvFastList_SelectionChanged);
             this.olvFastList.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.olvFastList_ItemChecked);
@@ -2680,6 +2679,7 @@ namespace ObjectListViewDemo
             // 
             this.olvColumn19.AspectName = "Occupation";
             this.olvColumn19.HeaderFont = null;
+            this.olvColumn19.Hyperlink = true;
             this.olvColumn19.IsTileViewColumn = true;
             this.olvColumn19.Text = "Occupation";
             this.olvColumn19.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
@@ -2839,7 +2839,6 @@ namespace ObjectListViewDemo
             this.treeListView.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
-            this.treeListView.CheckBoxes = true;
             this.treeListView.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.treeColumnName,
             this.treeColumnCreated,
@@ -2849,7 +2848,6 @@ namespace ObjectListViewDemo
             this.treeColumnAttributes});
             this.treeListView.EmptyListMsg = "This folder is completely empty!";
             this.treeListView.EmptyListMsgFont = new System.Drawing.Font("Comic Sans MS", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.treeListView.FullRowSelect = true;
             this.treeListView.HideSelection = false;
             this.treeListView.IsSimpleDragSource = true;
             this.treeListView.IsSimpleDropSink = true;
@@ -2860,13 +2858,12 @@ namespace ObjectListViewDemo
             this.treeListView.OverlayImage.Transparency = 128;
             this.treeListView.OverlayText.Offset = new System.Drawing.Size(0, 0);
             this.treeListView.OwnerDraw = true;
-            this.treeListView.SelectedRowDecoration = null;
             this.treeListView.ShowCommandMenuOnRightClick = true;
             this.treeListView.ShowGroups = false;
             this.treeListView.ShowImagesOnSubItems = true;
             this.treeListView.ShowItemToolTips = true;
             this.treeListView.Size = new System.Drawing.Size(748, 413);
-            this.treeListView.SmallImageList = this.imageList1;
+            this.treeListView.SmallImageList = this.imageList3;
             this.treeListView.TabIndex = 13;
             this.treeListView.UseCompatibleStateImageBehavior = false;
             this.treeListView.View = System.Windows.Forms.View.Details;
@@ -2927,6 +2924,12 @@ namespace ObjectListViewDemo
             this.treeColumnAttributes.IsEditable = false;
             this.treeColumnAttributes.MinimumWidth = 20;
             this.treeColumnAttributes.Text = "Attributes";
+            // 
+            // imageList3
+            // 
+            this.imageList3.ColorDepth = System.Windows.Forms.ColorDepth.Depth8Bit;
+            this.imageList3.ImageSize = new System.Drawing.Size(16, 16);
+            this.imageList3.TransparentColor = System.Drawing.Color.Transparent;
             // 
             // tabPage8
             // 
@@ -3057,7 +3060,6 @@ namespace ObjectListViewDemo
             this.olvGeeks.OverlayText.Alignment = System.Drawing.ContentAlignment.BottomLeft;
             this.olvGeeks.OverlayText.Offset = new System.Drawing.Size(0, 0);
             this.olvGeeks.OverlayText.Text = "";
-            this.olvGeeks.SelectedRowDecoration = null;
             this.olvGeeks.ShowCommandMenuOnRightClick = true;
             this.olvGeeks.ShowGroups = false;
             this.olvGeeks.ShowImagesOnSubItems = true;
@@ -3195,7 +3197,6 @@ namespace ObjectListViewDemo
             this.olvFroods.OverlayText.Alignment = System.Drawing.ContentAlignment.BottomLeft;
             this.olvFroods.OverlayText.Offset = new System.Drawing.Size(0, 0);
             this.olvFroods.OverlayText.Text = "";
-            this.olvFroods.SelectedRowDecoration = null;
             this.olvFroods.ShowCommandMenuOnRightClick = true;
             this.olvFroods.ShowGroups = false;
             this.olvFroods.ShowImagesOnSubItems = true;
@@ -3514,30 +3515,30 @@ namespace ObjectListViewDemo
             this.whichOnlyAppearsToolStripMenuItem,
             this.whenYouClickOnColumn0ToolStripMenuItem});
             this.contextMenuStrip2.Name = "contextMenuStrip2";
-            this.contextMenuStrip2.Size = new System.Drawing.Size(231, 92);
+            this.contextMenuStrip2.Size = new System.Drawing.Size(226, 92);
             // 
             // menuOfCommandsToolStripMenuItem
             // 
             this.menuOfCommandsToolStripMenuItem.Name = "menuOfCommandsToolStripMenuItem";
-            this.menuOfCommandsToolStripMenuItem.Size = new System.Drawing.Size(230, 22);
+            this.menuOfCommandsToolStripMenuItem.Size = new System.Drawing.Size(225, 22);
             this.menuOfCommandsToolStripMenuItem.Text = "Menu of commands";
             // 
             // appropriateToTheClickedFileToolStripMenuItem
             // 
             this.appropriateToTheClickedFileToolStripMenuItem.Name = "appropriateToTheClickedFileToolStripMenuItem";
-            this.appropriateToTheClickedFileToolStripMenuItem.Size = new System.Drawing.Size(230, 22);
+            this.appropriateToTheClickedFileToolStripMenuItem.Size = new System.Drawing.Size(225, 22);
             this.appropriateToTheClickedFileToolStripMenuItem.Text = "Appropriate to the clicked file";
             // 
             // whichOnlyAppearsToolStripMenuItem
             // 
             this.whichOnlyAppearsToolStripMenuItem.Name = "whichOnlyAppearsToolStripMenuItem";
-            this.whichOnlyAppearsToolStripMenuItem.Size = new System.Drawing.Size(230, 22);
+            this.whichOnlyAppearsToolStripMenuItem.Size = new System.Drawing.Size(225, 22);
             this.whichOnlyAppearsToolStripMenuItem.Text = "Which only appears";
             // 
             // whenYouClickOnColumn0ToolStripMenuItem
             // 
             this.whenYouClickOnColumn0ToolStripMenuItem.Name = "whenYouClickOnColumn0ToolStripMenuItem";
-            this.whenYouClickOnColumn0ToolStripMenuItem.Size = new System.Drawing.Size(230, 22);
+            this.whenYouClickOnColumn0ToolStripMenuItem.Size = new System.Drawing.Size(225, 22);
             this.whenYouClickOnColumn0ToolStripMenuItem.Text = "When you click on column 0";
             // 
             // hotItemStyle2
@@ -3575,7 +3576,6 @@ namespace ObjectListViewDemo
             this.objectListView1.OverlayImage.Offset = new System.Drawing.Size(0, 0);
             this.objectListView1.OverlayText.Offset = new System.Drawing.Size(0, 0);
             this.objectListView1.OwnerDraw = true;
-            this.objectListView1.SelectedRowDecoration = null;
             this.objectListView1.ShowCommandMenuOnRightClick = true;
             this.objectListView1.ShowGroups = false;
             this.objectListView1.Size = new System.Drawing.Size(774, 367);
@@ -4056,6 +4056,9 @@ namespace ObjectListViewDemo
         private ImageList groupImageList;
         private Label label37;
         private ComboBox comboBox14;
+        private ImageRenderer imageRenderer2;
+        private ImageList imageList3;
+        private ToolTip toolTip1;
 
 	}
 }
