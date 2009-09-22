@@ -81,7 +81,10 @@ namespace BrightIdeasSoftware
         }
 
         private static OLVColumn MakeColumnFromAttribute(string aspectName, OLVColumnAttribute attr, bool editable) {
-            OLVColumn column = new OLVColumn(attr.Title, aspectName);
+            string title = attr.Title;
+            if (String.IsNullOrEmpty(title))
+                title = aspectName;
+            OLVColumn column = new OLVColumn(title, aspectName);
             column.AspectToStringFormat = attr.AspectToStringFormat;
             column.CheckBoxes = attr.CheckBoxes;
             column.DisplayIndex = attr.DisplayIndex;
