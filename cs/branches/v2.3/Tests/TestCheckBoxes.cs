@@ -8,11 +8,8 @@
  * 10/25/2008 JPP  Initial Version
  */
 
-using System;
-using System.Collections;
 using System.Windows.Forms;
 using NUnit.Framework;
-using NUnit.Framework.SyntaxHelpers;
 
 namespace BrightIdeasSoftware.Tests
 {

@@ -76,7 +76,6 @@ namespace BrightIdeasSoftware.Tests
             this.objectListView1.ShowGroups = false;
             this.objectListView1.Size = new System.Drawing.Size(819, 167);
             this.objectListView1.TabIndex = 0;
-            this.objectListView1.TranslucentSelectionDecoration = null;
             this.objectListView1.UseCompatibleStateImageBehavior = false;
             this.objectListView1.View = System.Windows.Forms.View.Details;
             // 
@@ -124,7 +123,6 @@ namespace BrightIdeasSoftware.Tests
             this.fastObjectListView1.ShowGroups = false;
             this.fastObjectListView1.Size = new System.Drawing.Size(819, 171);
             this.fastObjectListView1.TabIndex = 1;
-            this.fastObjectListView1.TranslucentSelectionDecoration = null;
             this.fastObjectListView1.UseCompatibleStateImageBehavior = false;
             this.fastObjectListView1.View = System.Windows.Forms.View.Details;
             this.fastObjectListView1.VirtualMode = true;
@@ -174,7 +172,6 @@ namespace BrightIdeasSoftware.Tests
             this.treeListView1.ShowGroups = false;
             this.treeListView1.Size = new System.Drawing.Size(819, 203);
             this.treeListView1.TabIndex = 2;
-            this.treeListView1.TranslucentSelectionDecoration = null;
             this.treeListView1.UseCompatibleStateImageBehavior = false;
             this.treeListView1.View = System.Windows.Forms.View.Details;
             this.treeListView1.VirtualMode = true;
@@ -214,7 +211,6 @@ namespace BrightIdeasSoftware.Tests
             this.objectListView2.Name = "objectListView2";
             this.objectListView2.Size = new System.Drawing.Size(819, 97);
             this.objectListView2.TabIndex = 3;
-            this.objectListView2.TranslucentSelectionDecoration = null;
             this.objectListView2.UseCompatibleStateImageBehavior = false;
             this.objectListView2.View = System.Windows.Forms.View.Details;
             // 
