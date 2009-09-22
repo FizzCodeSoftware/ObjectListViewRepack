@@ -29,6 +29,8 @@
 
 using System;
 using System.ComponentModel;
+using System.ComponentModel.Design;
+using System.Drawing.Design;
 using System.Collections;
 using System.Collections.Generic;
 using System.Windows.Forms;
@@ -36,7 +38,17 @@ using System.Windows.Forms.Design;
 
 namespace BrightIdeasSoftware.Design
 {
-    internal class ObjectListViewDesigner : ControlDesigner
+    /// <summary>
+    /// A specialised designer for the ObjectListView.
+    /// </summary>
+    /// <remarks>
+    /// This is currently not enabled as the designer for ObjectListView, since we cannot
+    /// duplicate all the functions of the base ListViewDesigner. The problem is that
+    /// ListViewDesigner is internal to the .NET code, so we cannot use or subclass it.
+    /// Here, I've duplicated what i can, but it is not fully working yet. In particular,
+    /// I don't have an equivilent of HookChildWindows() method. 2009-09-12
+    /// </remarks>
+    internal class ObjectListViewDesigner : ListViewDesigner
     {
         protected override void PreFilterProperties(IDictionary properties) {
             // Always call the base PreFilterProperties implementation 
@@ -50,8 +62,17 @@ namespace BrightIdeasSoftware.Design
             // So we shadow the unwanted properties, and give the replacement properties
             // non-browsable attributes so that they are hidden from the user
 
-            string[] unwantedProperties = new string[] { "BackgroundImage", "BackgroundImageTiled",
-                "HotTracking", "HoverSelection", "LabelEdit", "VirtualListSize", "VirtualMode" };
+            List<string> unwantedProperties = new List<string>(new string[] { "BackgroundImage", "BackgroundImageTiled",
+                "HotTracking", "HoverSelection", "LabelEdit", "VirtualListSize", "VirtualMode" });
+
+            // Also hid Tooltip properties, since giving a tooltip to the control through the IDE
+            // messes up the tooltip handling
+            foreach (string propertyName in properties.Keys) {
+                if (propertyName.StartsWith("ToolTip")) {
+                    unwantedProperties.Add(propertyName);
+                }
+            }
+
             foreach (string unwantedProperty in unwantedProperties) {
                 PropertyDescriptor propertyDesc = TypeDescriptor.CreateProperty(
                     typeof(ObjectListViewDesigner),
@@ -113,7 +134,7 @@ namespace BrightIdeasSoftware.Design
             if (col == null || String.IsNullOrEmpty(col.AspectName))
                 return base.GetDisplayText(value);
 
-            return base.GetDisplayText(value) + " (" + col.AspectName + ")";
+            return String.Format("{0} ({1})", base.GetDisplayText(value), col.AspectName);
         }
     }
 
@@ -151,4 +172,338 @@ namespace BrightIdeasSoftware.Design
             return base.ConvertTo(context, culture, value, destinationType);
         }
     }
+
+    // Everything from this point to the end of the file is a hack to get around
+    // the fact that .NET's ListViewDesigner is internal. Being internal means that we cannot
+    // subclass it or even reference it as our base designer class. So what follows 
+    // is disassembled from the .NET Dlls by Reflector. There are still some bits
+    // we still can't do, so they are have been commented out.
+
+    #region ListViewDesigner
+
+    internal class ListViewDesigner : ControlDesigner
+    {
+        // Fields
+        private DesignerActionListCollection _actionLists;
+        private NativeMethods.HDHITTESTINFO hdrhit = new NativeMethods.HDHITTESTINFO();
+        //private bool inShowErrorDialog;
+
+        // Methods
+        protected override bool GetHitTest(System.Drawing.Point point) {
+            //return base.GetHitTest(point);
+
+            ObjectListView component = (ObjectListView)base.Component;
+            return (component.HeaderControl.ColumnIndexUnderCursor >= 0);
+
+            //if (component.View == View.Details)
+            //{
+            //    Point point2 = this.Control.PointToClient(point);
+            //    IntPtr handle = component.Handle;
+            //    IntPtr ptr2 = NativeMethods.ChildWindowFromPointEx(handle, point2.X, point2.Y, 1);
+            //    if ((ptr2 != IntPtr.Zero) && (ptr2 != handle))
+            //    {
+            //        IntPtr hWndTo = NativeMethods.SendMessage(handle, 0x101f, IntPtr.Zero, IntPtr.Zero);
+            //        if (ptr2 == hWndTo)
+            //        {
+            //            NativeMethods.POINT pt = new NativeMethods.POINT();
+            //            pt.x = point.X;
+            //            pt.y = point.Y;
+            //            NativeMethods.MapWindowPoints(IntPtr.Zero, hWndTo, pt, 1);
+            //            this.hdrhit.pt_x = pt.x;
+            //            this.hdrhit.pt_y = pt.y;
+            //            NativeMethods.SendMessage(hWndTo, 0x1206, IntPtr.Zero, this.hdrhit);
+            //            if (this.hdrhit.flags == 4)
+            //            {
+            //                return true;
+            //            }
+            //        }
+            //    }
+            //}
+            //return false;
+        }
+
+        public override void Initialize(IComponent component) {
+            ListView view = (ListView)component;
+            this.OwnerDraw = view.OwnerDraw;
+            view.OwnerDraw = false;
+            view.UseCompatibleStateImageBehavior = false;
+            base.AutoResizeHandles = true;
+            base.Initialize(component);
+            //if (view.View == View.Details) {
+            //    base.HookChildHandles(this.Control.Handle);
+            //}
+        }
+
+        protected override void PreFilterProperties(IDictionary properties) {
+            PropertyDescriptor oldPropertyDescriptor = (PropertyDescriptor)properties["OwnerDraw"];
+            if (oldPropertyDescriptor != null) {
+                properties["OwnerDraw"] = TypeDescriptor.CreateProperty(typeof(ListViewDesigner), oldPropertyDescriptor, new Attribute[0]);
+            }
+            PropertyDescriptor descriptor2 = (PropertyDescriptor)properties["View"];
+            if (descriptor2 != null) {
+                properties["View"] = TypeDescriptor.CreateProperty(typeof(ListViewDesigner), descriptor2, new Attribute[0]);
+            }
+            base.PreFilterProperties(properties);
+        }
+
+        protected override void WndProc(ref Message m) {
+            switch (m.Msg) {
+                case 0x4e:
+                case 0x204e: {
+                    NativeMethods.NMHDR nmhdr = (NativeMethods.NMHDR)System.Runtime.InteropServices.Marshal.PtrToStructure(m.LParam, typeof(NativeMethods.NMHDR));
+                    if (nmhdr.code == -327) //NativeMethods.HDN_ENDTRACK)
+                {
+                        try {
+                            ((IComponentChangeService)this.GetService(typeof(IComponentChangeService))).OnComponentChanged(base.Component, null, null, null);
+                        }
+                        catch (InvalidOperationException /*exception*/) {
+                            //if (!this.inShowErrorDialog)
+                            //{
+                            //    IUIService service = (IUIService) base.Component.Site.GetService(typeof(IUIService));
+                            //    this.inShowErrorDialog = true;
+                            //    try
+                            //    {
+                            //        DataGridViewDesigner.ShowErrorDialog(service, exception, (ListView) base.Component);
+                            //    }
+                            //    finally
+                            //    {
+                            //        this.inShowErrorDialog = false;
+                            //    }
+                            //}
+                            return;
+                        }
+                    }
+                    break;
+                }
+            }
+            base.WndProc(ref m);
+        }
+
+        // Properties
+        public override DesignerActionListCollection ActionLists {
+            get {
+                if (this._actionLists == null) {
+                    this._actionLists = new DesignerActionListCollection();
+                    this._actionLists.Add(new ListViewActionList(this));
+                }
+                return this._actionLists;
+            }
+        }
+
+        public override ICollection AssociatedComponents {
+            get {
+                ObjectListView control = this.Control as ObjectListView;
+                if (control != null) {
+                    return control.AllColumns;
+                }
+                return base.AssociatedComponents;
+            }
+        }
+
+        private bool OwnerDraw {
+            get { return (bool)base.ShadowProperties["OwnerDraw"]; }
+            set { base.ShadowProperties["OwnerDraw"] = value;  }
+        }
+
+        private View View {
+            get { return ((ListView)base.Component).View; }
+            set { ((ListView)base.Component).View = value;
+                //if (value == View.Details) {
+                //    base.HookChildHandles(this.Control.Handle);
+                //}
+            }
+        }
+    }
+
+    internal class ListViewActionList : DesignerActionList
+    {
+        // Fields
+        private ComponentDesigner _designer;
+
+        // Methods
+        public ListViewActionList(ComponentDesigner designer)
+            : base(designer.Component) {
+            this._designer = designer;
+        }
+
+        public override DesignerActionItemCollection GetSortedActionItems() {
+            DesignerActionItemCollection items = new DesignerActionItemCollection();
+            //items.Add(new DesignerActionMethodItem(this, "InvokeItemsDialog", "ListViewActionListEditItemsDisplayName", "PropertiesCategoryName", "ListViewActionListEditItemsDescription", true));
+            items.Add(new DesignerActionMethodItem(this, "InvokeColumnsDialog", "Edit Columns", "Properties", "Edit the columns of this ObjectListView", true));
+            //items.Add(new DesignerActionMethodItem(this, "InvokeGroupsDialog", "ListViewActionListEditGroupsDisplayName", "PropertiesCategoryName", "ListViewActionListEditGroupsDescription", true));
+            items.Add(new DesignerActionPropertyItem("View", "View", "Properties", "View"));
+            items.Add(new DesignerActionPropertyItem("SmallImageList", "Small Image List", "Properties", "Small Image List"));
+            items.Add(new DesignerActionPropertyItem("LargeImageList", "Large Image List", "Properties", "Large Image List"));
+            return items;
+        }
+
+        public void InvokeColumnsDialog() {
+            EditorServiceContext.EditValue(this._designer, base.Component, "Columns");
+        }
+
+        //public void InvokeGroupsDialog() {
+        //    EditorServiceContext.EditValue(this._designer, base.Component, "Groups");
+        //}
+
+        //public void InvokeItemsDialog() {
+        //    EditorServiceContext.EditValue(this._designer, base.Component, "Items");
+        //}
+
+        // Properties
+        public ImageList LargeImageList {
+            get {
+                return ((ObjectListView)base.Component).LargeImageList;
+            }
+            set {
+                TypeDescriptor.GetProperties(base.Component)["LargeImageList"].SetValue(base.Component, value);
+            }
+        }
+
+        public ImageList SmallImageList {
+            get {
+                return ((ObjectListView)base.Component).SmallImageList;
+            }
+            set {
+                TypeDescriptor.GetProperties(base.Component)["SmallImageList"].SetValue(base.Component, value);
+            }
+        }
+
+        public View View {
+            get {
+                return ((ListView)base.Component).View;
+            }
+            set {
+                TypeDescriptor.GetProperties(base.Component)["View"].SetValue(base.Component, value);
+            }
+        }
+    }
+
+    internal class EditorServiceContext : IWindowsFormsEditorService, ITypeDescriptorContext, IServiceProvider
+    {
+        // Fields
+        private IComponentChangeService _componentChangeSvc;
+        private ComponentDesigner _designer;
+        private PropertyDescriptor _targetProperty;
+
+        // Methods
+        internal EditorServiceContext(ComponentDesigner designer) {
+            this._designer = designer;
+        }
+
+        internal EditorServiceContext(ComponentDesigner designer, PropertyDescriptor prop) {
+            this._designer = designer;
+            this._targetProperty = prop;
+            if (prop == null) {
+                prop = TypeDescriptor.GetDefaultProperty(designer.Component);
+                if ((prop != null) && typeof(ICollection).IsAssignableFrom(prop.PropertyType)) {
+                    this._targetProperty = prop;
+                }
+            }
+        }
+
+        internal EditorServiceContext(ComponentDesigner designer, PropertyDescriptor prop, string newVerbText)
+            : this(designer, prop) {
+            this._designer.Verbs.Add(new DesignerVerb(newVerbText, new EventHandler(this.OnEditItems)));
+        }
+
+        public static object EditValue(ComponentDesigner designer, object objectToChange, string propName) {
+            PropertyDescriptor prop = TypeDescriptor.GetProperties(objectToChange)[propName];
+            EditorServiceContext context = new EditorServiceContext(designer, prop);
+            UITypeEditor editor = prop.GetEditor(typeof(UITypeEditor)) as UITypeEditor;
+            object obj2 = prop.GetValue(objectToChange);
+            object obj3 = editor.EditValue(context, context, obj2);
+            if (obj3 != obj2) {
+                try {
+                    prop.SetValue(objectToChange, obj3);
+                }
+                catch (CheckoutException) {
+                }
+            }
+            return obj3;
+        }
+
+        private void OnEditItems(object sender, EventArgs e) {
+            object component = this._targetProperty.GetValue(this._designer.Component);
+            if (component != null) {
+                CollectionEditor editor = TypeDescriptor.GetEditor(component, typeof(UITypeEditor)) as CollectionEditor;
+                if (editor != null) {
+                    editor.EditValue(this, this, component);
+                }
+            }
+        }
+
+        void ITypeDescriptorContext.OnComponentChanged() {
+            this.ChangeService.OnComponentChanged(this._designer.Component, this._targetProperty, null, null);
+        }
+
+        bool ITypeDescriptorContext.OnComponentChanging() {
+            try {
+                this.ChangeService.OnComponentChanging(this._designer.Component, this._targetProperty);
+            }
+            catch (CheckoutException exception) {
+                if (exception != CheckoutException.Canceled) {
+                    throw;
+                }
+                return false;
+            }
+            return true;
+        }
+
+        object IServiceProvider.GetService(Type serviceType) {
+            if ((serviceType == typeof(ITypeDescriptorContext)) || (serviceType == typeof(IWindowsFormsEditorService))) {
+                return this;
+            }
+            if (this._designer.Component.Site != null) {
+                return this._designer.Component.Site.GetService(serviceType);
+            }
+            return null;
+        }
+
+        void IWindowsFormsEditorService.CloseDropDown() {
+        }
+
+        void IWindowsFormsEditorService.DropDownControl(Control control) {
+        }
+
+        DialogResult IWindowsFormsEditorService.ShowDialog(Form dialog) {
+            IUIService service = (IUIService)((IServiceProvider)this).GetService(typeof(IUIService));
+            if (service != null) {
+                return service.ShowDialog(dialog);
+            }
+            return dialog.ShowDialog(this._designer.Component as IWin32Window);
+        }
+
+        // Properties
+        private IComponentChangeService ChangeService {
+            get {
+                if (this._componentChangeSvc == null) {
+                    this._componentChangeSvc = (IComponentChangeService)((IServiceProvider)this).GetService(typeof(IComponentChangeService));
+                }
+                return this._componentChangeSvc;
+            }
+        }
+
+        IContainer ITypeDescriptorContext.Container {
+            get {
+                if (this._designer.Component.Site != null) {
+                    return this._designer.Component.Site.Container;
+                }
+                return null;
+            }
+        }
+
+        object ITypeDescriptorContext.Instance {
+            get {
+                return this._designer.Component;
+            }
+        }
+
+        PropertyDescriptor ITypeDescriptorContext.PropertyDescriptor {
+            get {
+                return this._targetProperty;
+            }
+        }
+    }
+
+    #endregion
 }
