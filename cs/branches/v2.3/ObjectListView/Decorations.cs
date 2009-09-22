@@ -5,6 +5,7 @@
  * Date: 19/08/2009 10:56 PM
  *
  * Change log:
+ * 2009-09-23   JPP  - Added LeftColumn and RightColumn to RowBorderDecoration
  * 2009-08-23   JPP  - Added LightBoxDecoration
  * 2009-08-19   JPP  - Initial version. Separated from Overlays.cs
  *
@@ -335,8 +336,39 @@ namespace BrightIdeasSoftware
     /// </summary>
     public class RowBorderDecoration : BorderDecoration
     {
+        public int LeftColumn {
+            get { return leftColumn; }
+            set { leftColumn = value; }
+        }
+        private int leftColumn = -1;
+
+        public int RightColumn {
+            get { return rightColumn; }
+            set { rightColumn = value; }
+        }
+        private int rightColumn = -1;
+
         protected override Rectangle CalculateBounds() {
-            return this.RowBounds;
+            Rectangle bounds = this.RowBounds;
+            if (this.ListItem == null)
+                return bounds;
+
+            if (this.LeftColumn >= 0) {
+                Rectangle leftCellBounds = this.ListItem.GetSubItemBounds(this.LeftColumn);
+                if (!leftCellBounds.IsEmpty) {
+                    bounds.Width = bounds.Right - leftCellBounds.Left;
+                    bounds.X = leftCellBounds.Left;
+                }
+            }
+
+            if (this.RightColumn >= 0) {
+                Rectangle rightCellBounds = this.ListItem.GetSubItemBounds(this.RightColumn);
+                if (!rightCellBounds.IsEmpty) {
+                    bounds.Width = rightCellBounds.Right - bounds.Left;
+                }
+            }
+
+            return bounds;
         }
     }
 
