@@ -1762,7 +1762,7 @@ namespace BrightIdeasSoftware
             get { return showCommandMenuOnRightClick; }
             set { showCommandMenuOnRightClick = value; }
         }
-        private bool showCommandMenuOnRightClick = true;
+        private bool showCommandMenuOnRightClick = false;
 
         /// <summary>
         /// Should this list show its items in groups?
@@ -7389,8 +7389,15 @@ namespace BrightIdeasSoftware
                 if (style.FontStyle != FontStyle.Regular)
                     olvi.Font = new Font(olvi.Font ?? this.Font, style.FontStyle);
 
-                if (!style.ForeColor.IsEmpty)
-                    olvi.ForeColor = style.ForeColor;
+                if (!style.ForeColor.IsEmpty) {
+                    if (olvi.UseItemStyleForSubItems)
+                        olvi.ForeColor = style.ForeColor;
+                    else {
+                        foreach (ListViewItem.ListViewSubItem x in olvi.SubItems) {
+                            x.ForeColor = style.ForeColor;
+                        }
+                    }
+                }
 
                 if (!style.BackColor.IsEmpty) {
                     if (olvi.UseItemStyleForSubItems)
