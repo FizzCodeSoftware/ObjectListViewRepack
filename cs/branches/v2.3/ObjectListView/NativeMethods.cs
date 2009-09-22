@@ -56,6 +56,8 @@ namespace BrightIdeasSoftware
         private const int LVM_SETSELECTEDCOLUMN = LVM_FIRST + 140;
         private const int LVM_INSERTGROUP = LVM_FIRST + 145;
         private const int LVM_SETGROUPINFO = LVM_FIRST + 147;
+        private const int LVM_GETGROUPINFO = LVM_FIRST + 149;
+        private const int LVM_GETGROUPSTATE = LVM_FIRST + 92;
         private const int LVM_SETGROUPMETRICS = LVM_FIRST + 155;
         private const int LVM_REMOVEALLGROUPS = LVM_FIRST + 160;
         
@@ -626,6 +628,16 @@ namespace BrightIdeasSoftware
         }
 
         /// <summary>
+        /// Make sure the ListView has the extended style that says to display subitem images.
+        /// </summary>
+        /// <remarks>This method must be called after any .NET call that update the extended styles
+        /// since they seem to erase this setting.</remarks>
+        /// <param name="list">The listview to send a m to</param>
+        public static void SetExtendedStyle(ListView list, int style, int styleMask) {
+            SendMessage(list.Handle, LVM_SETEXTENDEDLISTVIEWSTYLE, style, styleMask);
+        }
+
+        /// <summary>
         /// Calculates the number of items that can fit vertically in the visible area of a list-view (which
         /// must be in details or list view.
         /// </summary>
@@ -931,7 +943,7 @@ namespace BrightIdeasSoftware
         public static extern IntPtr SelectObject(IntPtr hdc, IntPtr obj);
 
         [DllImport("uxtheme.dll", CharSet = CharSet.Auto, SetLastError = true, ExactSpelling = true)]
-        public static extern IntPtr SetWindowTheme(IntPtr hdc, string subApp, string list);
+        public static extern IntPtr SetWindowTheme(IntPtr hWnd, string subApp, string subIdList);
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true)]
         public static extern bool InvalidateRect(IntPtr hWnd, int ignored, bool erase);
@@ -948,6 +960,14 @@ namespace BrightIdeasSoftware
         {
             public int x;
             public int y;
+        }
+
+        public static int GetGroupInfo(ObjectListView olv, int groupId, ref LVGROUP2 group) {
+            return (int)NativeMethods.SendMessage(olv.Handle, LVM_GETGROUPINFO, groupId, ref group);
+        }
+
+        public static GroupState GetGroupState(ObjectListView olv, int groupId, GroupState mask) {
+            return (GroupState)NativeMethods.SendMessage(olv.Handle, LVM_GETGROUPSTATE, groupId, (int)mask);
         }
 
         public static int InsertGroup(ObjectListView olv, LVGROUP2 group) {
