@@ -5,6 +5,8 @@
  * Date: 16/08/2009 1:02 AM
  *
  * Change log:
+ * 2009-09-22   JPP  - Added Wrap property to TextAdornment, to allow text wrapping to be disabled
+ *                   - Added ShrinkToWidth property to ImageAdornment
  * 2009-08-17   JPP  - Initial version
  *
  * To do:
@@ -300,6 +302,18 @@ namespace BrightIdeasSoftware
         }
         private Image image;
 
+        /// <summary>
+        /// Gets or sets if the image will be shrunk to fit with its horizontal bounds
+        /// </summary>
+        [Category("Appearance - ObjectListView"),
+         Description("Will the image be shrunk to fit within its width?"),
+         DefaultValue(false)]
+        public bool ShrinkToWidth {
+            get { return this.shrinkToWidth; }
+            set { this.shrinkToWidth = value; }
+        }
+        private bool shrinkToWidth;
+
         #endregion
 
         #region Commands
@@ -310,7 +324,10 @@ namespace BrightIdeasSoftware
         /// <param name="g">The Graphics used for drawing</param>
         /// <param name="r">The bounds of the rendering</param>
         public void DrawImage(Graphics g, Rectangle r) {
-            this.DrawImage(g, r, this.Image, this.Transparency); 
+            if (this.ShrinkToWidth)
+                this.DrawScaledImage(g, r, this.Image, this.Transparency);
+            else
+                this.DrawImage(g, r, this.Image, this.Transparency); 
         }
 
         /// <summary>
@@ -320,20 +337,54 @@ namespace BrightIdeasSoftware
         /// <param name="g">The Graphics used for drawing</param>
         /// <param name="r">The bounds of the rendering</param>
         public void DrawImage(Graphics g, Rectangle r, Image image, int transparency) {
+            if (image != null)
+                this.DrawImage(g, r, image, image.Size, transparency);
+        }
+
+        /// <summary>
+        /// Draw the image in its specified location
+        /// </summary>
+        /// <param name="image">The image to be drawn</param>
+        /// <param name="g">The Graphics used for drawing</param>
+        /// <param name="r">The bounds of the rendering</param>
+        public void DrawImage(Graphics g, Rectangle r, Image image, Size sz, int transparency) {
             if (image == null)
                 return;
 
-            Rectangle adornmentBounds = this.CreateAlignedRectangle(r, image.Size);
+            Rectangle adornmentBounds = this.CreateAlignedRectangle(r, sz);
             try {
                 this.ApplyRotation(g, adornmentBounds);
-                this.DrawTransparentBitmap(g, adornmentBounds.Location, image, transparency);
+                this.DrawTransparentBitmap(g, adornmentBounds, image, transparency);
             }
             finally {
                 this.UnapplyRotation(g);
             }
         }
 
-        private void DrawTransparentBitmap(Graphics g, Point pt, Image image, int transparency) {
+        /// <summary>
+        /// Draw the image in its specified location, scaled so that it is not wider
+        /// than the given rectangle. Height is scaled proportional to the width.
+        /// </summary>
+        /// <param name="image">The image to be drawn</param>
+        /// <param name="g">The Graphics used for drawing</param>
+        /// <param name="r">The bounds of the rendering</param>
+        public void DrawScaledImage(Graphics g, Rectangle r, Image image, int transparency) {
+            if (image == null)
+                return;
+
+            // If the image is too wide to be drawn in the space provided, proportionally scale it down.
+            // Too tall images are not scaled.
+            Size size = image.Size;
+            if (image.Width > r.Width) {
+                float scaleRatio = (float)r.Width / (float)image.Width;
+                size.Height = (int)((float)image.Height * scaleRatio);
+                size.Width = r.Width - 1;
+            }
+
+            this.DrawImage(g, r, image, size, transparency);
+        }
+
+        protected void DrawTransparentBitmap(Graphics g, Rectangle r, Image image, int transparency) {
             ImageAttributes imageAttributes = null;
             if (transparency != 255) {
                 imageAttributes = new ImageAttributes();
@@ -349,7 +400,7 @@ namespace BrightIdeasSoftware
             }
 
             g.DrawImage(image,
-               new Rectangle(pt, image.Size),              // destination rectangle
+               r,                                          // destination rectangle
                0, 0, image.Size.Width, image.Size.Height,  // source rectangle
                GraphicsUnit.Pixel,
                imageAttributes);
@@ -505,6 +556,8 @@ namespace BrightIdeasSoftware
                     this.stringFormat.Alignment = StringAlignment.Center;
                     this.stringFormat.LineAlignment = StringAlignment.Center;
                     this.stringFormat.Trimming = StringTrimming.EllipsisCharacter;
+                    if (!this.Wrap)
+                        this.stringFormat.FormatFlags = StringFormatFlags.NoWrap;
                 }
                 return this.stringFormat; 
             }
@@ -548,6 +601,18 @@ namespace BrightIdeasSoftware
             set { this.textColor = value; }
         }
         private Color textColor = Color.DarkBlue;
+
+        /// <summary>
+        /// Gets or sets whether the text will wrap when it exceeds its bounds
+        /// </summary>
+        [Category("Appearance - ObjectListView"),
+         Description("Will the text wrap?"),
+         DefaultValue(true)]
+        public bool Wrap {
+            get { return this.wrap; }
+            set { this.wrap = value; }
+        }
+        private bool wrap = true;
 
         #endregion
 
