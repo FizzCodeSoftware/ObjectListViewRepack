@@ -387,7 +387,7 @@ namespace BrightIdeasSoftware
                 wpos.cx = rect.right - rect.left;
                 wpos.cy = height;
 
-            rect.top = height;
+                rect.top = height;
 
                 Marshal.StructureToPtr(rect, hdlayout.prc, false);
                 Marshal.StructureToPtr(wpos, hdlayout.pwpos, false);
