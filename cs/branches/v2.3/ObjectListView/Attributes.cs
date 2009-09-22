@@ -38,6 +38,9 @@ namespace BrightIdeasSoftware
     {
         #region Constructor
 
+        public OLVColumnAttribute() {
+        }
+
         public OLVColumnAttribute(string title) {
             this.Title = title;
         }
