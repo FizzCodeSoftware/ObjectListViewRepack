@@ -190,12 +190,6 @@ namespace BrightIdeasSoftware
      ToolboxItem(true)]
     public class BaseRenderer : AbstractRenderer
     {
-        /// <summary>
-        /// Make a simple renderer
-        /// </summary>
-        public BaseRenderer() {
-        }
-
         #region Configuration Properties
 
         /// <summary>
@@ -209,7 +203,7 @@ namespace BrightIdeasSoftware
             get { return canWrap; }
             set { canWrap = value; }
         }
-        private bool canWrap = false;
+        private bool canWrap;
 
         /// <summary>
         /// When rendering multiple images, how many pixels should be between each image?
@@ -554,9 +548,10 @@ namespace BrightIdeasSoftware
                 Size proposedSize = new Size(int.MaxValue, int.MaxValue);
                 return TextRenderer.MeasureText(g, txt, this.Font, proposedSize, TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix).Width;
             } else {
-                StringFormat fmt = new StringFormat();
-                fmt.Trimming = StringTrimming.EllipsisCharacter;
-                return 1 + (int)g.MeasureString(txt, this.Font, int.MaxValue, fmt).Width;
+                using (StringFormat fmt = new StringFormat()) {
+                    fmt.Trimming = StringTrimming.EllipsisCharacter;
+                    return 1 + (int)g.MeasureString(txt, this.Font, int.MaxValue, fmt).Width;
+                }
             }
         }
 
@@ -1205,25 +1200,26 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <remarks>Printing to a printer dc has to be done using this method.</remarks>
         protected virtual void DrawTextGdiPlus(Graphics g, Rectangle r, String txt) {
-            StringFormat fmt = new StringFormat();
-            fmt.LineAlignment = StringAlignment.Center;
-            fmt.Trimming = StringTrimming.EllipsisCharacter;
-            fmt.Alignment = this.Column.TextStringAlign;
-            if (!this.CanWrap)
-                fmt.FormatFlags = StringFormatFlags.NoWrap;
-            // Draw the background of the text as selected, if it's the primary column
-            // and it's selected and it's not in FullRowSelect mode.
-            Font f = this.Font;
-            if (this.IsDrawBackground && this.IsItemSelected && this.Column.Index == 0 && !this.ListView.FullRowSelect) {
-                SizeF size = g.MeasureString(txt, f, r.Width, fmt);
-                Rectangle r2 = r;
-                r2.Width = (int)size.Width + 1;
-                using (Brush brush = new SolidBrush(this.ListView.HighlightBackgroundColorOrDefault))
-                    g.FillRectangle(brush, r2);
+            using (StringFormat fmt = new StringFormat()) {
+                fmt.LineAlignment = StringAlignment.Center;
+                fmt.Trimming = StringTrimming.EllipsisCharacter;
+                fmt.Alignment = this.Column.TextStringAlign;
+                if (!this.CanWrap)
+                    fmt.FormatFlags = StringFormatFlags.NoWrap;
+                // Draw the background of the text as selected, if it's the primary column
+                // and it's selected and it's not in FullRowSelect mode.
+                Font f = this.Font;
+                if (this.IsDrawBackground && this.IsItemSelected && this.Column.Index == 0 && !this.ListView.FullRowSelect) {
+                    SizeF size = g.MeasureString(txt, f, r.Width, fmt);
+                    Rectangle r2 = r;
+                    r2.Width = (int)size.Width + 1;
+                    using (Brush brush = new SolidBrush(this.ListView.HighlightBackgroundColorOrDefault)) {
+                        g.FillRectangle(brush, r2);
+                    }
+                }
+                RectangleF rf = r;
+                g.DrawString(txt, f, this.TextBrush, rf, fmt);
             }
-
-            RectangleF rf = r;
-            g.DrawString(txt, f, this.TextBrush, rf, fmt);
 
             // We should put a focus rectange around the column 0 text if it's selected --
             // but we don't because:
@@ -1271,8 +1267,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Make a new empty renderer
         /// </summary>
-        public MappedImageRenderer()
-            : base() {
+        public MappedImageRenderer() {
             map = new System.Collections.Hashtable();
         }
 
@@ -1380,6 +1375,7 @@ namespace BrightIdeasSoftware
     /// <summary>
     /// This renderer draws just a checkbox to match the check state of our model object.
     /// </summary>
+
     public class CheckStateRenderer : BaseRenderer
     {
         public override void Render(Graphics g, Rectangle r) {
@@ -1403,7 +1399,7 @@ namespace BrightIdeasSoftware
             //Size checkBoxSize = CheckBoxRenderer.GetGlyphSize(g, CheckBoxState.CheckedNormal);
             Size checkBoxSize = this.ListView.SmallImageSize;
             return this.AlignRectangle(cellBounds,
-                new Rectangle(0, 0, this.ListView.SmallImageSize.Width, cellBounds.Height));
+                new Rectangle(0, 0, checkBoxSize.Width, cellBounds.Height));
         }
     }
 
@@ -1431,8 +1427,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Make an empty image renderer
         /// </summary>
-        public ImageRenderer()
-            : base() {
+        public ImageRenderer() {
             this.tickler = new System.Threading.Timer(new TimerCallback(this.OnTimer), null, Timeout.Infinite, Timeout.Infinite);
             this.stopwatch = new Stopwatch();
         }
