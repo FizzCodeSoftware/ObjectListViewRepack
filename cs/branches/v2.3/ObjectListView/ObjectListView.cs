@@ -5,6 +5,7 @@
  * Date: 9/10/2006 11:15 AM
  *
  * Change log
+ * 2009-09-30  JPP  - Addd Dispose() method to properly release resources
  * 2009-09-16  JPP  - Added OwnerDrawnHeader, which you can set to true if you want to owner draw
  *                    the header yourself.
  * 2009-09-15  JPP  - Added UseExplorerTheme, which allow complete visual compliance with Vista explorer.
@@ -431,6 +432,22 @@ namespace BrightIdeasSoftware
             // Setup the overlays that will be controlled by the IDE settings
             this.InitializeStandardOverlays();
             this.InitializeEmptyListMsgOverlay();
+        }
+
+        /// <summary>
+        /// Dispose of any resources this instance has been using
+        /// </summary>
+        /// <param name="disposing"></param>
+        protected override void Dispose(bool disposing) {
+            base.Dispose(disposing);
+
+            if (disposing) {
+                foreach (GlassPanelForm glassPanel in this.glassPanels) {
+                    glassPanel.Unbind();
+                    glassPanel.Dispose();
+                }
+                this.glassPanels.Clear();
+            }
         }
 
         #region Static properties
