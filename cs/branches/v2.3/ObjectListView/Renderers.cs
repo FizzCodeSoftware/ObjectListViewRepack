@@ -5,6 +5,7 @@
  * Date: 27/09/2008 9:15 AM
  *
  * Change log:
+ * 2009-09-28   JPP  - Added DescribedTaskRenderer
  * 2009-09-01   JPP  - Correctly handle an ImageRenderer's handling of an aspect that holds
  *                     the image to be displayed at Byte[].
  * 2009-08-29   JPP  - Fixed bug where some of a cell's background was not erased. 
@@ -51,6 +52,9 @@
  * 2008-09-27   JPP  - Separated from ObjectListView.cs
  * 
  * Copyright (C) 2006-2008 Phillip Piper
+ * 
+ * TO DO:
+ * - Hit detection on renderers doesn't change the controls standard selection behavior
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -206,6 +210,18 @@ namespace BrightIdeasSoftware
         private bool canWrap;
 
         /// <summary>
+        /// Gets or sets the image list from which keyed images will be fetched
+        /// </summary>
+        [Category("Appearance"),
+         Description("The image list from which keyed images will be fetched for drawing."),
+         DefaultValue(null)]
+        public ImageList ImageList {
+            get { return imageList; }
+            set { imageList = value; }
+        }
+        private ImageList imageList;
+
+        /// <summary>
         /// When rendering multiple images, how many pixels should be between each image?
         /// </summary>
         [Category("Appearance"),
@@ -318,6 +334,15 @@ namespace BrightIdeasSoftware
             }
         }
         private Font font;
+
+        /// <summary>
+        /// Gets the image list from which keyed images will be fetched
+        /// </summary>
+        [Browsable(false),
+         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public ImageList ImageListOrDefault {
+            get { return this.ImageList ?? this.ListView.BaseSmallImageList; }
+        }
 
         /// <summary>
         /// Should this renderer fill in the background before drawing?
@@ -511,7 +536,7 @@ namespace BrightIdeasSoftware
                 return 0;
 
             // Draw from the image list (most common case)
-            ImageList il = this.ListView.BaseSmallImageList;
+            ImageList il = this.ImageListOrDefault;
             if (il != null) {
                 int selectorAsInt = -1;
 
@@ -616,7 +641,7 @@ namespace BrightIdeasSoftware
             if (imageSelector == null || imageSelector == System.DBNull.Value)
                 return null;
 
-            ImageList il = this.ListView.BaseSmallImageList;
+            ImageList il = this.ImageListOrDefault;
             if (il != null) {
                 if (imageSelector is Int32) {
                     Int32 index = (Int32)imageSelector;
@@ -1159,7 +1184,6 @@ namespace BrightIdeasSoftware
         /// <param name="g">Graphics context to use for drawing</param>
         /// <param name="r">Bounds of the cell</param>
         /// <param name="txt">The string to be drawn</param>
-        /// <param name="image">The optional image to be drawn</param>
         protected virtual void DrawText(Graphics g, Rectangle r, String txt) {
             if (String.IsNullOrEmpty(txt))
                 return;
@@ -1189,9 +1213,10 @@ namespace BrightIdeasSoftware
 
             TextFormatFlags flags = TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix |
                 TextFormatFlags.VerticalCenter | TextFormatFlags.PreserveGraphicsTranslateTransform;
+            
+            // BUG: Setting or not setting SingleLine doesn't make any difference -- it is always single line.
             if (!this.CanWrap)
                 flags |= TextFormatFlags.SingleLine;
-
             TextRenderer.DrawText(g, txt, this.Font, r, this.GetForegroundColor(), backColor, flags);
         }
 
@@ -2322,5 +2347,248 @@ namespace BrightIdeasSoftware
 
         private List<Int32> keysInOrder = new List<Int32>();
         private Dictionary<Int32, Object> imageMap = new Dictionary<Int32, object>();
+    }
+
+    /// <summary>
+    /// This renderer draws an image, a single line title, and then multi-line descrition
+    /// under the title.
+    /// </summary>
+    /// <remarks>
+    /// <para>This class works best with FullRowSelect = true.</para>
+    /// <para>It's not designed to work with cell editing -- it will work but will look odd.</para>
+    /// <para>
+    /// This class is experimental. It may not work properly and may disappear from
+    /// future versions.
+    /// </para>
+    /// </remarks>
+    public class DescribedTaskRenderer : BaseRenderer
+    {
+        public DescribedTaskRenderer() {
+        }
+
+        #region Configuration properties
+
+        /// <summary>
+        /// Gets or set the font that will be used to draw the title of the task
+        /// </summary>
+        /// <remarks>If this is null, the ListView's font will be used</remarks>
+        [Category("Appearance - ObjectListView"),
+        Description("The font that will be used to draw the title of the task"),
+        DefaultValue(null)]
+        public Font TitleFont {
+            get { return titleFont; }
+            set { titleFont = value; }
+        }
+        private Font titleFont;
+
+        /// <summary>
+        /// Return a font that has been set for the title or a reasonable default
+        /// </summary>
+        [Browsable(false)]
+        public Font TitleFontOrDefault {
+            get {
+                return this.TitleFont ?? this.ListView.Font;
+            }
+        }
+
+        /// <summary>
+        /// Gets or set the color of the title of the task
+        /// </summary>
+        /// <remarks>This color is used when the task is not selected or when the listview
+        /// has a translucent selection mechanism.</remarks>
+        [Category("Appearance - ObjectListView"),
+        Description("The color of the title"),
+        DefaultValue(typeof(Color), "")]
+        public Color TitleColor {
+            get { return titleColor; }
+            set { titleColor = value; }
+        }
+        private Color titleColor;
+
+        /// <summary>
+        /// Return the color of the title of the task or a reasonable default
+        /// </summary>
+        [Browsable(false)]
+        public Color TitleColorOrDefault {
+            get {
+                if (this.IsItemSelected || this.TitleColor.IsEmpty)
+                    return this.GetForegroundColor();
+                else
+                    return this.TitleColor;
+            }
+        }
+
+        /// <summary>
+        /// Gets or set the font that will be used to draw the description of the task
+        /// </summary>
+        /// <remarks>If this is null, the ListView's font will be used</remarks>
+        [Category("Appearance - ObjectListView"),
+        Description("The font that will be used to draw the description of the task"),
+        DefaultValue(null)]
+        public Font DescriptionFont {
+            get { return descriptionFont; }
+            set { descriptionFont = value; }
+        }
+        private Font descriptionFont;
+
+        /// <summary>
+        /// Return a font that has been set for the title or a reasonable default
+        /// </summary>
+        [Browsable(false)]
+        public Font DescriptionFontOrDefault {
+            get {
+                return this.DescriptionFont ?? this.ListView.Font;
+            }
+        }
+
+        /// <summary>
+        /// Gets or set the color of the description of the task
+        /// </summary>
+        /// <remarks>This color is used when the task is not selected or when the listview
+        /// has a translucent selection mechanism.</remarks>
+        [Category("Appearance - ObjectListView"),
+        Description("The color of the description"),
+        DefaultValue(typeof(Color), "DimGray")]
+        public Color DescriptionColor {
+            get { return descriptionColor; }
+            set { descriptionColor = value; }
+        }
+        private Color descriptionColor = Color.DimGray;
+
+        /// <summary>
+        /// Return the color of the description of the task or a reasonable default
+        /// </summary>
+        [Browsable(false)]
+        public Color DescriptionColorOrDefault {
+            get {
+                if (this.DescriptionColor.IsEmpty || (this.IsItemSelected && !this.ListView.UseTranslucentSelection))
+                    return this.GetForegroundColor();
+                else
+                    return this.DescriptionColor;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the number of pixels that renderer will leave empty around the edge of the cell
+        /// </summary>
+        [Category("Appearance - ObjectListView"),
+        Description("The number of pixels that renderer will leave empty around the edge of the cell"),
+        DefaultValue(typeof(Size), "2,2")]
+        public Size CellPadding {
+            get { return cellPadding; }
+            set { cellPadding = value; }
+        }
+        private Size cellPadding = new Size(2, 2);
+
+        /// <summary>
+        /// Gets or sets the number of pixels that will be left between the image and the text
+        /// </summary>
+        [Category("Appearance - ObjectListView"),
+        Description("The number of pixels that that will be left between the image and the text"),
+        DefaultValue(4)]
+        public int ImageTextSpace {
+            get { return imageTextSpace; }
+            set { imageTextSpace = value; }
+        }
+        private int imageTextSpace = 4;
+
+        /// <summary>
+        /// Gets or sets the name of the aspect of the model object that contains the task description
+        /// </summary>
+        [Category("Appearance - ObjectListView"),
+        Description("The name of the aspect of the model object that contains the task description"),
+        DefaultValue(null)]
+        public string DescriptionAspectName {
+            get { return descriptionAspectName; }
+            set { descriptionAspectName = value; }
+        }
+        private string descriptionAspectName;
+
+        #endregion
+
+        #region Calculating
+
+        /// <summary>
+        /// Fetch the description from the model class
+        /// </summary>
+        /// <returns></returns>
+        protected virtual string GetDescription() {
+            if (String.IsNullOrEmpty(this.DescriptionAspectName))
+                return String.Empty;
+
+            if (this.descriptionGetter == null)
+                this.descriptionGetter = new Munger(this.DescriptionAspectName);
+
+            return this.descriptionGetter.GetValue(this.RowObject) as String;
+        }
+        Munger descriptionGetter;
+
+        #endregion
+
+        #region Rendering
+
+        public override void Render(Graphics g, Rectangle r) {
+            this.DrawBackground(g, r);
+            this.DrawDescribedTask(g, r, this.Aspect as String, this.GetDescription(), this.GetImage());
+        }
+
+        public virtual void DrawDescribedTask(Graphics g, Rectangle r, string title, string description, Image image) {
+            Rectangle cellBounds = r;
+            cellBounds.Inflate(-this.CellPadding.Width, -this.CellPadding.Height);
+            Rectangle textBounds = cellBounds;
+
+            if (image != null) {
+                g.DrawImage(image, cellBounds.Location);
+                int gapToText = image.Width + this.ImageTextSpace;
+                textBounds.X += gapToText;
+                textBounds.Width -= gapToText;
+            }
+
+            // Color the background if the row is selected and we're not using a translucent selection
+            if (this.IsItemSelected && !this.ListView.UseTranslucentSelection) {
+                using (SolidBrush b = new SolidBrush(this.GetTextBackgroundColor())) {
+                    g.FillRectangle(b, textBounds);
+                }
+            }
+
+            // Draw the title
+            if (!String.IsNullOrEmpty(title)) {
+                using (StringFormat fmt = new StringFormat(StringFormatFlags.NoWrap)) {
+                    fmt.Trimming = StringTrimming.EllipsisCharacter;
+                    fmt.Alignment = StringAlignment.Near;
+                    fmt.LineAlignment = StringAlignment.Near;
+                    Font f = this.TitleFontOrDefault;
+                    using (SolidBrush b = new SolidBrush(this.TitleColorOrDefault)) {
+                        g.DrawString(title, f, b, textBounds, fmt);
+                    }
+
+                    // How tall was the title?
+                    SizeF size = g.MeasureString(title, f, (int)textBounds.Width, fmt);
+                    textBounds.Y += (int)size.Height;
+                    textBounds.Height -= (int)size.Height;
+                }
+            }
+
+            // Draw the description
+            if (!String.IsNullOrEmpty(description)) {
+                using (StringFormat fmt2 = new StringFormat()) {
+                    fmt2.Trimming = StringTrimming.EllipsisCharacter;
+                    using (SolidBrush b = new SolidBrush(this.DescriptionColorOrDefault)) {
+                        g.DrawString(description, this.DescriptionFontOrDefault, b, textBounds, fmt2);
+                    }
+                }
+            }
+        }
+
+        #endregion
+
+        #region Hit Testing
+
+        protected override void HandleHitTest(Graphics g, OlvListViewHitTestInfo hti, int x, int y) {
+            if (this.Bounds.Contains(x, y))
+                hti.HitTestLocation = HitTestLocation.Text;
+        }
+
+        #endregion
     }
 }
