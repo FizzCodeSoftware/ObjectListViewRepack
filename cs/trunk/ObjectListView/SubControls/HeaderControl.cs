@@ -53,7 +53,6 @@
 
 using System;
 using System.Drawing;
-using System.Runtime.Remoting.Messaging;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Windows.Forms.VisualStyles;
@@ -1040,7 +1039,7 @@ namespace BrightIdeasSoftware {
             if (width <= 0)
                 return r;
 
-            Image indicator = Resources.ColumnFilterIndicator;
+            Image indicator = Resources.Filtering;
             int x = r.Right - width;
             int y = r.Top + (r.Height - indicator.Height)/2;
             g.DrawImageUnscaled(indicator, x, y);
@@ -1050,9 +1049,9 @@ namespace BrightIdeasSoftware {
         }
 
         private int CalculateFilterIndicatorWidth(Rectangle r) {
-            if (Resources.ColumnFilterIndicator == null || r.Width < 48)
+            if (Resources.Filtering == null || r.Width < 48)
                 return 0;
-            return Resources.ColumnFilterIndicator.Width + 1;
+            return Resources.Filtering.Width + 1;
         }
 
         /// <summary>

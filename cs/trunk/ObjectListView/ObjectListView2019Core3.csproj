@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationIcon />
+    <StartupObject />
+
+    <PackageId>ObjectListView.Repack.Core3</PackageId>
+    <Authors>FizzCode Ltd.</Authors>
+    <PackageLicenseUrl>https://github.com/FizzcodeSoftware/ObjectListViewRepack/blob/master/cs/trunk/COPYING</PackageLicenseUrl>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <Product>ObjectListView (repack for .NET Core 3.x)</Product>
+    <Description>ObjectListView is a .NET ListView wired on caffeine, guarana and steroids. More calmly, it is a C# wrapper around a .NET ListView, which makes the ListView much easier to use and teaches it lots of neat new tricks.</Description>
+    <Copyright>Copyright 2006-2016 Bright Ideas Software</Copyright>
+    <RepositoryUrl>https://github.com/FizzcodeSoftware/ObjectListViewRepack</RepositoryUrl>
+
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <CustomToolNamespace>BrightIdeasSoftware.Properties</CustomToolNamespace>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>
