@@ -383,15 +383,19 @@ namespace BrightIdeasSoftware
         /// </remarks>
         [Browsable(false),
          DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        protected new virtual int VirtualListSize {
+        protected new virtual int VirtualListSize
+        {
             get { return base.VirtualListSize; }
-            set {
+            set
+            {
                 if (value == this.VirtualListSize || value < 0)
                     return;
 
                 // Get around the 'private' marker on 'virtualListSize' field using reflection
-                if (virtualListSizeFieldInfo == null) {
-                    virtualListSizeFieldInfo = typeof(ListView).GetField("virtualListSize", BindingFlags.NonPublic | BindingFlags.Instance);
+                if (virtualListSizeFieldInfo == null)
+                {
+                    virtualListSizeFieldInfo = typeof(ListView).GetProperty("VirtualListSize");//#!JFS!#
+                                                                                               //virtualListSizeFieldInfo = typeof(ListView).GetField("VirtualListSize", BindingFlags.NonPublic | BindingFlags.Instance);
                     System.Diagnostics.Debug.Assert(virtualListSizeFieldInfo != null);
                 }
 
@@ -403,7 +407,8 @@ namespace BrightIdeasSoftware
                     NativeMethods.SetItemCount(this, value);
             }
         }
-        static private FieldInfo virtualListSizeFieldInfo;
+        //static private FieldInfo virtualListSizeFieldInfo;
+        static private PropertyInfo virtualListSizeFieldInfo; //#!JFS!#
 
         #endregion
 
